@@ -1,0 +1,10 @@
+{
+  "description": "Level 1 Rank",
+  "image": "ipfs://QmaAZmV9KtZt63c4MJv95nMNi3XzfQhfvmhjA2i6asmnis",
+  "name": "Rank Token",
+  "attributes": [
+    {
+      "level": "1"
+    }
+  ]
+}
