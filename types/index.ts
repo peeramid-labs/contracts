@@ -21,7 +21,7 @@ export const ProposalTypes = {
     },
     {
       type: "bytes32",
-      name: "proposalHash",
+      name: "proposalNHash",
     },
     {
       type: "string",

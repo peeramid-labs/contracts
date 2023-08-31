@@ -5,6 +5,7 @@ import "@nomiclabs/hardhat-truffle5";
 import "@nomiclabs/hardhat-web3";
 import "@nomiclabs/hardhat-ethers";
 import "hardhat-diamond-abi";
+import "@nomicfoundation/hardhat-toolbox";
 import "@typechain/hardhat";
 import "hardhat-abi-exporter";
 import { toSignature, isIncluded } from "./scripts/diamond";

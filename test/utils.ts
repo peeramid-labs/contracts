@@ -16,7 +16,7 @@ const {
 import { BigNumber, BigNumberish, Bytes, BytesLike, Wallet } from "ethers";
 // @ts-ignore
 import { RankToken } from "../types/typechain/contracts/tokens/RankToken";
-import { BestOfInit } from "../types/typechain/contracts/initializers/BestOfInit";
+// import { BestOfInit } from "../types/typechain/contracts/initializers/BestOfInit";
 import { assert } from "console";
 import { Deployment } from "hardhat-deploy/types";
 import { HardhatEthersHelpers } from "@nomiclabs/hardhat-ethers/types";
@@ -359,9 +359,6 @@ export const setupEnvironment = async (setup: {
   mockERC1155: MockERC1155;
   adr: AdrSetupResult;
 }): Promise<EnvSetupResult> => {
-  if (!process.env.IPFS_GATEWAY_URL || !process.env.RANK_TOKEN_PATH)
-    throw new Error("Rank token IPFS route not exported");
-
   const rankToken = (await ethers.getContractAt(
     setup.RankToken.abi,
     setup.RankToken.address
@@ -425,39 +422,37 @@ export async function mineBlocks(count: any) {
 
 // };
 
-export interface ProposalSubmittion {
-  gmSignature: string;
-  proposalEncryptedByGM: string;
-  proposalHash: string;
-  proposal: string;
-  proposer: SignerIdentity;
-}
-
-interface ProposalMessage {
+export interface ProposalParams {
   gameId: BigNumberish;
-  turn: BigNumberish;
-  encryptedByGMProposal: string;
-  proposalHash: BytesLike;
+  encryptedProposal: string;
+  commitmentHash: BytesLike;
+  proposer: string;
 }
 
-export const signProposalMessage = async (
-  message: ProposalMessage,
-  verifierAddress: string,
-  signer: SignerIdentity
-) => {
-  let { chainId } = await ethers.provider.getNetwork();
+export interface ProposalSubmittion {
+  proposal: string;
+  params: ProposalParams;
+  proposerSignerId: SignerIdentity;
+}
 
-  const domain = {
-    name: BESTOF_CONTRACT_NAME,
-    version: BESTOF_CONTRACT_VERSION,
-    chainId,
-    verifyingContract: verifierAddress,
-  };
-  const s = await signer.wallet._signTypedData(domain, ProposalTypes, {
-    ...message,
-  });
-  return s;
-};
+// export const signProposalMessage = async (
+//   message: ProposalMessage,
+//   verifierAddress: string,
+//   signer: SignerIdentity
+// ) => {
+//   let { chainId } = await ethers.provider.getNetwork();
+
+//   const domain = {
+//     name: BESTOF_CONTRACT_NAME,
+//     version: BESTOF_CONTRACT_VERSION,
+//     chainId,
+//     verifyingContract: verifierAddress,
+//   };
+//   const s = await signer.wallet._signTypedData(domain, ProposalTypes, {
+//     ...message,
+//   });
+//   return s;
+// };
 
 interface VoteMessage {
   vote1: BigNumberish;
@@ -690,7 +685,6 @@ export const mockVotes = async ({
   gm,
   gameId,
   turn,
-  proposals,
   verifierAddress,
   players,
   distribution,
@@ -698,7 +692,6 @@ export const mockVotes = async ({
   gameId: BigNumberish;
   turn: BigNumberish;
   gm: SignerIdentity;
-  proposals: [...string[]];
   verifierAddress: string;
   players: [SignerIdentity, SignerIdentity, ...SignerIdentity[]];
   distribution: "ftw" | "semiUniform" | "equal";
@@ -787,7 +780,6 @@ export const mockProposalSecrets = async ({
   proposer,
   gameId,
   turn,
-  verifierAddress,
 }: {
   gm: SignerIdentity;
   proposer: SignerIdentity;
@@ -797,28 +789,24 @@ export const mockProposalSecrets = async ({
 }): Promise<ProposalSubmittion> => {
   const _gmW = gm.wallet as Wallet;
   const proposal = String(gameId) + String(turn) + proposer.id;
-  const encryptedByGMProposal = aes
-    .encrypt(proposal, _gmW.privateKey)
-    .toString();
-  const proposalHash: BytesLike = ethers.utils.solidityKeccak256(
+  const encryptedProposal = aes.encrypt(proposal, _gmW.privateKey).toString();
+  const commitmentHash: string = ethers.utils.solidityKeccak256(
     ["string"],
     [proposal]
   );
-  const message = {
-    gameId: gameId,
-    turn: turn,
-    encryptedByGMProposal: encryptedByGMProposal,
-    proposalHash: proposalHash,
+  const params: ProposalParams = {
+    gameId,
+    encryptedProposal,
+    commitmentHash,
+    proposer: proposer.wallet.address,
   };
 
-  const s = await signProposalMessage(message, verifierAddress, gm);
+  // const s = await signProposalMessage(message, verifierAddress, gm);
 
   return {
-    gmSignature: s,
-    proposalEncryptedByGM: encryptedByGMProposal,
-    proposalHash,
+    params,
     proposal,
-    proposer,
+    proposerSignerId: proposer,
   };
 };
 

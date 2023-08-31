@@ -1374,21 +1374,15 @@
       },
       {
         "indexed": false,
-        "internalType": "bytes",
-        "name": "gmSignature",
-        "type": "bytes"
+        "internalType": "bytes32",
+        "name": "commitmentHash",
+        "type": "bytes32"
       },
       {
         "indexed": false,
         "internalType": "string",
         "name": "proposalEncryptedByGM",
         "type": "string"
-      },
-      {
-        "indexed": false,
-        "internalType": "bytes32",
-        "name": "proposalHash",
-        "type": "bytes32"
       }
     ],
     "name": "ProposalSubmitted",
@@ -1420,24 +1414,6 @@
         "internalType": "uint256[]",
         "name": "scores",
         "type": "uint256[]"
-      },
-      {
-        "indexed": true,
-        "internalType": "bytes32",
-        "name": "turnSalt",
-        "type": "bytes32"
-      },
-      {
-        "indexed": false,
-        "internalType": "address[]",
-        "name": "voters",
-        "type": "address[]"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256[3][]",
-        "name": "votesRevealed",
-        "type": "uint256[3][]"
       }
     ],
     "name": "TurnEnded",
@@ -1480,29 +1456,19 @@
         "type": "uint256"
       },
       {
-        "internalType": "bytes32",
-        "name": "turnSalt",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "address[]",
-        "name": "voters",
-        "type": "address[]"
-      },
-      {
         "internalType": "uint256[3][]",
-        "name": "votesRevealed",
+        "name": "votes",
         "type": "uint256[3][]"
       },
       {
         "internalType": "string[]",
-        "name": "ProposalsRevealed",
+        "name": "newProposals",
         "type": "string[]"
       },
       {
-        "internalType": "address[]",
-        "name": "prevProposersRevealed",
-        "type": "address[]"
+        "internalType": "uint256[]",
+        "name": "proposerIndicies",
+        "type": "uint256[]"
       }
     ],
     "name": "endTurn",
@@ -1537,24 +1503,31 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "gameId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bytes",
-        "name": "gmSignature",
-        "type": "bytes"
-      },
-      {
-        "internalType": "string",
-        "name": "encryptedByGMProposal",
-        "type": "string"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "proposalHash",
-        "type": "bytes32"
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "gameId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "string",
+            "name": "encryptedProposal",
+            "type": "string"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "commitmentHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address",
+            "name": "proposer",
+            "type": "address"
+          }
+        ],
+        "internalType": "struct GameMastersFacet.ProposalParams",
+        "name": "proposalData",
+        "type": "tuple"
       }
     ],
     "name": "submitProposal",

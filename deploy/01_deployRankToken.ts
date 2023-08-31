@@ -11,13 +11,20 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deploy, diamond } = deployments;
 
   const { deployer } = await getNamedAccounts();
-  if (!process.env.IPFS_GATEWAY_URL || !process.env.RANK_TOKEN_PATH)
-    throw new Error(
-      "env variables not set: export IPFS_GATEWAY_URL / RANK_TOKEN_PATH"
-    );
-  const URI = process.env.IPFS_GATEWAY_URL + process.env.RANK_TOKEN_PATH;
-  const ContractURI =
-    process.env.IPFS_GATEWAY_URL + process.env.RANK_TOKEN_CONTRACT_PATH;
+  let URI: string, ContractURI: string;
+  if (process.env.NODE_ENV !== "TEST") {
+    if (!process.env.IPFS_GATEWAY_URL || !process.env.RANK_TOKEN_PATH)
+      throw new Error(
+        "env variables not set: export IPFS_GATEWAY_URL / RANK_TOKEN_PATH"
+      );
+    URI = process.env.IPFS_GATEWAY_URL + process.env.RANK_TOKEN_PATH;
+    ContractURI =
+      process.env.IPFS_GATEWAY_URL + process.env.RANK_TOKEN_CONTRACT_PATH;
+  } else {
+    URI = "URI";
+    ContractURI = "CURI";
+  }
+
   await deploy("RankToken", {
     from: deployer,
     args: [URI, deployer, ContractURI],

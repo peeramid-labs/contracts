@@ -9,7 +9,8 @@ import {
   ProposalSubmittion,
   setupTest,
   SignerIdentity,
-  signProposalMessage,
+  ProposalParams,
+  BOG_MAX_TURNS,
 } from "./utils";
 import {
   setupAddresses,
@@ -34,6 +35,7 @@ import { assert } from "console";
 const scriptName = path.basename(__filename);
 import hre from "hardhat";
 import { solidityKeccak256 } from "ethers/lib/utils";
+import { HashZero } from "@ethersproject/constants";
 
 let votes: MockVotes;
 let proposalsStruct: ProposalSubmittion[];
@@ -92,15 +94,13 @@ const runToTheEnd = async (
       gameContract,
       gameMaster,
       gameId,
-      true
+      isLastTurn ? false : true
     );
     await gameContract.connect(gameMaster.wallet).endTurn(
       gameId,
-      getTurnSalt({ gameId: gameId, turn: turn }),
-      turn == 1 ? [] : votersAddresses,
       turn == 1 ? [] : votes?.map((vote) => vote.vote),
-      proposals.map((prop) => prop.proposal),
-      proposalsStruct.map((p) => p.proposer.wallet.address)
+      proposals.map((prop) => (turn < BOG_MAX_TURNS ? prop.proposal : "")),
+      proposals.map((p, i) => i)
     );
     isGameOver = await env.bestOfGame.isGameOver(gameId);
   }
@@ -139,11 +139,9 @@ const runToLastTurn = async (
     );
     await gameContract.connect(gameMaster.wallet).endTurn(
       gameId,
-      getTurnSalt({ gameId: gameId, turn: turn }),
-      turn == 1 ? [] : votersAddresses,
       turn == 1 ? [] : votes?.map((vote) => vote.vote),
       proposals.map((prop) => prop.proposal),
-      proposalsStruct.map((p) => p.proposer.wallet.address)
+      proposals.map((prop, idx) => idx)
     );
   }
   const isLastTurn = await gameContract.isLastTurn(gameId);
@@ -154,14 +152,9 @@ const endTurn = async (gameId: BigNumberish, gameContract: BestOfDiamond) => {
   const turn = await gameContract.getTurn(gameId);
   await gameContract.connect(adr.gameMaster1.wallet).endTurn(
     gameId,
-    getTurnSalt({
-      gameId: gameId,
-      turn: turn,
-    }),
-    votersAddresses,
     votes.map((vote) => vote.vote),
     proposalsStruct.map((prop) => prop.proposal),
-    proposalsStruct.map((p) => p.proposer.wallet.address)
+    proposalsStruct.map((prop, idx) => idx)
   );
 };
 
@@ -191,14 +184,9 @@ const runToOvertime = async (
   const turn = await gameContract.getTurn(gameId);
   await gameContract.connect(gameMaster.wallet).endTurn(
     gameId,
-    getTurnSalt({
-      gameId: gameId,
-      turn: turn,
-    }),
-    votersAddresses,
     votes.map((vote) => vote.vote),
     proposals.map((prop) => prop.proposal),
-    proposalsStruct.map((p) => p.proposer.wallet.address)
+    proposals.map((prop, idx) => idx)
   );
 };
 
@@ -266,7 +254,6 @@ const mockValidVotes = async (
     verifierAddress: gameContract.address,
     players: players,
     gm: gameMaster,
-    proposals: proposalsStruct.map((item) => item.proposal),
     distribution: distribution ?? "semiUniform",
   });
   if (submitNow) {
@@ -319,13 +306,8 @@ const mockValidProposals = async (
   if (submitNow) {
     for (let i = 0; i < players.length; i++) {
       await gameContract
-        .connect(players[i].wallet)
-        .submitProposal(
-          gameId,
-          proposalsStruct[i].gmSignature,
-          proposalsStruct[i].proposalEncryptedByGM,
-          proposalsStruct[i].proposalHash
-        );
+        .connect(gameMaster.wallet)
+        .submitProposal(proposalsStruct[i].params);
     }
   }
   return proposalsStruct;
@@ -492,12 +474,7 @@ describe(scriptName, () => {
     await expect(
       env.bestOfGame
         .connect(adr.gameMaster1.wallet)
-        .submitProposal(
-          2,
-          proposalsStruct[0].gmSignature,
-          proposalsStruct[0].proposalEncryptedByGM,
-          proposalsStruct[0].proposalHash
-        )
+        .submitProposal(proposalsStruct[0].params)
     ).to.be.revertedWith("no game found");
     votersAddresses = getPlayers(adr, BOGSettings.BOG_MAX_PLAYERS).map(
       (player) => player.wallet.address
@@ -508,7 +485,6 @@ describe(scriptName, () => {
       verifierAddress: env.bestOfGame.address,
       players: getPlayers(adr, BOGSettings.BOG_MAX_PLAYERS),
       gm: adr.gameMaster1,
-      proposals: proposalsStruct.map((item) => item.proposal),
       distribution: "semiUniform",
     });
     await expect(
@@ -554,22 +530,15 @@ describe(scriptName, () => {
     await expect(
       env.bestOfGame.connect(adr.gameMaster1.wallet).endTurn(
         1,
-        getTurnSalt({ gameId: 1, turn: 1 }),
-        votersAddresses,
         votes.map((vote) => vote.vote),
         proposals.map((prop) => prop.proposal),
-        proposalsStruct.map((p) => p.proposer.wallet.address)
+        proposalsStruct.map((p, idx) => idx)
       )
     ).to.be.revertedWith("no game found");
     await expect(
       env.bestOfGame
         .connect(adr.gameMaster1.wallet)
-        .submitProposal(
-          1,
-          proposalsStruct[0].gmSignature,
-          proposalsStruct[0].proposalEncryptedByGM,
-          proposalsStruct[0].proposalHash
-        )
+        .submitProposal(proposalsStruct[0].params)
     ).to.be.revertedWith("no game found");
   });
   it("Succedes to create ranked game only if sender has correspoding tier rank token", async () => {
@@ -684,14 +653,12 @@ describe(scriptName, () => {
       });
       it("Game methods beside join and start are inactive", async () => {
         await expect(
-          env.bestOfGame
-            .connect(adr.gameMaster1.wallet)
-            .submitProposal(
-              1,
-              ethers.utils.formatBytes32String("mockString"),
-              "mockString",
-              solidityKeccak256(["string"], ["mockString"])
-            )
+          env.bestOfGame.connect(adr.gameMaster1.wallet).submitProposal({
+            gameId: 1,
+            proposer: adr.player1.wallet.address,
+            commitmentHash: solidityKeccak256(["string"], ["mockString"]),
+            encryptedProposal: "",
+          })
         ).to.be.revertedWith("Game has not yet started");
         proposalsStruct = await mockProposals({
           players: getPlayers(adr, BOGSettings.BOG_MAX_PLAYERS),
@@ -706,7 +673,6 @@ describe(scriptName, () => {
           verifierAddress: env.bestOfGame.address,
           players: getPlayers(adr, BOGSettings.BOG_MAX_PLAYERS),
           gm: adr.gameMaster1,
-          proposals: proposalsStruct.map((item) => item.proposal),
           distribution: "semiUniform",
         });
         votersAddresses = getPlayers(adr, BOGSettings.BOG_MAX_PLAYERS).map(
@@ -715,11 +681,9 @@ describe(scriptName, () => {
         await expect(
           env.bestOfGame.connect(adr.gameMaster1.wallet).endTurn(
             1,
-            getTurnSalt({ gameId: 1, turn: 1 }),
-            votersAddresses,
             votes.map((vote) => vote.vote),
-            proposalsStruct.map((p) => p.proposalHash),
-            proposalsStruct.map((p) => p.proposer.wallet.address)
+            proposalsStruct.map((p) => p.proposal),
+            proposalsStruct.map((p, index) => index)
           )
         ).to.be.revertedWith("Game has not yet started");
         await expect(
@@ -744,11 +708,9 @@ describe(scriptName, () => {
         await expect(
           env.bestOfGame.connect(adr.gameMaster1.wallet).endTurn(
             1,
-            getTurnSalt({ gameId: 1, turn: 1 }),
-            votersAddresses,
             votes.map((vote) => vote.vote),
-            proposalsStruct.map((p) => p.proposalHash),
-            proposalsStruct.map((p) => p.proposer.wallet.address)
+            proposalsStruct.map((p) => p.proposal),
+            proposalsStruct.map((p, index) => index)
           )
         ).to.be.revertedWith("Game has not yet started");
       });
@@ -788,12 +750,7 @@ describe(scriptName, () => {
           await expect(
             env.bestOfGame
               .connect(adr.gameMaster1.wallet)
-              .submitProposal(
-                1,
-                proposalsStruct[0].gmSignature,
-                proposalsStruct[0].proposalEncryptedByGM,
-                proposalsStruct[0].proposalHash
-              )
+              .submitProposal(proposalsStruct[0].params)
           ).to.be.revertedWith("Game has not yet started");
           votes = await mockVotes({
             gameId: 1,
@@ -801,7 +758,6 @@ describe(scriptName, () => {
             verifierAddress: env.bestOfGame.address,
             players: getPlayers(adr, BOGSettings.BOG_MAX_PLAYERS),
             gm: adr.gameMaster1,
-            proposals: proposalsStruct.map((item) => item.proposal),
             distribution: "semiUniform",
           });
           votersAddresses = getPlayers(adr, BOGSettings.BOG_MAX_PLAYERS).map(
@@ -811,11 +767,9 @@ describe(scriptName, () => {
           await expect(
             env.bestOfGame.connect(adr.gameMaster1.wallet).endTurn(
               1,
-              getTurnSalt({ gameId: 1, turn: 1 }),
-              votersAddresses,
               votes.map((vote) => vote.vote),
-              proposalsStruct.map((p) => p.proposalHash),
-              proposalsStruct.map((p) => p.proposer.wallet.address)
+              proposalsStruct.map((p) => p.proposal),
+              proposalsStruct.map((p, idx) => idx)
             )
           ).to.be.revertedWith("Game has not yet started");
           await expect(
@@ -848,13 +802,8 @@ describe(scriptName, () => {
             });
             await expect(
               env.bestOfGame
-                .connect(proposals[0].proposer.wallet)
-                .submitProposal(
-                  1,
-                  proposals[0].gmSignature,
-                  proposals[0].proposalEncryptedByGM,
-                  proposals[0].proposalHash
-                )
+                .connect(adr.gameMaster1.wallet)
+                .submitProposal(proposals[0].params)
             ).to.be.emit(env.bestOfGame, "ProposalSubmitted");
             votes = await mockVotes({
               gameId: 1,
@@ -862,7 +811,6 @@ describe(scriptName, () => {
               verifierAddress: env.bestOfGame.address,
               players: getPlayers(adr, BOGSettings.BOG_MIN_PLAYERS),
               gm: adr.gameMaster1,
-              proposals: proposals.map((item) => item.proposal),
               distribution: "semiUniform",
             });
             votersAddresses = getPlayers(adr, BOGSettings.BOG_MAX_PLAYERS).map(
@@ -880,34 +828,24 @@ describe(scriptName, () => {
                 )
             ).to.be.revertedWith("No proposals exist at turn 1: cannot vote");
           });
-          it("Processes only proposals only from player", async () => {
+          it("Processes only proposals only from game master", async () => {
             await expect(
               env.bestOfGame
-                .connect(adr.player1.wallet)
-                .submitProposal(
-                  1,
-                  proposalsStruct[0].gmSignature,
-                  proposalsStruct[0].proposalEncryptedByGM,
-                  proposalsStruct[0].proposalHash
-                )
+                .connect(adr.gameMaster1.wallet)
+                .submitProposal(proposalsStruct[0].params)
             ).to.emit(env.bestOfGame, "ProposalSubmitted");
             await expect(
               env.bestOfGame
                 .connect(adr.maliciousActor1.wallet)
-                .submitProposal(
-                  1,
-                  proposalsStruct[0].gmSignature,
-                  proposalsStruct[0].proposalEncryptedByGM,
-                  proposalsStruct[0].proposalHash
-                )
-            ).to.be.revertedWith("not a player");
+                .submitProposal(proposalsStruct[0].params)
+            ).to.be.revertedWith("Only game master");
           });
           it("Can end turn if timeout reached with zero scores", async () => {
             await mineBlocks(BOGSettings.BOG_BLOCKS_PER_TURN + 1);
             await expect(
               env.bestOfGame
                 .connect(adr.gameMaster1.wallet)
-                .endTurn(1, getTurnSalt({ gameId: 1, turn: 1 }), [], [], [], [])
+                .endTurn(1, [], [], [])
             )
               .to.be.emit(env.bestOfGame, "TurnEnded")
               .withArgs(
@@ -916,12 +854,7 @@ describe(scriptName, () => {
                 getPlayers(adr, BOGSettings.BOG_MIN_PLAYERS).map(
                   (identity) => identity.wallet.address
                 ),
-                getPlayers(adr, BOGSettings.BOG_MIN_PLAYERS).map(() => 0),
-                getTurnSalt({ gameId: 1, turn: 1 }),
-                [],
-                getPlayers(adr, BOGSettings.BOG_MIN_PLAYERS).map(
-                  () => undefined
-                )
+                getPlayers(adr, BOGSettings.BOG_MIN_PLAYERS).map(() => "0")
               );
           });
           describe("When all proposals received", () => {
@@ -938,11 +871,9 @@ describe(scriptName, () => {
               await expect(
                 env.bestOfGame.connect(adr.gameMaster1.wallet).endTurn(
                   1,
-                  getTurnSalt({ gameId: 1, turn: 1 }),
-                  [],
                   [],
                   proposalsStruct.map((p) => p.proposal),
-                  proposalsStruct.map((p) => p.proposer.wallet.address)
+                  proposalsStruct.map((p, idx) => idx)
                 )
               ).to.be.emit(env.bestOfGame, "TurnEnded");
             });
@@ -950,69 +881,64 @@ describe(scriptName, () => {
               beforeEach(async () => {
                 await env.bestOfGame.connect(adr.gameMaster1.wallet).endTurn(
                   1,
-                  getTurnSalt({ gameId: 1, turn: 1 }),
-                  [],
                   [],
                   proposalsStruct.map((p) => p.proposal),
-                  []
+                  proposalsStruct.map((p, idx) => idx)
                 );
               });
-              it("throws if player submitted GM signed vote for player voting himself", async () => {
-                proposalsStruct = await mockValidProposals(
-                  getPlayers(adr, BOGSettings.BOG_MIN_PLAYERS),
-                  env.bestOfGame,
-                  adr.gameMaster1,
-                  1,
-                  true
-                );
-                const badVote = await mockVote({
-                  voter: adr.player1,
-                  gm: adr.gameMaster1,
-                  gameId: 1,
-                  verifierAddress: env.bestOfGame.address,
-                  turn: 2,
-                  vote: [0, 1, 2],
-                });
+              // it("throws if player voting himself", async () => {
+              //   proposalsStruct = await mockValidProposals(
+              //     getPlayers(adr, BOGSettings.BOG_MIN_PLAYERS),
+              //     env.bestOfGame,
+              //     adr.gameMaster1,
+              //     1,
+              //     true
+              //   );
+              //   const badVote = await mockVote({
+              //     voter: adr.player1,
+              //     gm: adr.gameMaster1,
+              //     gameId: 1,
+              //     verifierAddress: env.bestOfGame.address,
+              //     turn: 2,
+              //     vote: [0, 1, 2],
+              //   });
 
-                const badVotes = await mockVotes({
-                  gameId: 1,
-                  turn: 2,
-                  verifierAddress: env.bestOfGame.address,
-                  players: getPlayers(adr, BOGSettings.BOG_MIN_PLAYERS),
-                  gm: adr.gameMaster1,
-                  proposals: proposalsStruct.map((item) => item.proposal),
-                  distribution: "semiUniform",
-                });
-                badVotes[0] = badVote;
-                votersAddresses = getPlayers(
-                  adr,
-                  BOGSettings.BOG_MIN_PLAYERS
-                ).map((player, idx) => player.wallet.address);
-                for (let i = 0; i < votersAddresses.length; i++) {
-                  let name = `player${i + 1}` as any as keyof AdrSetupResult;
+              //   const badVotes = await mockVotes({
+              //     gameId: 1,
+              //     turn: 2,
+              //     verifierAddress: env.bestOfGame.address,
+              //     players: getPlayers(adr, BOGSettings.BOG_MIN_PLAYERS),
+              //     gm: adr.gameMaster1,
+              //     distribution: "semiUniform",
+              //   });
+              //   badVotes[0] = badVote;
+              //   votersAddresses = getPlayers(
+              //     adr,
+              //     BOGSettings.BOG_MIN_PLAYERS
+              //   ).map((player, idx) => player.wallet.address);
+              //   for (let i = 0; i < votersAddresses.length; i++) {
+              //     let name = `player${i + 1}` as any as keyof AdrSetupResult;
 
-                  await env.bestOfGame
-                    .connect(adr[`${name}`].wallet)
-                    .submitVote(
-                      1,
-                      badVotes[i].voteHidden,
-                      badVotes[i].proof,
-                      badVotes[i].publicSignature
-                    );
-                }
+              //     await env.bestOfGame
+              //       .connect(adr[`${name}`].wallet)
+              //       .submitVote(
+              //         1,
+              //         badVotes[i].voteHidden,
+              //         badVotes[i].proof,
+              //         badVotes[i].publicSignature
+              //       );
+              //   }
 
-                await mineBlocks(BOGSettings.BOG_BLOCKS_PER_TURN + 1);
-                await expect(
-                  env.bestOfGame.connect(adr.gameMaster1.wallet).endTurn(
-                    1,
-                    getTurnSalt({ gameId: 1, turn: 2 }),
-                    votersAddresses,
-                    badVotes.map((vote) => vote.vote),
-                    proposalsStruct.map((p) => p.proposal),
-                    proposalsStruct.map((p) => p.proposer.wallet.address)
-                  )
-                ).to.be.revertedWith("voted for himself");
-              });
+              //   await mineBlocks(BOGSettings.BOG_BLOCKS_PER_TURN + 1);
+              //   await expect(
+              //     env.bestOfGame.connect(adr.gameMaster1.wallet).endTurn(
+              //       1,
+              //       badVotes.map((vote) => vote.vote),
+              //       proposalsStruct.map((p) => p.proposal),
+              //       proposalsStruct.map((p, idx) => idx)
+              //     )
+              //   ).to.be.revertedWith("voted for himself");
+              // });
               describe("When all players voted", () => {
                 beforeEach(async () => {
                   votes = await mockValidVotes(
@@ -1031,42 +957,36 @@ describe(scriptName, () => {
                   await expect(
                     env.bestOfGame.connect(adr.gameMaster1.wallet).endTurn(
                       1,
-                      getTurnSalt({ gameId: 1, turn: 2 }),
-                      votersAddresses,
                       votes.map((vote) => vote.vote),
                       proposalsStruct.map((p) => p.proposal),
-                      proposalsStruct.map((p) => p.proposer.wallet.address)
+                      proposalsStruct.map((p, idx) => idx)
                     )
                   ).to.be.revertedWith(
                     "Some players still have time to propose"
                   );
                 });
-                it.only("Can end turn if timeout reached", async () => {
+                it("Can end turn if timeout reached", async () => {
                   await mineBlocks(BOGSettings.BOG_BLOCKS_PER_TURN + 1);
                   expect(await env.bestOfGame.getTurn(1)).to.be.equal(2);
-                  const expectedScores: number[] = [];
-                  const players = getPlayers(
-                    adr,
-                    BOGSettings.BOG_MIN_PLAYERS
-                  ).length;
-                  for (let i = 0; i < players; i++) {
-                    expectedScores[i] = 0;
-                    votes.forEach((playerVote) => {
-                      playerVote.vote.forEach((vote, idx) => {
-                        if (proposalsStruct[i].proposal === vote) {
-                          expectedScores[i] += 3 - idx;
-                        }
+                  const players = getPlayers(adr, BOGSettings.BOG_MIN_PLAYERS);
+                  const expectedScores: number[] = players.map((v) => 0);
+                  for (let i = 0; i < players.length; i++) {
+                    // expectedScores[i] = 0;
+                    if (votes.length > i) {
+                      votes[i].vote.forEach((votedFor, voteWeightInverted) => {
+                        const _votedFor = Number(votedFor.toString());
+                        expectedScores[_votedFor] += 3 - voteWeightInverted;
                       });
-                    });
+                    } else {
+                      //somebody did not vote at all
+                    }
                   }
                   await expect(
                     env.bestOfGame.connect(adr.gameMaster1.wallet).endTurn(
                       1,
-                      getTurnSalt({ gameId: 1, turn: 2 }),
-                      votersAddresses,
                       votes.map((vote) => vote.vote),
                       [],
-                      proposalsStruct.map((p) => p.proposer.wallet.address)
+                      proposalsStruct.map((p, idx) => idx)
                     )
                   )
                     .to.be.emit(env.bestOfGame, "TurnEnded")
@@ -1076,8 +996,7 @@ describe(scriptName, () => {
                       getPlayers(adr, BOGSettings.BOG_MIN_PLAYERS).map(
                         (identity) => identity.wallet.address
                       ),
-                      expectedScores,
-                      getTurnSalt({ gameId: 1, turn: 2 })
+                      expectedScores
                     );
                 });
               });
@@ -1139,17 +1058,20 @@ describe(scriptName, () => {
           .openRegistration(1);
         const players = getPlayers(adr, BOG_MAX_PLAYERS, 0);
         for (let i = 0; i < players.length; i++) {
-          await env.mockERC1155.mint(
-            players[i].wallet.address,
-            ethers.utils.parseEther("10"),
-            "1",
-            "0x"
-          );
-          await env.mockERC20.mint(
-            players[i].wallet.address,
-            ethers.utils.parseEther("10")
-          );
-          await env.mockERC721.mint(players[i].wallet.address, i + 1, "0x");
+          await env.mockERC1155
+            .connect(adr.contractDeployer.wallet)
+            .mint(
+              players[i].wallet.address,
+              ethers.utils.parseEther("10"),
+              "1",
+              "0x"
+            );
+          await env.mockERC20
+            .connect(adr.contractDeployer.wallet)
+            .mint(players[i].wallet.address, ethers.utils.parseEther("10"));
+          await env.mockERC721
+            .connect(adr.contractDeployer.wallet)
+            .mint(players[i].wallet.address, i + 1, "0x");
           await env.mockERC20
             .connect(players[i].wallet)
             .approve(env.bestOfGame.address, ethers.utils.parseEther("100"));
@@ -1168,6 +1090,8 @@ describe(scriptName, () => {
             env.bestOfGame.address,
             ethers.utils.parseEther("100")
           );
+        const bal = await env.mockERC20.balanceOf(adr.player1.wallet.address);
+        console.log(ethers.utils.formatEther(bal));
         await env.bestOfGame
           .connect(adr.player1.wallet)
           .joinGame(1, { value: ethers.utils.parseEther("0.4") });
@@ -1307,12 +1231,7 @@ describe(scriptName, () => {
         await expect(
           env.bestOfGame
             .connect(adr.gameMaster1.wallet)
-            .submitProposal(
-              1,
-              proposalsStruct[0].gmSignature,
-              proposalsStruct[0].proposalEncryptedByGM,
-              proposalsStruct[0].proposalHash
-            )
+            .submitProposal(proposalsStruct[0].params)
         ).to.be.revertedWith("Cannot propose in last turn");
       });
       it("Next turn without winner brings Game is in overtime conditions", async () => {
@@ -1362,14 +1281,9 @@ describe(scriptName, () => {
           expect(
             await env.bestOfGame.connect(adr.gameMaster1.wallet).endTurn(
               1,
-              getTurnSalt({
-                gameId: 1,
-                turn: currentTurn,
-              }),
-              votersAddresses,
               votes.map((vote) => vote.vote),
               proposals.map((p) => p.proposal),
-              proposalsStruct.map((p) => p.proposer.wallet.address)
+              proposalsStruct.map((p, idx) => idx)
             )
           ).to.emit(env.bestOfGame, "GameOver");
         });
@@ -1393,7 +1307,6 @@ describe(scriptName, () => {
             verifierAddress: env.bestOfGame.address,
             players: getPlayers(adr, BOGSettings.BOG_MAX_PLAYERS),
             gm: adr.gameMaster1,
-            proposals: proposalsStruct.map((item) => item.proposal),
             distribution: "ftw",
           });
           proposalsStruct = await mockProposals({
@@ -1408,12 +1321,7 @@ describe(scriptName, () => {
             const proposals = await expect(
               env.bestOfGame
                 .connect(adr.gameMaster1.wallet)
-                .submitProposal(
-                  1,
-                  proposalsStruct[i].gmSignature,
-                  proposalsStruct[i].proposalEncryptedByGM,
-                  proposalsStruct[i].proposalHash
-                )
+                .submitProposal(proposalsStruct[i].params)
             ).to.be.revertedWith("Game over");
 
             let name = `player${i + 1}` as any as keyof AdrSetupResult;
@@ -1431,11 +1339,6 @@ describe(scriptName, () => {
           await expect(
             env.bestOfGame.connect(adr.gameMaster1.wallet).endTurn(
               1,
-              getTurnSalt({
-                gameId: 1,
-                turn: BOGSettings.BOG_MAX_TURNS,
-              }),
-              votersAddresses,
               votes.map((vote) => vote.vote),
               [],
               []

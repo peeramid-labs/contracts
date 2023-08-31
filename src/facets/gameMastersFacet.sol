@@ -11,6 +11,7 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "../abstracts/draft-EIP712Diamond.sol";
 import { RankToken } from "../tokens/RankToken.sol";
 import { LibCoinVending } from "../libraries/LibCoinVending.sol";
+import "hardhat/console.sol";
 
 contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
   using LibTBG for uint256;
@@ -24,10 +25,8 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
     uint256 indexed gameId,
     uint256 indexed turn,
     address[] players,
-    uint256[] scores,
-    bytes32 indexed turnSalt,
-    address[] voters,
-    uint256[3][] votesRevealed
+    uint256[] scores
+    // uint256[3][] votesRevealed
   );
 
   event GameOver(
@@ -111,7 +110,6 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
   function _endGame(
     uint256 gameId,
     address[] memory leaderboard,
-    uint256[] memory scores,
     address[] memory players
   ) internal nonReentrant {
     IBestOf.BOGInstance storage game = gameId.getGameStorage();
@@ -127,57 +125,156 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
       );
       LibBestOf.fulfillRankRq(address(this), players[i], game.rank, true);
     }
+    (, uint256[] memory scores) = gameId.getScores();
     emit GameOver(gameId, players, scores);
   }
 
-  function endVoting(
-    uint256 gameId,
-    bytes32 turnSalt,
-    address[] memory voters,
-    uint256[3][] memory votesRevealed,
-    address[] memory prevProposersRevealed
-  ) private {
+  event ProposalSubmitted(
+    uint256 indexed gameId,
+    uint256 indexed turn,
+    address indexed proposer,
+    bytes32 commitmentHash,
+    string proposalEncryptedByGM
+  );
+  struct ProposalParams {
+    uint256 gameId;
+    string encryptedProposal;
+    bytes32 commitmentHash;
+    address proposer;
+  }
+
+  function submitProposal(ProposalParams memory proposalData) public {
+    LibBestOf.enforceIsGM(proposalData.gameId);
+
+    IBestOf.BOGInstance storage game = proposalData.gameId.getGameStorage();
+    proposalData.gameId.enforceGameExists();
+    proposalData.gameId.enforceHasStarted();
+    require(
+      LibTBG.getPlayersGame(proposalData.proposer) == proposalData.gameId,
+      "not a player"
+    );
+    require(!proposalData.gameId.isGameOver(), "Game over");
+    require(!proposalData.gameId.isLastTurn(), "Cannot propose in last turn");
+    require(
+      bytes(proposalData.encryptedProposal).length != 0,
+      "Cannot propose empty"
+    );
+    require(
+      game.proposalCommitmentHashes[proposalData.proposer] == "",
+      "Already proposed!"
+    );
+    // bytes memory message = abi.encode(
+    //   LibBestOf._PROPOSAL_PROOF_TYPEHASH,
+    //   gameId,
+    //   _turn,
+    //   proposalNHash,
+    //   keccak256(abi.encodePacked(encryptedProposal))
+    // );
+    // require(
+    //   _isValidSignature(message, gmSignature, gameId.getGM()),
+    //   "wrong signature"
+    // );
+    game.proposalCommitmentHashes[proposalData.proposer] = proposalData
+      .commitmentHash;
+    game.numCommitments += 1;
+    emit ProposalSubmitted(
+      proposalData.gameId,
+      proposalData.gameId.getTurn(),
+      proposalData.proposer,
+      proposalData.commitmentHash,
+      proposalData.encryptedProposal
+    );
+  }
+
+  // function enforceValidProposalsRevealed(
+  //   uint256 gameId,
+  //   uint256 turn,
+  //   bytes32[] memory nullifiers // string[] memory proposals unused until ZKP is implemented
+  // ) private {
+  //   IBestOf.BOGInstance storage game = gameId.getGameStorage();
+  //   require(nullifiers.length == game.numCommitments, "unequal lengths");
+  //   uint256 length = nullifiers.length;
+  //   for (uint256 i = 0; i < length; i++) {
+  //     require(
+  //       !game.futureProposalNs[turn + 1][nullifiers[i]],
+  //       "Duplicate nullifier detected"
+  //     );
+  //     game.futureProposalNs[turn + 1][nullifiers[i]] = true;
+  //     bytes32 nHash = keccak256(abi.encode(nullifiers[i]));
+  //     require(
+  //       game.proposalCommitmentHashes[turn + 1][nHash],
+  //       "invalid nullifier"
+  //     );
+  //     //ToDo: ZKP verification that proposalNHash exists for a proposal. Until that assumption is that GM must be honest
+  //     // validateZKP(game.proposalCommitmentHashes[turn+1][nHash],proposals[i])
+  //   }
+  // }
+
+  // Clean up game instance for upcoming round
+  function _beforeNextTurn(uint256 gameId) internal {
     address[] memory players = gameId.getPlayers();
     IBestOf.BOGInstance storage game = gameId.getGameStorage();
+    game.numOngoingProposals = 0;
+    game.numCommitments = 0;
+    for (uint256 i = 0; i < players.length; i++) {
+      game.proposalCommitmentHashes[players[i]] = bytes32(0);
+      game.ongoingProposals[i] = "";
+      game.votesHidden[players[i]].votedFor[0] = bytes32(0);
+      game.votesHidden[players[i]].votedFor[1] = bytes32(0);
+      game.votesHidden[players[i]].votedFor[2] = bytes32(0);
+      delete game.votesHidden[players[i]].proof;
+    }
+  }
+
+  function _afterNextTurn(
+    uint256 gameId,
+    string[] memory newProposals
+  ) private {
+    IBestOf.BOGInstance storage game = gameId.getGameStorage();
+    for (uint256 i = 0; i < newProposals.length; i++) {
+      game.ongoingProposals[i] = newProposals[i];
+      game.numOngoingProposals += 1;
+    }
+  }
+
+  //prevProposersRevealed MUST be submitted sorted according to proposals in ongoingProposals map
+  function _calculateScores(
+    uint256 gameId,
+    uint256[3][] memory votesRevealed,
+    uint256[] memory proposerIndicies
+  ) private {
+    address[] memory players = gameId.getPlayers();
     uint256[] memory scores = new uint256[](players.length);
-    for (uint256 i = 0; i < game.numOngoingProposals; i++) {
-      if (
-        (gameId.getTurn() != 1) && bytes(game.ongoingProposals[i]).length != 0
-      ) {
-        //if proposal exsists
-        validateVotes(
-          gameId,
-          voters,
-          votesRevealed,
-          turnSalt,
-          prevProposersRevealed
-        );
-        scores[i] =
-          gameId.getScore(players[i]) +
-          LibBestOf.getProposalScore(gameId, voters, votesRevealed, players[i]);
-        gameId.setScore(players[i], scores[i]);
+    for (uint256 playerIdx = 0; playerIdx < players.length; playerIdx++) {
+      //for each player
+
+      if (proposerIndicies[playerIdx] < players.length) {
+        //if proposal exists
+        scores[playerIdx] =
+          gameId.getScore(players[playerIdx]) +
+          LibBestOf.getProposalScore(
+            gameId,
+            votesRevealed,
+            proposerIndicies[playerIdx]
+          );
+        gameId.setScore(players[playerIdx], scores[playerIdx]);
       } else {
-        //Player did not propose anything - his score stays same;
-        //Unless there is still time to submit proposals
+        //Player did not propose
       }
     }
+  }
+
+  function _nextTurn(uint256 gameId, string[] memory newProposals) private {
+    _beforeNextTurn(gameId);
+    address[] memory players = gameId.getPlayers();
     (
       bool _isLastTurn,
       bool _isOvertime,
       bool _isGameOver,
       address[] memory leaderboard
     ) = gameId.nextTurn();
-    game.numOngoingProposals = 0; //numProposals = 0;
-    game.prevTurnSalt = turnSalt;
-    emit TurnEnded(
-      gameId,
-      gameId.getTurn() - 1,
-      players,
-      scores,
-      turnSalt,
-      voters,
-      votesRevealed
-    );
+    (, uint256[] memory scores) = gameId.getScores();
+    emit TurnEnded(gameId, gameId.getTurn() - 1, players, scores);
     if (_isLastTurn && _isOvertime) {
       emit OverTime(gameId);
     }
@@ -185,116 +282,18 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
       emit LastTurn(gameId);
     }
     if (_isGameOver) {
-      _endGame(gameId, leaderboard, scores, players);
+      _endGame(gameId, leaderboard, players);
     }
+    _afterNextTurn(gameId, newProposals);
   }
 
-  event ProposalSubmitted(
-    uint256 indexed gameId,
-    uint256 indexed turn,
-    address indexed proposer,
-    bytes gmSignature,
-    string proposalEncryptedByGM,
-    bytes32 proposalHash
-  );
-
-  function submitProposal(
-    uint256 gameId,
-    bytes memory gmSignature,
-    string memory encryptedByGMProposal,
-    bytes32 proposalHash
-  ) public {
-    // LibBestOf.enforceIsGM(gameId);
-    IBestOf.BOGInstance storage game = gameId.getGameStorage();
-    gameId.enforceGameExists();
-    gameId.enforceHasStarted();
-    require(LibTBG.getPlayersGame(msg.sender) == gameId, "not a player");
-    require(!gameId.isGameOver(), "Game over");
-    require(!gameId.isLastTurn(), "Cannot propose in last turn");
-    uint256 _turn = gameId.getTurn();
-    require(bytes(encryptedByGMProposal).length != 0, "Cannot propose empty");
-    require(
-      game.futureProposalHashes[proposalHash] == false,
-      "Already proposed!"
-    );
-    bytes memory message = abi.encode(
-      LibBestOf._PROPOSAL_PROOF_TYPEHASH,
-      gameId,
-      _turn,
-      proposalHash,
-      keccak256(abi.encodePacked(encryptedByGMProposal))
-    );
-    require(
-      _isValidSignature(message, gmSignature, gameId.getGM()),
-      "wrong signature"
-    );
-    game.futureProposalHashes[proposalHash] = true;
-    game.numFutureProposals += 1;
-    //ToDo: Here must have ZK proof workflow that ensures unique proposer from proposers pool and in simple manner - that numFutureProposals is below numPlayers.
-    //In MVP assumption is that GM service is honest
-    emit ProposalSubmitted(
-      gameId,
-      gameId.getTurn(),
-      msg.sender,
-      gmSignature,
-      encryptedByGMProposal,
-      proposalHash
-    );
-  }
-
-  function startNewVoting(
-    uint256 gameId,
-    string[] memory ProposalsRevealed
-  ) private {
-    address[] memory players = gameId.getPlayers();
-    IBestOf.BOGInstance storage game = gameId.getGameStorage();
-    for (uint256 i = 0; i < players.length; i++) {
-      //indexing trough players does not mean i corresponds to a player, but rather to a max number of possible proposals out there
-      game.numOngoingProposals = 0;
-      if (game.numFutureProposals > i) {
-        //This would be a good place for ZK proof that hash(proposalRevealed + salt) is equal to futureProposalHashes without revealing the salt
-        //Whilist this relies on Game Master submitting correct data, otherwise will fail later on when turn is ending.
-        game.ongoingProposals[i] = ProposalsRevealed[i];
-        game.numOngoingProposals += 1;
-      } else {
-        // Some proposals were not submitted -> cleaning up old proposals
-        game.ongoingProposals[i] = "";
-      }
-      bytes32 revealedProposalHash = keccak256(
-        abi.encodePacked(ProposalsRevealed[i])
-      );
-      assert(game.futureProposalHashes[revealedProposalHash] == true);
-      game.futureProposalHashes[revealedProposalHash] = false;
-    }
-    game.numFutureProposals = 0;
-  }
-
-  function enforceValidProposalsRevealed(
-    uint256 gameId,
-    address[] memory prevProposersRevealed,
-    string[] memory ProposalsRevealed
-  ) private view {
-    IBestOf.BOGInstance storage game = gameId.getGameStorage();
-    for (uint256 i = 0; i < prevProposersRevealed.length; i++) {
-      address proposer = prevProposersRevealed[i];
-      bytes32 revealedProposalHash = keccak256(
-        abi.encodePacked(ProposalsRevealed[i])
-      );
-      bool proposalHashFromStore = game.futureProposalHashes[
-        revealedProposalHash
-      ];
-      require(proposalHashFromStore, "Proposal hashes do not match");
-    }
-  }
-
-  //Proposers order must be same as hidden proposal ordering in game.proposals
+  // newProposals array MUST be sorted randomly
+  // votes and proposerIndicies MUST correspond to players array from game.getPlayers()
   function endTurn(
     uint256 gameId,
-    bytes32 turnSalt,
-    address[] memory voters,
-    uint256[3][] memory votesRevealed,
-    string[] memory ProposalsRevealed, //REFERRING TO UPCOMING VOTING ROUND
-    address[] memory prevProposersRevealed //REFERRING TO PREVIOUS VOTING ROUND
+    uint256[3][] memory votes,
+    string[] memory newProposals, //REFERRING TO UPCOMING VOTING ROUND
+    uint256[] memory proposerIndicies //REFERRING TO game.players index in PREVIOUS VOTING ROUND
   ) public {
     LibBestOf.enforceIsGM(gameId);
 
@@ -306,18 +305,15 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
     }
     if (!gameId.isLastTurn()) {
       require(
-        (game.numFutureProposals == gameId.getPlayers().length) ||
+        (game.numCommitments == gameId.getPlayers().length) ||
           gameId.isTurnTimedOut(),
         "Some players still have time to propose"
       );
     }
-    enforceValidProposalsRevealed(
-      gameId,
-      prevProposersRevealed,
-      ProposalsRevealed
-    );
-    endVoting(gameId, turnSalt, voters, votesRevealed, prevProposersRevealed);
-    startNewVoting(gameId, ProposalsRevealed);
+    if (gameId.getTurn() != 1) {
+      _calculateScores(gameId, votes, proposerIndicies);
+    }
+    _nextTurn(gameId, newProposals);
   }
 
   function emitRankRewards(
