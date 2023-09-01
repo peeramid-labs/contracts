@@ -21,11 +21,7 @@ contract MockVendingMachine is ReentrancyGuard {
         LibCoinVending.fund(_positionName);
     }
 
-    function release(
-        bytes32 _positionName,
-        address payee,
-        address beneficiary
-    ) public nonReentrant {
+    function release(bytes32 _positionName, address payee, address beneficiary) public nonReentrant {
         LibCoinVending.release(_positionName, payee, beneficiary, msg.sender);
     }
 
@@ -37,11 +33,7 @@ contract MockVendingMachine is ReentrancyGuard {
         LibCoinVending.batchRefund(_positionName, participants);
     }
 
-    function releaseAll(
-        bytes32 _positionName,
-        address payee,
-        address beneficiary
-    ) public nonReentrant {
+    function releaseAll(bytes32 _positionName, address payee, address beneficiary) public nonReentrant {
         LibCoinVending.batchRelease(_positionName, payee, beneficiary, participants);
     }
 
@@ -71,12 +63,7 @@ contract MockVendingMachine is ReentrancyGuard {
         return bytes4("");
     }
 
-    function onERC721Received(
-        address operator,
-        address,
-        uint256,
-        bytes calldata
-    ) external view returns (bytes4) {
+    function onERC721Received(address operator, address, uint256, bytes calldata) external view returns (bytes4) {
         if (operator == address(this)) {
             return IERC721Receiver.onERC721Received.selector;
         }

@@ -23,8 +23,7 @@ import "../modifiers/OnlyOwnerDiamond.sol";
 // of your diamond. Add parameters to the init funciton if you need to.
 
 contract MultipassInit is OnlyOwnerDiamond {
-
-        function _buildDomainSeparator(
+    function _buildDomainSeparator(
         bytes32 typeHash,
         bytes32 nameHash,
         bytes32 versionHash
@@ -40,7 +39,7 @@ contract MultipassInit is OnlyOwnerDiamond {
         ds.supportedInterfaces[type(IDiamondLoupe).interfaceId] = true;
         ds.supportedInterfaces[type(IERC173).interfaceId] = true;
 
-         bytes32 hashedName = keccak256(bytes(name));
+        bytes32 hashedName = keccak256(bytes(name));
         bytes32 hashedVersion = keccak256(bytes(version));
         bytes32 typeHash = keccak256(
             "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"

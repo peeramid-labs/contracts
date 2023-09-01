@@ -4,10 +4,9 @@ pragma solidity ^0.8.4;
 import "../libraries/LibMultipass.sol";
 
 interface IMultipass {
-    function resolveRecord(LibMultipass.NameQuery memory query)
-        external
-        view
-        returns (bool, LibMultipass.Record memory);
+    function resolveRecord(
+        LibMultipass.NameQuery memory query
+    ) external view returns (bool, LibMultipass.Record memory);
 
     /** @dev same as resolveRecord but returns username, id and LibMultipass.Domain as string */
     // function resolveRecordToString(LibMultipass.NameQuery memory query)

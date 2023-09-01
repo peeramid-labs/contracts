@@ -211,11 +211,10 @@ library LibMultipass {
         domain.nonce[record.id] += record.nonce;
     }
 
-    function _resolveFromAddress(address _address, DomainNameService storage _domain)
-        private
-        view
-        returns (bool, RecordBytes32 memory)
-    {
+    function _resolveFromAddress(
+        address _address,
+        DomainNameService storage _domain
+    ) private view returns (bool, RecordBytes32 memory) {
         RecordBytes32 memory resolved;
 
         resolved.id = _domain.addressToId[_address];

@@ -3,11 +3,7 @@ pragma solidity ^0.8.4;
 import "hardhat/console.sol";
 
 library LibArray {
-    function quickSort(
-        uint256[] memory arr,
-        int256 left,
-        int256 right
-    ) internal view {
+    function quickSort(uint256[] memory arr, int256 left, int256 right) internal view {
         int256 i = left;
         int256 j = right;
         if (i == j) return;

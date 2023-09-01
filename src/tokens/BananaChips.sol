@@ -5,9 +5,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 pragma solidity ^0.8.0;
 
 contract BananaChips is ERC721 {
-
-    constructor(address s) ERC721("Bowl of banana chips", "BCHIP")
-    {
+    constructor(address s) ERC721("Bowl of banana chips", "BCHIP") {
         _safeMint(s, 1);
     }
 
@@ -19,6 +17,4 @@ contract BananaChips is ERC721 {
     function _baseURI() internal pure override returns (string memory) {
         return "ipfs://QmNkKSgcrGZHJ2HAQxU3ZET8ywF5zXQqYDkh2xrbaD2vsQ/";
     }
-
-
 }

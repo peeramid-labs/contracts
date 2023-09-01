@@ -10,7 +10,7 @@ contract OwnershipFacet is IERC173 {
         LibDiamond.setContractOwner(_newOwner);
     }
 
-    function owner() external override view returns (address owner_) {
+    function owner() external view override returns (address owner_) {
         owner_ = LibDiamond.contractOwner();
     }
 }
