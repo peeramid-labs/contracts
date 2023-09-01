@@ -1,4 +1,4 @@
-/* global ethers */
+/* global hre, ethers */
 
 const FacetCutAction = { Add: 0, Replace: 1, Remove: 2 };
 
@@ -6,7 +6,7 @@ const FacetCutAction = { Add: 0, Replace: 1, Remove: 2 };
 function getSelectors(contract) {
   const signatures = Object.keys(contract.interface.functions);
   const selectors = signatures.reduce((acc, val) => {
-    if (val !== "init(bytes)") {
+    if (val !== 'init(bytes)') {
       acc.push(contract.interface.getSighash(val));
     }
     return acc;
@@ -26,7 +26,7 @@ function getSelector(func) {
 // used with getSelectors to remove selectors from an array of selectors
 // functionNames argument is an array of function signatures
 function remove(functionNames) {
-  const selectors = this.filter((v) => {
+  const selectors = this.filter(v => {
     for (const functionName of functionNames) {
       if (v === this.contract.interface.getSighash(functionName)) {
         return false;
@@ -43,7 +43,7 @@ function remove(functionNames) {
 // used with getSelectors to get selectors from an array of selectors
 // functionNames argument is an array of function signatures
 function get(functionNames) {
-  const selectors = this.filter((v) => {
+  const selectors = this.filter(v => {
     for (const functionName of functionNames) {
       if (v === this.contract.interface.getSighash(functionName)) {
         return true;
@@ -59,11 +59,9 @@ function get(functionNames) {
 
 // remove selectors using an array of signatures
 function removeSelectors(selectors, signatures) {
-  const iface = new ethers.utils.Interface(
-    signatures.map((v) => "function " + v)
-  );
-  const removeSelectors = signatures.map((v) => iface.getSighash(v));
-  selectors = selectors.filter((v) => !removeSelectors.includes(v));
+  const iface = new ethers.utils.Interface(signatures.map(v => 'function ' + v));
+  const removeSelectors = signatures.map(v => iface.getSighash(v));
+  selectors = selectors.filter(v => !removeSelectors.includes(v));
   return selectors;
 }
 
@@ -76,13 +74,7 @@ function findAddressPositionInFacets(facetAddress, facets) {
   }
 }
 
-async function cutFacets({
-  facets,
-  initializer,
-  diamondAddress,
-  signer,
-  initializerArgs,
-}) {
+async function cutFacets({ facets, initializer, diamondAddress, signer, initializerArgs }) {
   // const getSelectors = await import("./libraries/diamond.js").then(
   //   (m) => m.getSelectors
   // );
@@ -100,23 +92,17 @@ async function cutFacets({
     });
   }
 
-  const diamondCut = await ethers.getContractAt("IDiamondCut", diamondAddress);
+  const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress);
   let tx;
   let receipt;
 
   // call to init function
-  let functionCall = initializer
-    ? initializer.interface.encodeFunctionData("init", initializerArgs)
-    : [];
+  let functionCall = initializer ? initializer.interface.encodeFunctionData('init', initializerArgs) : [];
   tx = await diamondCut
     .connect(signer)
-    .diamondCut(
-      cut,
-      initializer?.address ?? hre.ethers.constants.AddressZero,
-      functionCall
-    );
+    .diamondCut(cut, initializer?.address ?? hre.ethers.constants.AddressZero, functionCall);
   if (require.main === module) {
-    console.log("Diamond cut tx: ", tx.hash);
+    console.log('Diamond cut tx: ', tx.hash);
   }
   receipt = await tx.wait();
   if (!receipt.status) {
@@ -126,18 +112,12 @@ async function cutFacets({
   return receipt;
 }
 
-async function replaceFacet(
-  DiamondAddress,
-  facetName,
-  signer,
-  initializer,
-  initializerArgs
-) {
+async function replaceFacet(DiamondAddress, facetName, signer, initializer, initializerArgs) {
   const Facet = await hre.ethers.getContractFactory(facetName, signer);
   const facet = await Facet.deploy();
   await facet.deployed();
 
-  const diamond = await ethers.getContractAt("IDiamondCut", DiamondAddress);
+  const diamond = await ethers.getContractAt('IDiamondCut', DiamondAddress);
   const cut = [
     {
       facetAddress: facet.address,
@@ -146,17 +126,11 @@ async function replaceFacet(
     },
   ];
 
-  let functionCall = initializer
-    ? initializer.interface.encodeFunctionData("init", initializerArgs)
-    : [];
+  let functionCall = initializer ? initializer.interface.encodeFunctionData('init', initializerArgs) : [];
 
-  tx = await diamond
+  const tx = await diamond
     .connect(signer)
-    .diamondCut(
-      cut,
-      initializer?.address ?? hre.ethers.constants.AddressZero,
-      functionCall
-    );
+    .diamondCut(cut, initializer?.address ?? hre.ethers.constants.AddressZero, functionCall);
 
   return tx;
 }
@@ -169,34 +143,28 @@ async function deployDiamond(FacetNames, signer, initializer, initializerArgs) {
   //   initializerArgs,
   //   signer.address
   // );
-  const DiamondCutFacet = await ethers.getContractFactory(
-    "DiamondCutFacet",
-    signer
-  );
+  const DiamondCutFacet = await ethers.getContractFactory('DiamondCutFacet', signer);
   const diamondCutFacet = await DiamondCutFacet.deploy();
   await diamondCutFacet.deployed();
   if (require.main === module) {
-    console.log("DiamondCutFacet deployed:", diamondCutFacet.address);
+    console.log('DiamondCutFacet deployed:', diamondCutFacet.address);
   }
 
-  const Diamond = await ethers.getContractFactory("Diamond", signer);
+  const Diamond = await ethers.getContractFactory('Diamond', signer);
   const diamond = await Diamond.deploy(signer.address, diamondCutFacet.address);
   await diamond.deployed();
   if (require.main === module) {
-    console.log("Diamond deployed:", diamond.address);
+    console.log('Diamond deployed:', diamond.address);
   }
 
   // deploy DiamondInit
   // DiamondInit provides a function that is called when the diamond is upgraded to initialize state variables
   // Read about how the diamondCut function works here: https://eips.ethereum.org/EIPS/eip-2535#addingreplacingremoving-functions
-  const DiamondInit = await ethers.getContractFactory(
-    initializer ?? "DiamondInit",
-    signer
-  );
+  const DiamondInit = await ethers.getContractFactory(initializer ?? 'DiamondInit', signer);
   const diamondInit = await DiamondInit.deploy();
   await diamondInit.deployed();
   if (require.main === module) {
-    console.log("DiamondInit deployed:", diamondInit.address);
+    console.log('DiamondInit deployed:', diamondInit.address);
   }
 
   // deploy facets
