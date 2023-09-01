@@ -1,8 +1,6 @@
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
 import {
-  MULTIPASS_CONTRACT_VERSION,
-  MULTIPASS_CONTRACT_NAME,
   BESTOF_CONTRACT_NAME,
   BESTOF_CONTRACT_VERSION,
   BOG_BLOCKS_PER_TURN,
@@ -15,8 +13,8 @@ import {
   BOG_NUM_WINNERS,
 } from '../test/utils';
 import { ethers } from 'hardhat';
-import { BestOfInit } from '../types/typechain/contracts/initializers/BestOfInit';
-import { RankToken } from '../types/typechain/contracts/tokens/RankToken';
+import { BestOfInit } from '../types/typechain/src/initializers/BestOfInit';
+import { RankToken } from '../types/typechain/src/tokens/RankToken';
 import { BestOfDiamond } from '../types/typechain/hardhat-diamond-abi/HardhatDiamondABI.sol';
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployments, getNamedAccounts } = hre;

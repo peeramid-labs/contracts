@@ -8,7 +8,9 @@
     "lint": "eslint ./ --ext js,jsx,ts,tsx && yarn run lint:sol",
     "upgrade:game:mumbai": "source .secrets/hh_mumbai.env &&  yarn hardhat --network mumbai deploy --tags upgrade_game",
     "test": "export NODE_ENV=TEST && yarn hardhat test",
-    "build": "yarn hardhat compile"
+    "build": "yarn hardhat compile",
+    "lint:sol": "prettier --loglevel warn --ignore-path .gitignore '{contracts,test}/**/*.sol' --check && solhint '{contracts,test}/**/*.sol'",
+    "lint:sol:fix": "prettier --loglevel warn --ignore-path .gitignore '{contracts,test}/**/*.sol' --write"
   },
   "keywords": [],
   "author": "Tim Pechersky (@Peersky)",
