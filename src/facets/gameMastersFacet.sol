@@ -144,16 +144,16 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
   }
 
   function submitProposal(ProposalParams memory proposalData) public {
+    proposalData.gameId.enforceGameExists();
     LibBestOf.enforceIsGM(proposalData.gameId);
+    require(!proposalData.gameId.isGameOver(), "Game over");
+    proposalData.gameId.enforceHasStarted();
 
     IBestOf.BOGInstance storage game = proposalData.gameId.getGameStorage();
-    proposalData.gameId.enforceGameExists();
-    proposalData.gameId.enforceHasStarted();
     require(
       LibTBG.getPlayersGame(proposalData.proposer) == proposalData.gameId,
       "not a player"
     );
-    require(!proposalData.gameId.isGameOver(), "Game over");
     require(!proposalData.gameId.isLastTurn(), "Cannot propose in last turn");
     require(
       bytes(proposalData.encryptedProposal).length != 0,

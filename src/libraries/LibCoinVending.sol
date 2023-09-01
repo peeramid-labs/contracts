@@ -6,7 +6,6 @@ pragma solidity ^0.8.4;
 import { MockERC20 } from "../mocks/MockERC20.sol";
 import { ERC1155Burnable } from "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Burnable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
-import "hardhat/console.sol";
 
 library LibCoinVending {
   /*
