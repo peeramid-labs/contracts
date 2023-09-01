@@ -13,8 +13,7 @@ import "../libraries/LibReentrancyGuard.sol";
 
 abstract contract DiamondReentrancyGuard {
     modifier nonReentrant() {
-        LibReentrancyGuard.ReentrancyGuardStruct
-            storage rgs = LibReentrancyGuard.reentrancyGuardStorage();
+        LibReentrancyGuard.ReentrancyGuardStruct storage rgs = LibReentrancyGuard.reentrancyGuardStorage();
         require(!rgs._entered, "REG: You shall not pass!");
         rgs._entered = true;
         _;
