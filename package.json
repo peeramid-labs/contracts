@@ -8,6 +8,7 @@
     "lint": "eslint ./ --ext js,jsx,ts,tsx && yarn run lint:sol",
     "upgrade:game:mumbai": "source .secrets/hh_mumbai.env &&  yarn hardhat --network mumbai deploy --tags upgrade_game",
     "test": "export NODE_ENV=TEST && yarn hardhat test",
+    "test:parallel": "export NODE_ENV=TEST && yarn hardhat test --parallel",
     "build": "yarn hardhat compile",
     "lint:sol": "prettier --loglevel warn --ignore-path .gitignore '{src,test}/**/*.sol' --check && solhint '{contracts,test}/**/*.sol'",
     "lint:sol:fix": "prettier --loglevel warn --ignore-path .gitignore '{src,test}/**/*.sol' --write"

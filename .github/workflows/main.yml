@@ -18,4 +18,4 @@ jobs:
       - uses: './.github/setup'
 
       - name: Running tests
-        run: yarn test
+        run: yarn test:parallel
