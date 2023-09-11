@@ -25,7 +25,8 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
         uint256 indexed gameId,
         uint256 indexed turn,
         address[] players,
-        uint256[] scores
+        uint256[] scores,
+        string[] newProposals
         // uint256[3][] votesRevealed
     );
 
@@ -112,6 +113,36 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
         string encryptedProposal;
         bytes32 commitmentHash;
         address proposer;
+    }
+
+    event VoteSubmitted(
+        uint256 indexed gameId,
+        uint256 indexed turn,
+        address indexed player,
+        bytes32[3] votesHidden,
+        bytes proof
+    );
+
+    function submitVote(uint256 gameId, bytes32[3] memory votesHidden, bytes memory proof) public {
+        LibBestOf.enforceIsGM(gameId);
+        gameId.enforceGameExists();
+        gameId.enforceHasStarted();
+        bytes memory message = abi.encode(
+            //ToDo: add address of a player to signature as well proof
+            LibBestOf._VOTE_SUBMIT_PROOF_TYPEHASH,
+            gameId,
+            gameId.getTurn(),
+            votesHidden[0],
+            votesHidden[1],
+            votesHidden[2]
+        );
+        IBestOf.BOGInstance storage game = gameId.getGameStorage();
+        require(!gameId.isGameOver(), "Game over");
+        require(gameId.getTurn() > 1, "No proposals exist at turn 1: cannot vote");
+        // game.votesHidden[msg.sender].votedFor = votesHidden;
+        game.votesHidden[msg.sender].proof = proof;
+        gameId.playerMove(msg.sender); // This will enforce player is in in the game
+        emit VoteSubmitted(gameId, gameId.getTurn(), msg.sender, votesHidden, proof);
     }
 
     function submitProposal(ProposalParams memory proposalData) public {
@@ -223,7 +254,7 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
         address[] memory players = gameId.getPlayers();
         (bool _isLastTurn, bool _isOvertime, bool _isGameOver, address[] memory leaderboard) = gameId.nextTurn();
         (, uint256[] memory scores) = gameId.getScores();
-        emit TurnEnded(gameId, gameId.getTurn() - 1, players, scores);
+        emit TurnEnded(gameId, gameId.getTurn() - 1, players, scores, newProposals);
         if (_isLastTurn && _isOvertime) {
             emit OverTime(gameId);
         }

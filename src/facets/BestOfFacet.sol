@@ -23,13 +23,6 @@ contract BestOfFacet is IBestOf, IERC1155Receiver, DiamondReentrancyGuard, IERC7
     using LibTBG for LibTBG.GameSettings;
     using LibBestOf for uint256;
 
-    event VoteSubmitted(
-        uint256 indexed gameId,
-        uint256 indexed turn,
-        address indexed player,
-        bytes32[3] votesHidden,
-        bytes proof
-    );
 
     function checkSignature(bytes memory message, bytes memory signature, address account) private view returns (bool) {
         bytes32 typedHash = _hashTypedDataV4(keccak256(message));
@@ -156,32 +149,6 @@ contract BestOfFacet is IBestOf, IERC1155Receiver, DiamondReentrancyGuard, IERC7
     voteHidden1-3 are valid and can be decoded as
 
 */
-    function submitVote(
-        uint256 gameId,
-        bytes32[3] memory votesHidden,
-        bytes memory proof,
-        bytes memory gmSignature
-    ) public {
-        gameId.enforceGameExists();
-        gameId.enforceHasStarted();
-        bytes memory message = abi.encode(
-            //ToDo: add address of a player to signature as well proof
-            LibBestOf._VOTE_SUBMIT_PROOF_TYPEHASH,
-            gameId,
-            gameId.getTurn(),
-            votesHidden[0],
-            votesHidden[1],
-            votesHidden[2]
-        );
-        BOGInstance storage game = gameId.getGameStorage();
-        _isValidSignature(message, gmSignature, gameId.getGM());
-        require(!gameId.isGameOver(), "Game over");
-        require(gameId.getTurn() > 1, "No proposals exist at turn 1: cannot vote");
-        // game.votesHidden[msg.sender].votedFor = votesHidden;
-        game.votesHidden[msg.sender].proof = proof;
-        gameId.playerMove(msg.sender); // This will enforce player is in in the game
-        emit VoteSubmitted(gameId, gameId.getTurn(), msg.sender, votesHidden, proof);
-    }
 
     function onERC1155Received(
         address operator,

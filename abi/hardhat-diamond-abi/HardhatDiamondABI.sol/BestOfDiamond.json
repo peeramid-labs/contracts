@@ -1414,6 +1414,12 @@
         "internalType": "uint256[]",
         "name": "scores",
         "type": "uint256[]"
+      },
+      {
+        "indexed": false,
+        "internalType": "string[]",
+        "name": "newProposals",
+        "type": "string[]"
       }
     ],
     "name": "TurnEnded",
