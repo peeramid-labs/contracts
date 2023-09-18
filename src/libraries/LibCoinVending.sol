@@ -7,52 +7,54 @@ import {MockERC20} from "../mocks/MockERC20.sol";
 import {ERC1155Burnable} from "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Burnable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 
+/**
+ * @dev This library is used to simulate the vending machine coin acceptor state machine that:
+ *  - Supports large number of positions; Each represents requirements to acess different goods of the virtual vending machine.
+ *  - Accepts multiple assets of following types: Native (Eth), ERC20, ERC721, and ERC1155 tokens that can be stacked together.
+ *  - Allows for each individual asset action promise can be one of following:
+ *      - Lock: The asset is locked in the acceptor with promise that asset will be returned to the sender at release funds time.
+ *      - Bet: The asset is locked in the acceptor with promise that asset will be awarded to benificiary at release funds time.
+ *      - Pay: The asset is locked in the acceptor with promise that asset will be paid to payee at release funds time.
+ *      - Burn: The asset is locked in the acceptor with promise that asset will be destroyed at release funds time.
+ *  - Maintains each position balance, hence allowing multiple participants to line up for the same position.
+ *  - Allows three actions:
+ *      - Fund position with assets
+ *      - Refund assets to user
+ *      - Consume assets and provide goods to user
+ *      - Consuming asset might take a form of
+ *      - Transferring assets to payee
+ *      - Burning assets
+ *      - Awarding beneficiary with assets
+ *      - Returning locked assets back to sender
+ *
+ * This library DOES enforces that any position can only be refunded or processed only within amount funded boundaries
+ * This library DOES NOT store the addresses of senders, nor benificiaries, nor payees.
+ * This is to be stored within implementation contract.
+ *
+ *
+ *  !!!!! IMPORTANT !!!!!
+ * This library does NOT invocates reentrancy guards. It is implementation contract's responsibility to enforce reentrancy guards.
+ * Reentrancy guards MUST be implemented in an implementing contract.
+ *
+ *  Usage:
+ *
+ *  0. Configure position via configure(...)
+ *  1. fund position with assets via fund(...)
+ *  2. release or refund assets via release(...) or refund(...)
+ *  3. repeat steps 1 and 2 as needed.
+ *  Position can be recofigured at any time when it's effective balance is zero: `timesFunded - timesRefuned - timesReleased = 0`
+ *
+ *
+ * Test state:
+ * This library most functionality has been tested: see ../tests/LibCoinVending.ts and ../tests/report.md for details.
+ *
+ * ERC721 token is checked only for "HAVE" condition since putting requirements on non fungable token id yet to be resolved.
+ * (see ERC721 section in the code below)
+ *
+ * This library has not been yet audited
+ *
+ */
 library LibCoinVending {
-    /*
-        This library is used to simulate the vending machine coin acceptor state machine that:
-        - Supports large number of positions; Each represents requirements to acess different goods of the virtual vending machine.
-        - Accepts multiple assets of following types: Native (Eth), ERC20, ERC721, and ERC1155 tokens that can be stacked together.
-        - Allows for each individual asset action promise can be one of following:
-            - Lock: The asset is locked in the acceptor with promise that asset will be returned to the sender at release funds time.
-            - Bet: The asset is locked in the acceptor with promise that asset will be awarded to benificiary at release funds time.
-            - Pay: The asset is locked in the acceptor with promise that asset will be paid to payee at release funds time.
-            - Burn: The asset is locked in the acceptor with promise that asset will be destroyed at release funds time.
-        - Maintains each position balance, hence allowing multiple participants to line up for the same position.
-        - Allows three actions:
-            - Fund position with assets
-            - Refund assets to user
-            - Consume assets and provide goods to user
-        - Consuming asset might take a form of
-            - Transferring assets to payee
-            - Burning assets
-            - Awarding beneficiary with assets
-            - Returning locked assets back to sender
-
-        This library DOES enforces that any position can only be refunded or processed only within amount funded boundaries.
-        This library DOES NOT store the addresses of senders, nor benificiaries, nor payees.
-        This is to be stored within implementation contract.
-
-
-        !!!!! IMPORTANT !!!!!
-        This library does NOT invocates reentrancy guards. It is implementation contract's responsibility to enforce reentrancy guards.
-        Reentrancy guards MUST be implemented in an implementing contract.
-
-        Usage:
-            0. Configure position via configure(...)
-            1. fund position with assets via fund(...)
-            2. release or refund assets via release(...) or refund(...)
-            3. repeat steps 1 and 2 as needed.
-                Position can be recofigured at any time when it's effective balance is zero: `timesFunded - timesRefuned - timesReleased = 0`
-
-
-        Test state:
-            This library most functionality has been tested: see ../tests/LibCoinVending.ts and ../tests/report.md for details.
-            ERC721 token is checked only for "HAVE" condition since putting requirements on non fungable token id yet to be resolved
-                (see ERC721 section in the code below)
-            This library has not been yet audited
-
-    */
-
     struct Condition {
         mapping(ContractTypes => mapping(address => mapping(uint256 => ContractCondition))) contracts;
         NumericCondition ethValues;
@@ -185,24 +187,18 @@ library LibCoinVending {
         }
     }
 
-    /*
-            ERC721
-            Due to non fungable nature it's an open question how to implement this method correctly for lock/burn/pay/bet cases.
-            In this library I assume that requirements are for multiple members, hence it makes no sense to put requirement on particular tokenId for ERC721.
-            I think best approach would be to split in to two methods:
-                1. fulfillERC72Balance: Treats tokens as fungible - requires one to lock/burn/pay/bet ANY token id, but in total should be equal to desired value.
-                2. fulfillERC721Ids: Requires one to lock/burn/pay/bet specific token id. (useful when requirements are unique per applicant).
-            fulfillERC72Balance is easy. fulfillERC721Ids brings up a question of how to select those ID's(since must specify for ERC721 contract on transfer method).
-            Two possible solutions:
-                - 1: modify fund() method to accept array of address+id pairs of NFT's and parse trough it. Compucationaly inefficient.
-                - 2: implement onERC721Received such that there is NFT vault in the contract, later fill funding position from that vault.
-                    That way applicant could pre-send NFT's to the contract and callfing fund later would pull those out from the vault.
-
-    */
-    //    function fulfillERC721Ids() private
-    //    {
-
-    //    }
+    /**
+     * @dev ERC721
+     * Due to non fungable nature it's an open question how to implement this method correctly for lock/burn/pay/bet cases.
+     * In this library I assume that requirements are for multiple members, hence it makes no sense to put requirement on particular tokenId for ERC721.
+     * I think best approach would be to split in to two methods:
+     *  1. fulfillERC72Balance: Treats tokens as fungible - requires one to lock/burn/pay/bet ANY token id, but in total should be equal to desired value.
+     *  2. fulfillERC721Ids: Requires one to lock/burn/pay/bet specific token id. (useful when requirements are unique per applicant).
+     * fulfillERC72Balance is easy. fulfillERC721Ids brings up a question of how to select those ID's(since must specify for ERC721 contract on transfer method).
+     *  Two possible solutions:
+     *  1: modify fund() method to accept array of address+id pairs of NFT's and parse trough it. Compucationaly inefficient.
+     *  2: implement onERC721Received such that there is NFT vault in the contract, later fill funding position from that vault. That way applicant could pre-send NFT's to the contract and callfing fund later would pull those out from the vault.
+     */
     function fulfillERC72Balance(
         address erc721addr,
         // uint256 id,
@@ -223,6 +219,11 @@ library LibCoinVending {
             require(balance >= tokenReq.have.amount, "Not enough ERC721 balance");
         }
     }
+
+    //    function fulfillERC721Ids() private
+    //    {
+
+    //    }
 
     function fulfillERC1155(
         address erc1155addr,
@@ -263,6 +264,16 @@ library LibCoinVending {
         }
     }
 
+    /**
+     * @dev takes pre-configured position from storage and ensures tokens are transferred in according to position requirements
+     * @param position - requirements
+     * @param from - who is fulfilling
+     * @param payee - payments receiver
+     * @param beneficiary - stakes receiver
+     * @param burnAddress - assets to burn receiver
+     * @param lockAddress - locked assets receiver
+     * wrap within reentrancy in implementation
+     */
     function fulfill(
         Condition storage position,
         address from,
@@ -321,11 +332,19 @@ library LibCoinVending {
         reqPos.timesRefunded += 1;
     }
 
+    /**
+     * @dev returns all position requirements back to fundee
+     * wrap within reentrancy guard in implementation
+     */
     function refund(bytes32 position, address to) internal {
         Condition storage reqPos = coinVendingPosition(position);
         _refund(reqPos, to);
     }
 
+    /**
+     * @dev batch refund()
+     * wrap within reentrancy guard in implementation
+     */
     function batchRefund(bytes32 position, address[] memory returnAddresses) internal {
         Condition storage reqPos = coinVendingPosition(position);
         for (uint256 i = 0; i < returnAddresses.length; i++) {
@@ -339,6 +358,14 @@ library LibCoinVending {
         reqPos.timesReleased += 1;
     }
 
+    /**
+     * @dev releases all position requirements to payee, beneficiary and locked assets to return address
+     * @param position - requirements
+     * @param payee - payments receiver
+     * @param beneficiary - stakes receiver
+     * @param returnAddress - locked assets receiver
+     * wrap within reentrancy guard in implementation
+     */
     function release(bytes32 position, address payee, address beneficiary, address returnAddress) internal {
         Condition storage reqPos = coinVendingPosition(position);
         _release(reqPos, payee, beneficiary, returnAddress);
@@ -364,11 +391,21 @@ library LibCoinVending {
         reqPos.timesFunded += 1;
     }
 
+    /**
+     * @dev funds the position by msg.sender
+     * @param position - requirements
+     * wrap within reentrancy guard in implementation
+     */
     function fund(bytes32 position) internal {
         Condition storage reqPos = coinVendingPosition(position);
         _fund(reqPos, msg.sender);
     }
 
+    /**
+     * @dev configures the position
+     * @param position - position identifier
+     * @param configuration - requirements
+     */
     function configure(bytes32 position, ConfigPosition memory configuration) internal {
         Condition storage mustDo = coinVendingPosition(position);
         require(
@@ -390,6 +427,10 @@ library LibCoinVending {
         mustDo._isConfigured = true;
     }
 
+    /**
+     * @dev gets position requrements struct
+     * @param position - position identifier
+     */
     function getPosition(bytes32 position) internal view returns (ConditionReturn memory) {
         Condition storage pos = coinVendingPosition(position);
         ConditionReturn memory ret;
@@ -404,6 +445,12 @@ library LibCoinVending {
         return ret;
     }
 
+    /**
+     * @dev gets position requrements struct from a particular required contract
+     * @param position - position identifier
+     * @param contractAddress - contract address
+     * @param contractId - contractId (needed for NFTs)
+     */
     function getPositionByContract(
         bytes32 position,
         address contractAddress,
