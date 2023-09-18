@@ -23,7 +23,6 @@ contract BestOfFacet is IBestOf, IERC1155Receiver, DiamondReentrancyGuard, IERC7
     using LibTBG for LibTBG.GameSettings;
     using LibBestOf for uint256;
 
-
     function checkSignature(bytes memory message, bytes memory signature, address account) private view returns (bool) {
         bytes32 typedHash = _hashTypedDataV4(keccak256(message));
         return SignatureChecker.isValidSignatureNow(account, typedHash, signature);
@@ -48,10 +47,10 @@ contract BestOfFacet is IBestOf, IERC1155Receiver, DiamondReentrancyGuard, IERC7
         LibBestOf.enforceIsInitialized();
         BOGSettings storage settings = BOGStorage();
         gameId.createGame(gameMaster);
-        // LibBestOf.fulfillTokenRequirement(msg.sender, address(this), gameId, settings.newGameReq);
+        // LibBestOf.fulfillTokenRequirement(msg.sender, address(this), gameId);
         require(gameRank != 0, "game rank not specified");
         require(msg.value >= settings.gamePrice, "Not enough payment");
-        LibBestOf.fulfillRankRq(msg.sender, address(this), gameRank, false);
+        require(IRankToken(settings.rankTokenAddress).balanceOf(msg.sender, gameRank) > 0, "Must have rank token");
         BOGInstance storage game = gameId.getGameStorage();
         game.createdBy = msg.sender;
         settings.numGames += 1;
@@ -60,6 +59,35 @@ contract BestOfFacet is IBestOf, IERC1155Receiver, DiamondReentrancyGuard, IERC7
         IRankToken rankTokenContract = IRankToken(settings.rankTokenAddress);
         rankTokenContract.mint(address(this), 1, gameRank + 1, "");
         rankTokenContract.mint(address(this), 3, gameRank, "");
+
+        LibCoinVending.ConfigPosition memory emptyConfig;
+        LibCoinVending.configure(bytes32(gameId), emptyConfig);
+
+        emit gameCreated(gameId, gameMaster, msg.sender, gameRank);
+    }
+
+    function createGame(
+        address gameMaster,
+        uint256 gameId,
+        uint256 gameRank,
+        address[] memory additionalRanks
+    ) public payable nonReentrant {
+        createGame(gameMaster, gameId, gameRank);
+        BOGInstance storage game = gameId.getGameStorage();
+        BOGSettings storage settings = BOGStorage();
+        IRankToken rankTokenContract = IRankToken(settings.rankTokenAddress);
+        rankTokenContract.mint(address(this), 1, gameRank + 1, "");
+        rankTokenContract.mint(address(this), 3, gameRank, "");
+        if (additionalRanks.length != 0) {
+            for (uint256 i = 0; i < additionalRanks.length; i++) {
+                IRankToken additonalRank = IRankToken(additionalRanks[i]);
+                require(additonalRank.supportsInterface(type(IRankToken).interfaceId), "must support rank interface");
+                require(additonalRank.getRankingInstance() == address(this), "must be rankingInstance");
+                additonalRank.mint(address(this), 1, gameRank + 1, "");
+                additonalRank.mint(address(this), 3, gameRank, "");
+            }
+            game.additionalRanks = additionalRanks;
+        }
 
         LibCoinVending.ConfigPosition memory emptyConfig;
         LibCoinVending.configure(bytes32(gameId), emptyConfig);
@@ -106,10 +134,9 @@ contract BestOfFacet is IBestOf, IERC1155Receiver, DiamondReentrancyGuard, IERC7
     // }
 
     function joinGame(uint256 gameId) public payable nonReentrant {
-        BOGInstance storage game = gameId.getGameStorage();
         gameId.enforceGameExists();
         LibCoinVending.fund(bytes32(gameId));
-        LibBestOf.fulfillRankRq(msg.sender, address(this), game.rank, true);
+        gameId.fulfillRankRq(msg.sender);
         gameId.addPlayer(msg.sender);
         emit PlayerJoined(gameId, msg.sender);
     }

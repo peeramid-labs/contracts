@@ -9,6 +9,8 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {LibArray} from "../libraries/LibArray.sol";
+import {LibCoinVending} from "../libraries/LibCoinVending.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 library LibTBG {
     // using EnumerableMap for EnumerableMap.AddressToUintMap;
@@ -22,6 +24,8 @@ library LibTBG {
         uint256 blocksToJoin;
         uint256 maxTurns;
         uint256 numWinners;
+        uint256 voteCredits;
+        string subject;
     }
 
     struct GameInstance {
@@ -44,6 +48,7 @@ library LibTBG {
         uint256 gameNum;
         mapping(address => uint256) playerInGame;
         uint256 totalGamesCreated;
+        uint256 maxQuadraticVote;
     }
 
     bytes32 constant TBG_STORAGE_POSITION = keccak256("turnbasedgame.storage.position");
@@ -65,12 +70,16 @@ library LibTBG {
         TBGStorageStruct storage tbg = TBGStorage();
         require(settings.blocksPerTurn != 0, "init->blocksPerTurn");
         require(settings.maxPlayersSize != 0, "init->maxPartySize");
-        require(settings.minPlayersSize != 0, "init->minPartySize");
+        require(settings.minPlayersSize > 2, "init->minPartySize");
         require(settings.maxTurns != 0, "init->maxTurns");
         require((settings.numWinners != 0) && (settings.numWinners < settings.minPlayersSize), "init->numWinners");
         require(settings.blocksToJoin != 0, "init->blocksToJoin");
         require(settings.maxPlayersSize >= settings.minPlayersSize, "init->maxPlayersSize");
+        require(settings.voteCredits > 0, "init->voteCredits");
+        require(bytes(settings.subject).length != 0, "init->subject");
+
         tbg.settings = settings;
+        tbg.maxQuadraticVote = Math.sqrt(settings.voteCredits);
     }
 
     function createGame(uint256 gameId, address gm) internal {
@@ -377,5 +386,50 @@ library LibTBG {
         TBGStorageStruct storage tbg = TBGStorage();
 
         return tbg.playerInGame[player];
+    }
+
+    function getScoreQuadratic(
+        uint256 gameId,
+        uint256[][] memory votes,
+        uint256 proposerIdx
+    ) internal view returns (uint256) {
+        address[] memory players = getPlayers(gameId);
+        GameInstance storage _game = _getGame(gameId);
+        // uint256 proposalIdx = game.playersOngoingProposalIdx[proposer];
+        uint256 score = 0;
+        for (uint256 i = 0; i < players.length; i++) {
+            if (!_game.madeMove[players[i]]) {
+                TBGStorageStruct storage tbg = TBGStorage();
+                score += tbg.maxQuadraticVote;
+            } else {
+                uint256[] memory playerVote = votes[i];
+                require(playerVote[proposerIdx] == 0, "Voted for himself");
+                score += playerVote[proposerIdx] * playerVote[proposerIdx];
+            }
+        }
+        return score;
+    }
+
+    //prevProposersRevealed MUST be submitted sorted according to proposals in ongoingProposals map
+    function calculateScoresQuadratic(
+        uint256 gameId,
+        uint256[][] memory votesRevealed,
+        uint256[] memory proposerIndicies
+    ) internal {
+        address[] memory players = getPlayers(gameId);
+        uint256[] memory scores = new uint256[](players.length);
+        for (uint256 playerIdx = 0; playerIdx < players.length; playerIdx++) {
+            //for each player
+
+            if (proposerIndicies[playerIdx] < players.length) {
+                //if proposal exists
+                scores[playerIdx] =
+                    getScore(gameId, players[playerIdx]) +
+                    getScoreQuadratic(gameId, votesRevealed, proposerIndicies[playerIdx]);
+                setScore(gameId, players[playerIdx], scores[playerIdx]);
+            } else {
+                //Player did not propose
+            }
+        }
     }
 }

@@ -29,7 +29,7 @@ interface IBestOf {
     // }
 
     struct VoteHidden {
-        bytes32[3] votedFor;
+        bytes32[] votedFor;
         bytes proof;
     }
 
@@ -41,6 +41,7 @@ interface IBestOf {
         mapping(address => bytes32) proposalCommitmentHashes; //Current turn Proposal submittion
         uint256 numCommitments;
         mapping(address => VoteHidden) votesHidden;
+        address[] additionalRanks;
     }
 
     event RegistrationOpen(uint256 indexed gameid);

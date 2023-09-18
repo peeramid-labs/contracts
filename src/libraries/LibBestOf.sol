@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 import {LibTBG} from "../libraries/LibTurnBasedGame.sol";
 import {IBestOf} from "../interfaces/IBestOf.sol";
 import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+import {IRankToken} from "../interfaces/IRankToken.sol";
 
 import "hardhat/console.sol";
 
@@ -57,44 +58,34 @@ library LibBestOf {
         require(gameId.getGM() == msg.sender, "Only game master");
     }
 
-    function getProposalScore(
-        uint256 gameId,
-        uint256[3][] memory votes,
-        uint256 proposerIdx
-    ) internal view returns (uint256) {
-        address[] memory players = gameId.getPlayers();
-        // uint256 proposalIdx = game.playersOngoingProposalIdx[proposer];
-        uint256 score = 0;
-        for (uint256 i = 0; i < players.length; i++) {
-            if (i != proposerIdx) {
-                if (votes[i][0] == proposerIdx) score += 3;
-                if (votes[i][1] == proposerIdx) score += 2;
-                if (votes[i][2] == proposerIdx) score += 1;
-                if (votes[i][0] >= players.length || votes[i][1] >= players.length || votes[i][2] >= players.length) {
-                    score = 3;
-                } // This means vote is empty -> give 3 points everyone except voter (N.B. Ensure default Vote Indicies not equal to zero! )
-            } else {
-                //Voter is proposer, cannot vote for himself
-            }
-        }
-        return score;
+    function _fulfillRankRq(address player, uint256 gameRank, address rankTokenAddress) private {
+        IRankToken rankToken = IRankToken(rankTokenAddress);
+        rankToken.lockInInstance(player, gameRank, 1);
     }
 
-    function fulfillRankRq(address applicant, address to, uint256 gameRank, bool mustLock) internal {
+    function fulfillRankRq(uint256 gameId, address player) internal {
         IBestOf.BOGSettings storage settings = BOGStorage();
-        if (gameRank > 1) {
-            IERC1155 rankToken = IERC1155(settings.rankTokenAddress);
-            if (mustLock) {
-                rankToken.safeTransferFrom(applicant, to, gameRank, 1, "0x");
-            } else {
-                require(rankToken.balanceOf(applicant, gameRank) > 0, "Has no rank for this action");
+        IBestOf.BOGInstance storage game = getGameStorage(gameId);
+        if (game.rank > 1) {
+            _fulfillRankRq(player, game.rank, settings.rankTokenAddress);
+            for (uint256 i = 0; i < game.additionalRanks.length; i++) {
+                _fulfillRankRq(player, game.rank, game.additionalRanks[i]);
             }
         }
+    }
+
+    function _releaseRankToken(address player, uint256 gameRank, address rankTokenAddress) private {
+        IRankToken rankToken = IRankToken(rankTokenAddress);
+        rankToken.unlockFromInstance(player, gameRank, 1);
     }
 
     function removeAndUnlockPlayer(uint256 gameId, address player) internal {
         gameId.removePlayer(player);
+        IBestOf.BOGSettings storage settings = BOGStorage();
         IBestOf.BOGInstance storage game = getGameStorage(gameId);
-        LibBestOf.fulfillRankRq(address(this), player, game.rank, true);
+        _releaseRankToken(player, game.rank, settings.rankTokenAddress);
+        for (uint256 i = 0; i < game.additionalRanks.length; i++) {
+            _releaseRankToken(player, game.rank, game.additionalRanks[i]);
+        }
     }
 }

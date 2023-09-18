@@ -41,44 +41,34 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
         return keccak256(abi.encodePacked(player, turnSalt));
     }
 
-    function validateVote(
-        uint256 gameId,
-        address voter,
-        uint256[3] memory votes,
-        bytes32 turnSalt,
-        address[] memory prevProposersRevealed
-    ) public view {
-        IBestOf.BOGInstance storage game = gameId.getGameStorage();
-        bytes32 salt = playerSalt(voter, turnSalt);
-        require(gameId.isPlayerInGame(voter), "Player not in that game");
-        bytes memory message = abi.encode( //Todo must contain address of voter
-            LibBestOf._VOTE_PROOF_TYPEHASH,
-            votes[0],
-            votes[1],
-            votes[2],
-            gameId,
-            gameId.getTurn(),
-            salt
-        );
-        bytes memory proof = game.votesHidden[voter].proof;
-        require(_isValidSignature(message, proof, gameId.getGM()), "invalid signature");
-        //make sure voter did not vote for himself
-        for (uint256 i = 0; i < votes.length; i++) {
-            require(prevProposersRevealed[votes[i]] != voter, "voted for himself");
-        }
-    }
+    // function validateVote(
+    //     uint256 gameId,
+    //     address voter,
+    //     uint256[] memory votes,
+    //     bytes32 turnSalt,
+    //     address[] memory prevProposersRevealed
+    // ) public view {
+    //     IBestOf.BOGInstance storage game = gameId.getGameStorage();
+    //     bytes32 salt = playerSalt(voter, turnSalt);
+    //     require(gameId.isPlayerInGame(voter), "Player not in that game");
+    //     bytes memory proof = game.votesHidden[voter].proof;
+    //     //make sure voter did not vote for himself
+    //     for (uint256 i = 0; i < votes.length; i++) {
+    //         require(prevProposersRevealed[votes[i]] != voter, "voted for himself");
+    //     }
+    // }
 
-    function validateVotes(
-        uint256 gameId,
-        address[] memory voters,
-        uint256[3][] memory votes,
-        bytes32 turnSalt,
-        address[] memory prevProposersRevealed
-    ) private view {
-        for (uint256 i = 0; i < gameId.getPlayersNumber(); i++) {
-            validateVote(gameId, voters[i], [votes[i][0], votes[i][1], votes[i][2]], turnSalt, prevProposersRevealed);
-        }
-    }
+    // function validateVotes(
+    //     uint256 gameId,
+    //     address[] memory voters,
+    //     uint256[][] memory votes,
+    //     bytes32 turnSalt,
+    //     address[] memory prevProposersRevealed
+    // ) private view {
+    //     for (uint256 i = 0; i < gameId.getPlayersNumber(); i++) {
+    //         validateVote(gameId, voters[i], votes[i], turnSalt, prevProposersRevealed);
+    //     }
+    // }
 
     function _isValidSignature(
         bytes memory message,
@@ -95,7 +85,7 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
 
         for (uint256 i = 0; i < players.length; i++) {
             LibCoinVending.release(bytes32(gameId), game.createdBy, leaderboard[0], players[i]);
-            LibBestOf.fulfillRankRq(address(this), players[i], game.rank, true);
+            gameId.removeAndUnlockPlayer(players[i]);
         }
         (, uint256[] memory scores) = gameId.getScores();
         emit GameOver(gameId, players, scores);
@@ -119,30 +109,30 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
         uint256 indexed gameId,
         uint256 indexed turn,
         address indexed player,
-        bytes32[3] votesHidden,
+        bytes32 votesHidden,
         bytes proof
     );
 
-    function submitVote(uint256 gameId, bytes32[3] memory votesHidden, bytes memory proof) public {
+    function submitVote(uint256 gameId, bytes32 votesHash, bytes memory proof) public {
         LibBestOf.enforceIsGM(gameId);
         gameId.enforceGameExists();
         gameId.enforceHasStarted();
-        bytes memory message = abi.encode(
-            //ToDo: add address of a player to signature as well proof
-            LibBestOf._VOTE_SUBMIT_PROOF_TYPEHASH,
-            gameId,
-            gameId.getTurn(),
-            votesHidden[0],
-            votesHidden[1],
-            votesHidden[2]
-        );
+        // bytes memory message = abi.encode(
+        //     //ToDo: add address of a player to signature as well proof
+        //     LibBestOf._VOTE_SUBMIT_PROOF_TYPEHASH,
+        //     gameId,
+        //     gameId.getTurn(),
+        //     votesHidden[0],
+        //     votesHidden[1],
+        //     votesHidden[2]
+        // );
         IBestOf.BOGInstance storage game = gameId.getGameStorage();
         require(!gameId.isGameOver(), "Game over");
         require(gameId.getTurn() > 1, "No proposals exist at turn 1: cannot vote");
         // game.votesHidden[msg.sender].votedFor = votesHidden;
         game.votesHidden[msg.sender].proof = proof;
         gameId.playerMove(msg.sender); // This will enforce player is in in the game
-        emit VoteSubmitted(gameId, gameId.getTurn(), msg.sender, votesHidden, proof);
+        emit VoteSubmitted(gameId, gameId.getTurn(), msg.sender, votesHash, proof);
     }
 
     function submitProposal(ProposalParams memory proposalData) public {
@@ -226,29 +216,6 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
         }
     }
 
-    //prevProposersRevealed MUST be submitted sorted according to proposals in ongoingProposals map
-    function _calculateScores(
-        uint256 gameId,
-        uint256[3][] memory votesRevealed,
-        uint256[] memory proposerIndicies
-    ) private {
-        address[] memory players = gameId.getPlayers();
-        uint256[] memory scores = new uint256[](players.length);
-        for (uint256 playerIdx = 0; playerIdx < players.length; playerIdx++) {
-            //for each player
-
-            if (proposerIndicies[playerIdx] < players.length) {
-                //if proposal exists
-                scores[playerIdx] =
-                    gameId.getScore(players[playerIdx]) +
-                    LibBestOf.getProposalScore(gameId, votesRevealed, proposerIndicies[playerIdx]);
-                gameId.setScore(players[playerIdx], scores[playerIdx]);
-            } else {
-                //Player did not propose
-            }
-        }
-    }
-
     function _nextTurn(uint256 gameId, string[] memory newProposals) private {
         _beforeNextTurn(gameId);
         address[] memory players = gameId.getPlayers();
@@ -271,7 +238,7 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
     // votes and proposerIndicies MUST correspond to players array from game.getPlayers()
     function endTurn(
         uint256 gameId,
-        uint256[3][] memory votes,
+        uint256[][] memory votes,
         string[] memory newProposals, //REFERRING TO UPCOMING VOTING ROUND
         uint256[] memory proposerIndicies //REFERRING TO game.players index in PREVIOUS VOTING ROUND
     ) public {
@@ -290,7 +257,7 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
             );
         }
         if (gameId.getTurn() != 1) {
-            _calculateScores(gameId, votes, proposerIndicies);
+            gameId.calculateScoresQuadratic(votes, proposerIndicies);
         }
         _nextTurn(gameId, newProposals);
     }
