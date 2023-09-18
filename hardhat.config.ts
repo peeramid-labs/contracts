@@ -15,6 +15,7 @@ import { cutFacets, replaceFacet } from './scripts/libraries/diamond';
 import 'hardhat-gas-reporter';
 import 'hardhat-contract-sizer';
 import 'hardhat-deploy';
+import 'solidity-docgen';
 task('accounts', 'Prints the list of accounts', async (taskArgs, hre) => {
   const accounts = await hre.ethers.getSigners();
 
@@ -67,6 +68,12 @@ task('addFacet', 'adds a facet')
 //   });
 
 export default {
+  docgen: {
+    outputDir: './docs/contracts',
+    pages: 'files',
+    pageExtension: '.mdx',
+    exclude: ['mocks', 'initializers', 'vendor', 'modifiers', 'fixtures', 'abstracts', 'facets'],
+  },
   gasReporter: {
     currency: 'EUR',
     gasPrice: 21,
