@@ -11,6 +11,8 @@ import {
   BOG_GAME_PRICE,
   BOG_JOIN_GAME_PRICE,
   BOG_NUM_WINNERS,
+  BOG_VOTE_CREDITS,
+  BOG_SUBJECT,
 } from '../test/utils';
 import { ethers } from 'hardhat';
 import { BestOfInit } from '../types/typechain/src/initializers/BestOfInit';
@@ -29,7 +31,9 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       !process.env.GAME_PRICE_ETH ||
       !process.env.JOIN_GAME_PRICE_ETH ||
       !process.env.MAX_TURNS ||
-      !process.env.NUM_WINNERS
+      !process.env.NUM_WINNERS ||
+      !process.env.VOTE_CREDITS ||
+      !process.env.SUBJECT
     )
       throw new Error('Best of initializer variables not set');
 
@@ -60,6 +64,8 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
           gamePrice: BOG_GAME_PRICE,
           joinGamePrice: BOG_JOIN_GAME_PRICE,
           numWinners: BOG_NUM_WINNERS,
+          voteCredits: BOG_VOTE_CREDITS,
+          subject: BOG_SUBJECT,
         }
       : {
           blocksPerTurn: process.env.BLOCKS_PER_TURN,
@@ -71,6 +77,8 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
           gamePrice: ethers.utils.parseEther(process.env.GAME_PRICE_ETH),
           joinGamePrice: ethers.utils.parseEther(process.env.JOIN_GAME_PRICE_ETH),
           numWinners: process.env.NUM_WINNERS,
+          voteCredits: process.env.VOTE_CREDITS,
+          subject: process.env.SUBJECT,
         };
 
   const { gameOwner } = await getNamedAccounts();
@@ -96,15 +104,17 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
           settings.joinGamePrice,
           settings.maxTurns,
           settings.numWinners,
+          settings.voteCredits,
+          settings.subject,
         ],
       ],
     },
   });
   const bestOfGame = (await ethers.getContractAt(deployment.abi, deployment.address)) as BestOfDiamond;
   await bestOfGame.connect(await hre.ethers.getSigner(deployer)).transferOwnership(gameOwner);
-  const rOwner = await rankToken.owner();
-  if (rOwner !== deployment.address) {
-    await rankToken.transferOwnership(deployment.address);
+  const rankingInstance = await rankToken.getRankingInstance();
+  if (rankingInstance !== deployment.address) {
+    await rankToken.updateRankingInstance(deployment.address);
   }
 };
 

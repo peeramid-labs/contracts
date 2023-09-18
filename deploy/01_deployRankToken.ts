@@ -1,7 +1,7 @@
-import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { DeployFunction } from "hardhat-deploy/types";
-import { BestOfDiamond } from "../types/typechain/hardhat-diamond-abi/HardhatDiamondABI.sol";
-import { ethers } from "hardhat";
+import { HardhatRuntimeEnvironment } from 'hardhat/types';
+import { DeployFunction } from 'hardhat-deploy/types';
+import { BestOfDiamond } from '../types/typechain/hardhat-diamond-abi/HardhatDiamondABI.sol';
+import { ethers } from 'hardhat';
 // import {
 //   MULTIPASS_CONTRACT_VERSION,
 //   MULTIPASS_CONTRACT_NAME,
@@ -12,25 +12,23 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
   const { deployer } = await getNamedAccounts();
   let URI: string, ContractURI: string;
-  if (process.env.NODE_ENV !== "TEST") {
+  if (process.env.NODE_ENV !== 'TEST') {
     if (!process.env.IPFS_GATEWAY_URL || !process.env.RANK_TOKEN_PATH)
-      throw new Error(
-        "env variables not set: export IPFS_GATEWAY_URL / RANK_TOKEN_PATH"
-      );
+      throw new Error('env variables not set: export IPFS_GATEWAY_URL / RANK_TOKEN_PATH');
     URI = process.env.IPFS_GATEWAY_URL + process.env.RANK_TOKEN_PATH;
-    ContractURI =
-      process.env.IPFS_GATEWAY_URL + process.env.RANK_TOKEN_CONTRACT_PATH;
+    ContractURI = process.env.IPFS_GATEWAY_URL + process.env.RANK_TOKEN_CONTRACT_PATH;
   } else {
-    URI = "URI";
-    ContractURI = "CURI";
+    URI = 'URI';
+    ContractURI = 'CURI';
   }
+  const owner = process.env.DAO_CONTRACT_ADDRESS || deployer;
 
-  await deploy("RankToken", {
+  await deploy('RankToken', {
     from: deployer,
-    args: [URI, deployer, ContractURI],
+    args: [URI, owner, ContractURI, ethers.BigNumber.from(4)],
     skipIfAlreadyDeployed: true,
   });
 };
 
 export default func;
-func.tags = ["ranktoken"];
+func.tags = ['ranktoken'];
