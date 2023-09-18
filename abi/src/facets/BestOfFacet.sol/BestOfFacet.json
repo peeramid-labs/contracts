@@ -80,43 +80,6 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "gameId",
-        "type": "uint256"
-      },
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "turn",
-        "type": "uint256"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "player",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "bytes32[3]",
-        "name": "votesHidden",
-        "type": "bytes32[3]"
-      },
-      {
-        "indexed": false,
-        "internalType": "bytes",
-        "name": "proof",
-        "type": "bytes"
-      }
-    ],
-    "name": "VoteSubmitted",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
         "indexed": false,
         "internalType": "uint256",
         "name": "gameId",
@@ -220,6 +183,34 @@
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "gameMaster",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "gameId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "gameRank",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address[]",
+        "name": "additionalRanks",
+        "type": "address[]"
+      }
+    ],
+    "name": "createGame",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "uint256",
         "name": "gameId",
         "type": "uint256"
@@ -305,6 +296,16 @@
                 "internalType": "uint256",
                 "name": "numWinners",
                 "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "voteCredits",
+                "type": "uint256"
+              },
+              {
+                "internalType": "string",
+                "name": "subject",
+                "type": "string"
               }
             ],
             "internalType": "struct LibTBG.GameSettings",
@@ -675,34 +676,6 @@
       }
     ],
     "name": "startGame",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "gameId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bytes32[3]",
-        "name": "votesHidden",
-        "type": "bytes32[3]"
-      },
-      {
-        "internalType": "bytes",
-        "name": "proof",
-        "type": "bytes"
-      },
-      {
-        "internalType": "bytes",
-        "name": "gmSignature",
-        "type": "bytes"
-      }
-    ],
-    "name": "submitVote",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

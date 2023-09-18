@@ -125,6 +125,43 @@
     "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "gameId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "turn",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "player",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32[]",
+        "name": "votesHidden",
+        "type": "bytes32[]"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "proof",
+        "type": "bytes"
+      }
+    ],
+    "name": "VoteSubmitted",
+    "type": "event"
+  },
+  {
     "inputs": [
       {
         "internalType": "bytes",
@@ -161,9 +198,9 @@
         "type": "uint256"
       },
       {
-        "internalType": "uint256[3][]",
+        "internalType": "uint256[][]",
         "name": "votes",
-        "type": "uint256[3][]"
+        "type": "uint256[][]"
       },
       {
         "internalType": "string[]",
@@ -248,29 +285,19 @@
         "type": "uint256"
       },
       {
-        "internalType": "address",
-        "name": "voter",
-        "type": "address"
+        "internalType": "bytes32[]",
+        "name": "votesHash",
+        "type": "bytes32[]"
       },
       {
-        "internalType": "uint256[3]",
-        "name": "votes",
-        "type": "uint256[3]"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "turnSalt",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "address[]",
-        "name": "prevProposersRevealed",
-        "type": "address[]"
+        "internalType": "bytes",
+        "name": "proof",
+        "type": "bytes"
       }
     ],
-    "name": "validateVote",
+    "name": "submitVote",
     "outputs": [],
-    "stateMutability": "view",
+    "stateMutability": "nonpayable",
     "type": "function"
   }
 ]

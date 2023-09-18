@@ -57,6 +57,16 @@
             "internalType": "uint256",
             "name": "numWinners",
             "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "voteCredits",
+            "type": "uint256"
+          },
+          {
+            "internalType": "string",
+            "name": "subject",
+            "type": "string"
           }
         ],
         "internalType": "struct BestOfInit.contractInitializer",
