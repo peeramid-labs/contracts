@@ -1421,9 +1421,9 @@
       },
       {
         "indexed": false,
-        "internalType": "bytes32[]",
+        "internalType": "bytes32",
         "name": "votesHidden",
-        "type": "bytes32[]"
+        "type": "bytes32"
       },
       {
         "indexed": false,
@@ -1559,9 +1559,9 @@
         "type": "uint256"
       },
       {
-        "internalType": "bytes32[]",
+        "internalType": "bytes32",
         "name": "votesHash",
-        "type": "bytes32[]"
+        "type": "bytes32"
       },
       {
         "internalType": "bytes",

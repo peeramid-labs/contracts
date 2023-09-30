@@ -23,11 +23,12 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   }
   const owner = process.env.DAO_CONTRACT_ADDRESS || deployer;
 
-  await deploy('RankToken', {
+  const result = await deploy('RankToken', {
     from: deployer,
     args: [URI, owner, ContractURI, ethers.BigNumber.from(4)],
     skipIfAlreadyDeployed: true,
   });
+  console.log('deployed rank token at', result.address);
 };
 
 export default func;

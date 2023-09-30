@@ -12,11 +12,12 @@ import { ProposalTypes } from '../types';
 const { ZERO_ADDRESS, ZERO_BYTES32 } = require('@openzeppelin/test-helpers/src/constants');
 import { BigNumber, BigNumberish, Bytes, BytesLike, Wallet } from 'ethers';
 // @ts-ignore
-import { RankToken } from '../types/typechain/contracts/tokens/RankToken';
-// import { BestOfInit } from "../types/typechain/contracts/initializers/BestOfInit";
+import { RankToken } from '../types/typechain/src/tokens/RankToken';
+// import { BestOfInit } from "../types/typechain/src/initializers/BestOfInit";
 import { assert } from 'console';
 import { Deployment } from 'hardhat-deploy/types';
 import { HardhatEthersHelpers } from '@nomiclabs/hardhat-ethers/types';
+import { keccak256 } from 'ethers/lib/utils';
 
 export interface SignerIdentity {
   name: string;
@@ -611,7 +612,7 @@ export const getPlayers = (
 export type MockVotes = Array<{
   proof: string;
   vote: [BigNumberish, BigNumberish, BigNumberish];
-  voteHidden: [BytesLike, BytesLike, BytesLike];
+  voteHidden: string;
   publicSignature: string;
 }>;
 
@@ -633,7 +634,7 @@ export const mockVotes = async ({
   const votes: Array<{
     proof: string;
     vote: [BigNumberish, BigNumberish, BigNumberish];
-    voteHidden: [BytesLike, BytesLike, BytesLike];
+    voteHidden: string;
     publicSignature: string;
   }> = [];
   for (let k = 0; k < players.length; k++) {
@@ -688,7 +689,7 @@ export const mockVotes = async ({
       verifierAddress,
       vote: [firstSelected, secondSelected, thirdSelected],
     });
-    votes[k] = { vote, voteHidden, proof, publicSignature };
+    votes[k] = { vote, voteHidden: keccak256(JSON.stringify(voteHidden)), proof, publicSignature };
   }
   return votes;
 };

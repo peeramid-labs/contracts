@@ -82,9 +82,10 @@ export default {
   },
   namedAccounts: {
     deployer: {
-      default: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
+      default: '0x7231161f85637Dea4DCa51e30ff443eD508c3313',
     },
     gameOwner: {
+      hardhat: '0xBfdF0Ee33BF4a2640D67f720Ae6594E81f8114d4',
       default: '0xE48BC6673B4EEBec6A230f9112Cb2c1ac17bc273',
     },
   },

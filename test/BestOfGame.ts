@@ -210,9 +210,7 @@ const mockValidVotes = async (
   if (submitNow) {
     votersAddresses = players.map(player => player.wallet.address);
     for (let i = 0; i < players.length; i++) {
-      await env.bestOfGame
-        .connect(players[i].wallet)
-        .submitVote(gameId, votes[i].voteHidden, votes[i].proof, votes[i].publicSignature);
+      await env.bestOfGame.connect(players[i].wallet).submitVote(gameId, votes[i].voteHidden, votes[i].proof);
     }
   }
   return votes;
@@ -357,9 +355,11 @@ describe(scriptName, () => {
     ).to.revertedWith('LibDiamond: Must be contract owner');
   });
   it('has rank token assigned', async () => {
+    console.log(env.rankToken.address);
     const state = await env.bestOfGame.getContractState();
-    await expect(state.BestOfState.rankTokenAddress).to.be.equal(env.rankToken.address);
-    expect(await env.rankToken.owner()).to.be.equal(env.bestOfGame.address);
+    expect(state.BestOfState.rankTokenAddress).to.be.equal(env.rankToken.address);
+    expect(await env.rankToken.getRankingInstance()).to.be.equal(env.bestOfGame.address);
+    expect(await env.rankToken.owner()).to.be.equal(adr.contractDeployer.wallet.address);
   });
   it('Can create game only with valid payments', async () => {
     await expect(
@@ -400,9 +400,7 @@ describe(scriptName, () => {
       distribution: 'semiUniform',
     });
     await expect(
-      env.bestOfGame
-        .connect(adr.gameMaster1.wallet)
-        .submitVote(1, votes[0].voteHidden, votes[0].proof, votes[0].publicSignature),
+      env.bestOfGame.connect(adr.gameMaster1.wallet).submitVote(1, votes[0].voteHidden, votes[0].proof),
     ).to.be.revertedWith('no game found');
     await expect(env.bestOfGame.connect(adr.gameMaster1.wallet).openRegistration(1)).to.be.revertedWith(
       'no game found',
@@ -559,9 +557,7 @@ describe(scriptName, () => {
           ),
         ).to.be.revertedWith('Game has not yet started');
         await expect(
-          env.bestOfGame
-            .connect(adr.gameMaster1.wallet)
-            .submitVote(1, votes[0].voteHidden, votes[0].proof, votes[0].publicSignature),
+          env.bestOfGame.connect(adr.gameMaster1.wallet).submitVote(1, votes[0].voteHidden, votes[0].proof),
         ).to.be.revertedWith('Game has not yet started');
         await expect(env.bestOfGame.connect(adr.gameCreator1.wallet).openRegistration(1)).to.be.revertedWith(
           'Cannot do when registration is open',
@@ -630,9 +626,7 @@ describe(scriptName, () => {
             ),
           ).to.be.revertedWith('Game has not yet started');
           await expect(
-            env.bestOfGame
-              .connect(adr.gameMaster1.wallet)
-              .submitVote(1, votes[0].voteHidden, votes[0].proof, votes[0].publicSignature),
+            env.bestOfGame.connect(adr.gameMaster1.wallet).submitVote(1, votes[0].voteHidden, votes[0].proof),
           ).to.be.revertedWith('Game has not yet started');
         });
         describe('When game has started', () => {
@@ -665,9 +659,7 @@ describe(scriptName, () => {
             votersAddresses = getPlayers(adr, BOGSettings.BOG_MAX_PLAYERS).map(player => player.wallet.address);
 
             await expect(
-              env.bestOfGame
-                .connect(adr.player1.wallet)
-                .submitVote(1, votes[0].voteHidden, votes[0].proof, votes[0].publicSignature),
+              env.bestOfGame.connect(adr.player1.wallet).submitVote(1, votes[0].voteHidden, votes[0].proof),
             ).to.be.revertedWith('No proposals exist at turn 1: cannot vote');
           });
           it('Processes only proposals only from game master', async () => {
@@ -1043,9 +1035,7 @@ describe(scriptName, () => {
 
             let name = `player${i + 1}` as any as keyof AdrSetupResult;
             await expect(
-              env.bestOfGame
-                .connect(adr[`${name}`].wallet)
-                .submitVote(1, votes[i].voteHidden, votes[i].proof, votes[i].publicSignature),
+              env.bestOfGame.connect(adr[`${name}`].wallet).submitVote(1, votes[i].voteHidden, votes[i].proof),
             ).to.be.revertedWith('Game over');
           }
           await expect(
