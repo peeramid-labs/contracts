@@ -74,6 +74,23 @@ library LibBestOf {
         }
     }
 
+    function emitRankReward(uint256 gameId, address[] memory leaderboard, address rankTokenAddress) private {
+        IBestOf.BOGInstance storage game = getGameStorage(gameId);
+        IRankToken rankTokenContract = IRankToken(rankTokenAddress);
+        rankTokenContract.safeTransferFrom(address(this), leaderboard[0], game.rank + 1, 1, "");
+        rankTokenContract.safeTransferFrom(address(this), leaderboard[1], game.rank, 2, "");
+        rankTokenContract.safeTransferFrom(address(this), leaderboard[2], game.rank, 1, "");
+    }
+
+    function emitRankRewards(uint256 gameId, address[] memory leaderboard) internal {
+        IBestOf.BOGInstance storage game = getGameStorage(gameId);
+        IBestOf.BOGSettings storage settings = LibBestOf.BOGStorage();
+        emitRankReward(gameId, leaderboard, settings.rankTokenAddress);
+        for (uint256 i = 0; i < game.additionalRanks.length; i++) {
+            emitRankReward(gameId, leaderboard, game.additionalRanks[i]);
+        }
+    }
+
     function _releaseRankToken(address player, uint256 gameRank, address rankTokenAddress) private {
         IRankToken rankToken = IRankToken(rankTokenAddress);
         rankToken.unlockFromInstance(player, gameRank, 1);
@@ -83,9 +100,11 @@ library LibBestOf {
         gameId.removePlayer(player);
         IBestOf.BOGSettings storage settings = BOGStorage();
         IBestOf.BOGInstance storage game = getGameStorage(gameId);
-        _releaseRankToken(player, game.rank, settings.rankTokenAddress);
-        for (uint256 i = 0; i < game.additionalRanks.length; i++) {
-            _releaseRankToken(player, game.rank, game.additionalRanks[i]);
+        if (game.rank > 1) {
+            _releaseRankToken(player, game.rank, settings.rankTokenAddress);
+            for (uint256 i = 0; i < game.additionalRanks.length; i++) {
+                _releaseRankToken(player, game.rank, game.additionalRanks[i]);
+            }
         }
     }
 }

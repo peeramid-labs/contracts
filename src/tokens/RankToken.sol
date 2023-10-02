@@ -51,7 +51,7 @@ contract RankToken is ERC1155, Ownable, IRankToken {
     }
 
     function lockInInstance(address account, uint256 id, uint256 amount) public onlyRankingInstance {
-        require(balanceOf(account, id) > lockedAmounts[account][id] + amount, "not enough balance");
+        require(balanceOf(account, id) >= lockedAmounts[account][id] + amount, "not enough balance");
         lockedAmounts[account][id] += amount;
         emit TokensLocked(account, id, amount);
     }

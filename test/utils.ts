@@ -555,13 +555,13 @@ export const mockVote = async ({
   gameId: BigNumberish;
   turn: BigNumberish;
   gm: SignerIdentity;
-  vote: [BigNumberish, BigNumberish, BigNumberish];
+  vote: BigNumberish[];
   verifierAddress: string;
 }): Promise<{
-  proof: string;
-  vote: [BigNumberish, BigNumberish, BigNumberish];
-  voteHidden: [BytesLike, BytesLike, BytesLike];
-  publicSignature: string;
+  // proof: string;
+  vote: BigNumberish[];
+  voteHidden: string;
+  // publicSignature: string;
 }> => {
   const playerSalt = getTurnPlayersSalt({
     gameId,
@@ -570,29 +570,23 @@ export const mockVote = async ({
   });
 
   const message = {
-    vote1: vote[0],
-    vote2: vote[1],
-    vote3: vote[2],
+    vote: vote,
     gameId,
     turn,
     salt: playerSalt,
   };
 
-  const voteHidden: [BytesLike, BytesLike, BytesLike] = [
-    ethers.utils.solidityKeccak256(['string', 'bytes32'], [vote[0], playerSalt]),
-    ethers.utils.solidityKeccak256(['string', 'bytes32'], [vote[1], playerSalt]),
-    ethers.utils.solidityKeccak256(['string', 'bytes32'], [vote[2], playerSalt]),
-  ];
-  const publicMessage = {
-    vote1: voteHidden[0],
-    vote2: voteHidden[1],
-    vote3: voteHidden[2],
-    gameId,
-    turn,
-  };
-  const proof = await signVoteMessage(message, verifierAddress, gm);
-  const publicSignature = await signPublicVoteMessage(publicMessage, verifierAddress, gm);
-  return { proof, vote, voteHidden, publicSignature };
+  const voteHidden: string = ethers.utils.solidityKeccak256(['string[]', 'bytes32'], [vote, playerSalt]);
+  // const publicMessage = {
+  //   vote1: voteHidden[0],
+  //   vote2: voteHidden[1],
+  //   vote3: voteHidden[2],
+  //   gameId,
+  //   turn,
+  // };
+  // const proof = await signVoteMessage(message, verifierAddress, gm);
+  // const publicSignature = await signPublicVoteMessage(publicMessage, verifierAddress, gm);
+  return { vote, voteHidden };
 };
 export const getPlayers = (
   adr: AdrSetupResult,
@@ -610,11 +604,28 @@ export const getPlayers = (
 };
 
 export type MockVotes = Array<{
-  proof: string;
-  vote: [BigNumberish, BigNumberish, BigNumberish];
+  // proof: string;
+  vote: BigNumberish[];
   voteHidden: string;
-  publicSignature: string;
+  // publicSignature: string;
 }>;
+
+function shuffle(array) {
+  let currentIndex = array.length,
+    randomIndex;
+
+  // While there remain elements to shuffle.
+  while (currentIndex > 0) {
+    // Pick a remaining element.
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+
+    // And swap it with the current element.
+    [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+  }
+
+  return array;
+}
 
 export const mockVotes = async ({
   gm,
@@ -632,64 +643,58 @@ export const mockVotes = async ({
   distribution: 'ftw' | 'semiUniform' | 'equal';
 }): Promise<MockVotes> => {
   const votes: Array<{
-    proof: string;
-    vote: [BigNumberish, BigNumberish, BigNumberish];
+    // proof: string;
+    vote: BigNumberish[];
     voteHidden: string;
-    publicSignature: string;
+    // publicSignature: string;
   }> = [];
   for (let k = 0; k < players.length; k++) {
-    let firstSelected = 0;
-    let secondSelected = 0;
-    let thirdSelected = 0;
+    let creditsLeft = BOG_VOTE_CREDITS;
+    let playerVote: BigNumberish[];
     if (distribution == 'ftw') {
-      if (k == 0) {
-        firstSelected = 1;
-        secondSelected = 2;
-        thirdSelected = 3;
-      } else if (k == 1) {
-        firstSelected = 0;
-        secondSelected = 2;
-        thirdSelected = 3;
-      } else if (k == 2) {
-        firstSelected = 0;
-        secondSelected = 1;
-        thirdSelected = 3;
-      } else {
-        firstSelected = 0;
-        secondSelected = 1;
-        thirdSelected = 2;
-      }
+      playerVote = players.map((proposer, idx) => {
+        if (k !== idx) {
+          const voteWeight = Math.floor(Math.sqrt(creditsLeft));
+          creditsLeft -= voteWeight * voteWeight;
+          return voteWeight;
+        } else {
+          return 0;
+        }
+      });
     } else if (distribution == 'semiUniform') {
-      firstSelected = (Number(gameId) + Number(turn) + k) % players.length;
-      firstSelected = firstSelected == k ? (firstSelected + 1) % players.length : firstSelected;
-
-      secondSelected = (firstSelected + 1 * k) % players.length;
-      while (secondSelected == k || firstSelected == secondSelected) {
-        secondSelected = (secondSelected + 1) % players.length;
-      }
-
-      thirdSelected = (secondSelected + 1 * k) % players.length;
-      while (thirdSelected == k || thirdSelected == secondSelected || thirdSelected == firstSelected) {
-        thirdSelected = (thirdSelected + 1) % players.length;
-      }
-    } else {
-      firstSelected = k;
-      firstSelected = firstSelected == k ? (firstSelected + 1) % players.length : firstSelected;
-      secondSelected = (firstSelected + 1) % players.length;
-      secondSelected = secondSelected == k ? (secondSelected + 1) % players.length : secondSelected;
-      thirdSelected = (secondSelected + 2) % players.length;
-      thirdSelected = thirdSelected == k ? (thirdSelected + 1) % players.length : thirdSelected;
+      const votesToDistribute = players.map(() => {
+        const voteWeight = Math.floor(Math.sqrt(creditsLeft));
+        creditsLeft -= voteWeight * voteWeight;
+        return voteWeight;
+      });
+      let votesDistributed = [];
+      do {
+        votesDistributed = shuffle(votesToDistribute);
+      } while (votesDistributed[k] !== 0);
+      playerVote = [...votesDistributed];
+    } else if (distribution == 'equal') {
+      const lowSide = k >= players.length / 2 ? false : true;
+      let _votes = players.map((proposer, idx) => {
+        const voteWeight = Math.floor(Math.sqrt(creditsLeft));
+        if (players.length % 2 !== 0 && k !== Math.floor(players.length / 2)) {
+          //Just skipp odd voter
+          creditsLeft -= voteWeight * voteWeight;
+          return voteWeight;
+        } else return 0;
+      });
+      playerVote = lowSide ? [..._votes.reverse()] : [..._votes];
+      console.assert(playerVote[k] == 0);
     }
 
-    const { vote, voteHidden, proof, publicSignature } = await mockVote({
+    const { vote, voteHidden } = await mockVote({
       voter: players[k],
       gameId,
       turn,
       gm,
       verifierAddress,
-      vote: [firstSelected, secondSelected, thirdSelected],
+      vote: playerVote,
     });
-    votes[k] = { vote, voteHidden: keccak256(JSON.stringify(voteHidden)), proof, publicSignature };
+    votes[k] = { vote, voteHidden: ethers.utils.hashMessage(JSON.stringify(voteHidden)) };
   }
   return votes;
 };

@@ -1424,12 +1424,6 @@
         "internalType": "bytes32",
         "name": "votesHidden",
         "type": "bytes32"
-      },
-      {
-        "indexed": false,
-        "internalType": "bytes",
-        "name": "proof",
-        "type": "bytes"
       }
     ],
     "name": "VoteSubmitted",
@@ -1564,9 +1558,9 @@
         "type": "bytes32"
       },
       {
-        "internalType": "bytes",
-        "name": "proof",
-        "type": "bytes"
+        "internalType": "address",
+        "name": "voter",
+        "type": "address"
       }
     ],
     "name": "submitVote",

@@ -78,15 +78,17 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
         return checkSignature(message, signature, account);
     }
 
+    function releaseAndReward(uint256 gameId, address player, address[] memory leaderboard) private {}
+
     function _endGame(uint256 gameId, address[] memory leaderboard, address[] memory players) internal nonReentrant {
         IBestOf.BOGInstance storage game = gameId.getGameStorage();
-        gameId.closeGame();
-        emitRankRewards(gameId, leaderboard);
 
         for (uint256 i = 0; i < players.length; i++) {
             LibCoinVending.release(bytes32(gameId), game.createdBy, leaderboard[0], players[i]);
             gameId.removeAndUnlockPlayer(players[i]);
         }
+        // gameId.closeGame();
+        gameId.emitRankRewards(leaderboard);
         (, uint256[] memory scores) = gameId.getScores();
         emit GameOver(gameId, players, scores);
     }
@@ -105,15 +107,9 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
         address proposer;
     }
 
-    event VoteSubmitted(
-        uint256 indexed gameId,
-        uint256 indexed turn,
-        address indexed player,
-        bytes32 votesHidden,
-        bytes proof
-    );
+    event VoteSubmitted(uint256 indexed gameId, uint256 indexed turn, address indexed player, bytes32 votesHidden);
 
-    function submitVote(uint256 gameId, bytes32 votesHash, bytes memory proof) public {
+    function submitVote(uint256 gameId, bytes32 votesHash, address voter) public {
         LibBestOf.enforceIsGM(gameId);
         gameId.enforceGameExists();
         gameId.enforceHasStarted();
@@ -126,13 +122,13 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
         //     votesHidden[1],
         //     votesHidden[2]
         // );
-        IBestOf.BOGInstance storage game = gameId.getGameStorage();
+        // IBestOf.BOGInstance storage game = gameId.getGameStorage();
         require(!gameId.isGameOver(), "Game over");
         require(gameId.getTurn() > 1, "No proposals exist at turn 1: cannot vote");
         // game.votesHidden[msg.sender].votedFor = votesHidden;
-        game.votesHidden[msg.sender].proof = proof;
-        gameId.playerMove(msg.sender); // This will enforce player is in in the game
-        emit VoteSubmitted(gameId, gameId.getTurn(), msg.sender, votesHash, proof);
+        // game.votesHidden[voter].proof = bytes memory (0);
+        gameId.playerMove(voter); // This will enforce player is in in the game
+        emit VoteSubmitted(gameId, gameId.getTurn(), voter, votesHash);
     }
 
     function submitProposal(ProposalParams memory proposalData) public {
@@ -201,10 +197,8 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
         for (uint256 i = 0; i < players.length; i++) {
             game.proposalCommitmentHashes[players[i]] = bytes32(0);
             game.ongoingProposals[i] = "";
-            game.votesHidden[players[i]].votedFor[0] = bytes32(0);
-            game.votesHidden[players[i]].votedFor[1] = bytes32(0);
-            game.votesHidden[players[i]].votedFor[2] = bytes32(0);
-            delete game.votesHidden[players[i]].proof;
+            game.votesHidden[players[i]].hash = bytes32(0);
+            // delete game.votesHidden[players[i]].proof;
         }
     }
 
@@ -262,12 +256,4 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
         _nextTurn(gameId, newProposals);
     }
 
-    function emitRankRewards(uint256 gameId, address[] memory leaderboard) private {
-        IBestOf.BOGInstance storage game = gameId.getGameStorage();
-        IBestOf.BOGSettings storage settings = LibBestOf.BOGStorage();
-        RankToken rankTokenContract = RankToken(settings.rankTokenAddress);
-        rankTokenContract.safeTransferFrom(address(this), leaderboard[0], game.rank + 1, 1, "");
-        rankTokenContract.safeTransferFrom(address(this), leaderboard[1], game.rank, 2, "");
-        rankTokenContract.safeTransferFrom(address(this), leaderboard[2], game.rank, 1, "");
-    }
 }

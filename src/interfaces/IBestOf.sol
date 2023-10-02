@@ -29,8 +29,8 @@ interface IBestOf {
     // }
 
     struct VoteHidden {
-        bytes32[] votedFor;
-        bytes proof;
+        bytes32 hash;
+        // bytes proof;
     }
 
     struct BOGInstance {

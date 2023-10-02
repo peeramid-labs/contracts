@@ -9,7 +9,6 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {LibArray} from "../libraries/LibArray.sol";
-import {LibCoinVending} from "../libraries/LibCoinVending.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 library LibTBG {
@@ -34,12 +33,14 @@ library LibTBG {
         uint256 turnStartedAt;
         uint256 registrationOpenAt;
         bool hasStarted;
+        bool hasEnded;
         EnumerableSet.AddressSet players;
         mapping(address => bool) madeMove;
         uint256 numPlayersMadeMove;
         mapping(address => uint256) score;
         bytes32 implemenationStoragePointer;
         bool isOvertime;
+        address[] leaderboard;
     }
 
     struct TBGStorageStruct {
@@ -129,7 +130,7 @@ library LibTBG {
         GameInstance storage _game = _getGame(gameId);
         require(gameExists(gameId), "game does not exist");
         require(tbg.playerInGame[participant] == gameId, "Not in the game");
-        require(_game.hasStarted == false, "Cannot leave once started");
+        require(_game.hasStarted == false || _game.hasEnded == true, "Cannot leave once started");
         tbg.playerInGame[participant] = 0;
         _game.players.remove(participant);
     }
@@ -246,6 +247,7 @@ library LibTBG {
         require(gameId != 0, "startGame->Game not found");
         require(_game.players.length() >= tbg.settings.minPlayersSize, "startGame->Not enough players");
         _game.hasStarted = true;
+        _game.hasEnded = false;
         _game.currentTurn = 1;
         _game.turnStartedAt = block.number;
         _resetPlayerStates(_game);
@@ -295,13 +297,6 @@ library LibTBG {
         return _game.hasStarted;
     }
 
-    function closeGame(uint256 gameId) internal {
-        TBGStorageStruct storage tbg = TBGStorage();
-        address[] memory players = getPlayers(gameId);
-        for (uint256 i = 0; i < players.length; i++) {
-            tbg.playerInGame[players[i]] = 0;
-        }
-    }
 
     function nextTurn(uint256 gameId) internal returns (bool, bool, bool, address[] memory) {
         GameInstance storage _game = _getGame(gameId);
@@ -314,11 +309,13 @@ library LibTBG {
         bool _isOvertime = _game.isOvertime;
         address[] memory sortedLeaders = new address[](getPlayers(gameId).length);
         if (_isLastTurn || _game.isOvertime || isGameOver(gameId)) {
-            (_isOvertime, sortedLeaders) = isLeadersScoresEqual(gameId);
+            (_isOvertime, sortedLeaders) = isSortedLeadersEqual(gameId);
             _game.isOvertime = _isOvertime;
         }
+        _game.leaderboard = sortedLeaders;
+        _game.hasEnded = isGameOver(gameId);
 
-        return (_isLastTurn, _isOvertime, isGameOver(gameId), sortedLeaders);
+        return (_isLastTurn, _isOvertime, _game.hasEnded, sortedLeaders);
     }
 
     function getDataStorage() internal pure returns (bytes32 pointer) {
@@ -365,7 +362,7 @@ library LibTBG {
         _game.isOvertime = false;
     }
 
-    function isLeadersScoresEqual(uint256 gameId) internal view returns (bool, address[] memory) {
+    function isSortedLeadersEqual(uint256 gameId) internal view returns (bool, address[] memory) {
         TBGStorageStruct storage tbg = TBGStorage();
         (address[] memory players, uint256[] memory scores) = getScores(gameId);
 
@@ -397,15 +394,19 @@ library LibTBG {
         GameInstance storage _game = _getGame(gameId);
         // uint256 proposalIdx = game.playersOngoingProposalIdx[proposer];
         uint256 score = 0;
+        TBGStorageStruct storage tbg = TBGStorage();
         for (uint256 i = 0; i < players.length; i++) {
+            uint256 creditsUsed = 0;
             if (!_game.madeMove[players[i]]) {
-                TBGStorageStruct storage tbg = TBGStorage();
                 score += tbg.maxQuadraticVote;
+                creditsUsed = tbg.settings.voteCredits;
             } else {
                 uint256[] memory playerVote = votes[i];
-                require(playerVote[proposerIdx] == 0, "Voted for himself");
-                score += playerVote[proposerIdx] * playerVote[proposerIdx];
+                require(playerVote[i] == 0, "Voted for himself");
+                score += playerVote[proposerIdx];
+                creditsUsed += playerVote[proposerIdx] * playerVote[proposerIdx];
             }
+            require(creditsUsed <= tbg.settings.voteCredits, "Quadratic: vote credits overrun");
         }
         return score;
     }

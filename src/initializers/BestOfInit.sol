@@ -16,8 +16,9 @@ import {IERC165} from "../vendor/interfaces/IERC165.sol";
 import {LibEIP712WithStorage} from "../libraries/LibEIP712Storage.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {IBestOf} from "../interfaces/IBestOf.sol";
+import {IRankToken} from "../interfaces/IRankToken.sol";
 import {LibTBG} from "../libraries/LibTurnBasedGame.sol";
-import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+// import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "hardhat/console.sol";
 
 // It is expected that this contract is customized if you want to deploy your diamond
@@ -80,10 +81,10 @@ contract BestOfInit {
         IBestOf.BOGSettings storage _BOG = BOGStorage();
         _BOG.gamePrice = initializer.gamePrice;
         _BOG.joinGamePrice = initializer.joinGamePrice;
-        IERC1155 ERC1155Contract = IERC1155(initializer.rankTokenAddress);
+        IRankToken rankContract = IRankToken(initializer.rankTokenAddress);
         require(
-            ERC1155Contract.supportsInterface(type(IERC1155).interfaceId),
-            "BestOfGame->init: rank token address does not support IERC1155 interface"
+            rankContract.supportsInterface(type(IRankToken).interfaceId),
+            "BestOfGame->init: rank token address does not support Rank interface"
         );
         _BOG.rankTokenAddress = initializer.rankTokenAddress;
         _BOG.contractInitialized = true;

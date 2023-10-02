@@ -50,7 +50,6 @@ contract BestOfFacet is IBestOf, IERC1155Receiver, DiamondReentrancyGuard, IERC7
         // LibBestOf.fulfillTokenRequirement(msg.sender, address(this), gameId);
         require(gameRank != 0, "game rank not specified");
         require(msg.value >= settings.gamePrice, "Not enough payment");
-        require(IRankToken(settings.rankTokenAddress).balanceOf(msg.sender, gameRank) > 0, "Must have rank token");
         BOGInstance storage game = gameId.getGameStorage();
         game.createdBy = msg.sender;
         settings.numGames += 1;
@@ -74,10 +73,6 @@ contract BestOfFacet is IBestOf, IERC1155Receiver, DiamondReentrancyGuard, IERC7
     ) public payable nonReentrant {
         createGame(gameMaster, gameId, gameRank);
         BOGInstance storage game = gameId.getGameStorage();
-        BOGSettings storage settings = BOGStorage();
-        IRankToken rankTokenContract = IRankToken(settings.rankTokenAddress);
-        rankTokenContract.mint(address(this), 1, gameRank + 1, "");
-        rankTokenContract.mint(address(this), 3, gameRank, "");
         if (additionalRanks.length != 0) {
             for (uint256 i = 0; i < additionalRanks.length; i++) {
                 IRankToken additonalRank = IRankToken(additionalRanks[i]);
@@ -88,11 +83,6 @@ contract BestOfFacet is IBestOf, IERC1155Receiver, DiamondReentrancyGuard, IERC7
             }
             game.additionalRanks = additionalRanks;
         }
-
-        LibCoinVending.ConfigPosition memory emptyConfig;
-        LibCoinVending.configure(bytes32(gameId), emptyConfig);
-
-        emit gameCreated(gameId, gameMaster, msg.sender, gameRank);
     }
 
     function createGame(address gameMaster, uint256 gameRank) public payable {
@@ -111,7 +101,7 @@ contract BestOfFacet is IBestOf, IERC1155Receiver, DiamondReentrancyGuard, IERC7
             LibCoinVending.refund(bytes32(gameId), players[i]);
             emit PlayerLeft(gameId, players[i]);
         }
-        gameId.closeGame();
+        // gameId.closeGame();
         emit GameClosed(gameId);
     }
 

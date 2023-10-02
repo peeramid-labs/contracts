@@ -210,7 +210,9 @@ const mockValidVotes = async (
   if (submitNow) {
     votersAddresses = players.map(player => player.wallet.address);
     for (let i = 0; i < players.length; i++) {
-      await env.bestOfGame.connect(players[i].wallet).submitVote(gameId, votes[i].voteHidden, votes[i].proof);
+      await env.bestOfGame
+        .connect(gameMaster.wallet)
+        .submitVote(gameId, votes[i].voteHidden, players[i].wallet.address);
     }
   }
   return votes;
@@ -355,7 +357,6 @@ describe(scriptName, () => {
     ).to.revertedWith('LibDiamond: Must be contract owner');
   });
   it('has rank token assigned', async () => {
-    console.log(env.rankToken.address);
     const state = await env.bestOfGame.getContractState();
     expect(state.BestOfState.rankTokenAddress).to.be.equal(env.rankToken.address);
     expect(await env.rankToken.getRankingInstance()).to.be.equal(env.bestOfGame.address);
@@ -400,7 +401,7 @@ describe(scriptName, () => {
       distribution: 'semiUniform',
     });
     await expect(
-      env.bestOfGame.connect(adr.gameMaster1.wallet).submitVote(1, votes[0].voteHidden, votes[0].proof),
+      env.bestOfGame.connect(adr.gameMaster1.wallet).submitVote(1, votes[0].voteHidden, adr.player1.wallet.address),
     ).to.be.revertedWith('no game found');
     await expect(env.bestOfGame.connect(adr.gameMaster1.wallet).openRegistration(1)).to.be.revertedWith(
       'no game found',
@@ -440,15 +441,15 @@ describe(scriptName, () => {
       env.bestOfGame.connect(adr.gameMaster1.wallet).submitProposal(proposalsStruct[0].params),
     ).to.be.revertedWith('no game found');
   });
-  it('Succedes to create ranked game only if sender has correspoding tier rank token', async () => {
-    await expect(
-      env.bestOfGame
-        .connect(adr.maliciousActor1.wallet)
-        ['createGame(address,uint256)'](adr.gameMaster1.wallet.address, 2, {
-          value: BOGSettings.BOG_GAME_PRICE,
-        }),
-    ).to.be.revertedWith('Has no rank for this action');
-  });
+  // it('Succedes to create ranked game only if sender has correspoding tier rank token', async () => {
+  //   await expect(
+  //     env.bestOfGame
+  //       .connect(adr.maliciousActor1.wallet)
+  //       ['createGame(address,uint256)'](adr.gameMaster1.wallet.address, 2, {
+  //         value: BOGSettings.BOG_GAME_PRICE,
+  //       }),
+  //   ).to.be.revertedWith('Must have rank token');
+  // });
   describe('When a game of first rank was created', () => {
     beforeEach(async () => {
       await createGame(env.bestOfGame, adr.gameCreator1, adr.gameMaster1.wallet.address, 1);
@@ -557,7 +558,7 @@ describe(scriptName, () => {
           ),
         ).to.be.revertedWith('Game has not yet started');
         await expect(
-          env.bestOfGame.connect(adr.gameMaster1.wallet).submitVote(1, votes[0].voteHidden, votes[0].proof),
+          env.bestOfGame.connect(adr.gameMaster1.wallet).submitVote(1, votes[0].voteHidden, adr.player1.wallet.address),
         ).to.be.revertedWith('Game has not yet started');
         await expect(env.bestOfGame.connect(adr.gameCreator1.wallet).openRegistration(1)).to.be.revertedWith(
           'Cannot do when registration is open',
@@ -626,7 +627,9 @@ describe(scriptName, () => {
             ),
           ).to.be.revertedWith('Game has not yet started');
           await expect(
-            env.bestOfGame.connect(adr.gameMaster1.wallet).submitVote(1, votes[0].voteHidden, votes[0].proof),
+            env.bestOfGame
+              .connect(adr.gameMaster1.wallet)
+              .submitVote(1, votes[0].voteHidden, adr.player1.wallet.address),
           ).to.be.revertedWith('Game has not yet started');
         });
         describe('When game has started', () => {
@@ -659,7 +662,7 @@ describe(scriptName, () => {
             votersAddresses = getPlayers(adr, BOGSettings.BOG_MAX_PLAYERS).map(player => player.wallet.address);
 
             await expect(
-              env.bestOfGame.connect(adr.player1.wallet).submitVote(1, votes[0].voteHidden, votes[0].proof),
+              env.bestOfGame.connect(adr.gameMaster1.wallet).submitVote(1, votes[0].voteHidden, votersAddresses[0]),
             ).to.be.revertedWith('No proposals exist at turn 1: cannot vote');
           });
           it('Processes only proposals only from game master', async () => {
@@ -679,6 +682,7 @@ describe(scriptName, () => {
                 1,
                 getPlayers(adr, BOGSettings.BOG_MIN_PLAYERS).map(identity => identity.wallet.address),
                 getPlayers(adr, BOGSettings.BOG_MIN_PLAYERS).map(() => '0'),
+                [],
               );
           });
           describe('When all proposals received', () => {
@@ -792,20 +796,20 @@ describe(scriptName, () => {
                   for (let i = 0; i < players.length; i++) {
                     // expectedScores[i] = 0;
                     if (votes.length > i) {
-                      votes[i].vote.forEach((votedFor, voteWeightInverted) => {
-                        const _votedFor = Number(votedFor.toString());
-                        expectedScores[_votedFor] += 3 - voteWeightInverted;
+                      votes[i].vote.forEach((vote, idx) => {
+                        expectedScores[idx] += Number(vote);
                       });
                     } else {
                       //somebody did not vote at all
                     }
                   }
+
                   await expect(
                     env.bestOfGame.connect(adr.gameMaster1.wallet).endTurn(
                       1,
                       votes.map(vote => vote.vote),
                       [],
-                      proposalsStruct.map((p, idx) => idx),
+                      votersAddresses.map((p, idx) => idx),
                     ),
                   )
                     .to.be.emit(env.bestOfGame, 'TurnEnded')
@@ -814,6 +818,7 @@ describe(scriptName, () => {
                       2,
                       getPlayers(adr, BOGSettings.BOG_MIN_PLAYERS).map(identity => identity.wallet.address),
                       expectedScores,
+                      [],
                     );
                 });
               });
@@ -1027,7 +1032,7 @@ describe(scriptName, () => {
           });
 
           const isover = await env.bestOfGame.isGameOver(1);
-          console.log('isover', isover);
+
           for (let i = 0; i < BOGSettings.BOG_MAX_PLAYERS; i++) {
             const proposals = await expect(
               env.bestOfGame.connect(adr.gameMaster1.wallet).submitProposal(proposalsStruct[i].params),
@@ -1035,7 +1040,9 @@ describe(scriptName, () => {
 
             let name = `player${i + 1}` as any as keyof AdrSetupResult;
             await expect(
-              env.bestOfGame.connect(adr[`${name}`].wallet).submitVote(1, votes[i].voteHidden, votes[i].proof),
+              env.bestOfGame
+                .connect(adr.gameMaster1.wallet)
+                .submitVote(1, votes[i].voteHidden, getPlayers(adr, BOGSettings.BOG_MAX_PLAYERS)[i].wallet.address),
             ).to.be.revertedWith('Game over');
           }
           await expect(
@@ -1073,14 +1080,13 @@ describe(scriptName, () => {
             await env.bestOfGame.connect(adr.player1.wallet).openRegistration(2);
           });
           it('Can be joined only by rank token bearers', async () => {
+            expect(await env.rankToken.balanceOf(adr.player1.wallet.address, 2)).to.be.equal(1);
             await env.rankToken.connect(adr.player1.wallet).setApprovalForAll(env.bestOfGame.address, true);
             await env.rankToken.connect(adr.player2.wallet).setApprovalForAll(env.bestOfGame.address, true);
             await expect(env.bestOfGame.connect(adr.player1.wallet).joinGame(2))
               .to.emit(env.bestOfGame, 'PlayerJoined')
               .withArgs(2, adr.player1.wallet.address);
-            await expect(env.bestOfGame.connect(adr.player2.wallet).joinGame(2)).to.revertedWith(
-              'ERC1155: insufficient balance for transfer',
-            );
+            await expect(env.bestOfGame.connect(adr.player2.wallet).joinGame(2)).to.revertedWith('not enough balance');
           });
         });
       });
@@ -1131,7 +1137,7 @@ describe(scriptName, () => {
         );
         await env.rankToken.connect(adr.player6.wallet).setApprovalForAll(env.bestOfGame.address, true);
         await expect(env.bestOfGame.connect(adr.player6.wallet).joinGame(lastCreatedGameId)).to.be.revertedWith(
-          'ERC1155: insufficient balance for transfer',
+          'not enough balance',
         );
       });
       it('Locks rank tokens when player joins', async () => {
@@ -1140,15 +1146,17 @@ describe(scriptName, () => {
         await env.rankToken.connect(adr.player1.wallet).setApprovalForAll(env.bestOfGame.address, true);
         await env.bestOfGame.connect(adr.player1.wallet).joinGame(lastCreatedGameId);
         const balance2 = await env.rankToken.balanceOf(adr.player1.wallet.address, 2);
-        expect(await env.rankToken.balanceOf(adr.player1.wallet.address, 2)).to.be.equal(balance.toNumber() - 1);
+        expect(await env.rankToken.balanceOfUnlocked(adr.player1.wallet.address, 2)).to.be.equal(
+          balance.toNumber() - 1,
+        );
       });
       it('Returns rank token if player leaves game', async () => {
         const lastCreatedGameId = await env.bestOfGame.getContractState().then(r => r.BestOfState.numGames);
         await env.rankToken.connect(adr.player1.wallet).setApprovalForAll(env.bestOfGame.address, true);
         await env.bestOfGame.connect(adr.player1.wallet).joinGame(lastCreatedGameId);
-        expect(await env.rankToken.balanceOf(adr.player1.wallet.address, 2)).to.be.equal(0);
+        expect(await env.rankToken.balanceOfUnlocked(adr.player1.wallet.address, 2)).to.be.equal(0);
         await env.bestOfGame.connect(adr.player1.wallet).leaveGame(lastCreatedGameId);
-        expect(await env.rankToken.balanceOf(adr.player1.wallet.address, 2)).to.be.equal(1);
+        expect(await env.rankToken.balanceOfUnlocked(adr.player1.wallet.address, 2)).to.be.equal(1);
       });
       it('Returns rank token if was game closed', async () => {
         const lastCreatedGameId = await env.bestOfGame.getContractState().then(r => r.BestOfState.numGames);
@@ -1156,14 +1164,14 @@ describe(scriptName, () => {
         await env.rankToken.connect(adr.player2.wallet).setApprovalForAll(env.bestOfGame.address, true);
         await env.bestOfGame.connect(adr.player1.wallet).joinGame(lastCreatedGameId);
         await env.bestOfGame.connect(adr.player2.wallet).joinGame(lastCreatedGameId);
-        let p1balance = await env.rankToken.balanceOf(adr.player1.wallet.address, 2);
+        let p1balance = await env.rankToken.balanceOfUnlocked(adr.player1.wallet.address, 2);
         p1balance = p1balance.add(1);
 
-        let p2balance = await env.rankToken.balanceOf(adr.player2.wallet.address, 2);
+        let p2balance = await env.rankToken.balanceOfUnlocked(adr.player2.wallet.address, 2);
         p2balance = p2balance.add(1);
         await env.bestOfGame.connect(adr.player1.wallet).cancelGame(lastCreatedGameId);
-        expect(await env.rankToken.balanceOf(adr.player1.wallet.address, 2)).to.be.equal(p1balance);
-        expect(await env.rankToken.balanceOf(adr.player2.wallet.address, 2)).to.be.equal(p2balance);
+        expect(await env.rankToken.balanceOfUnlocked(adr.player1.wallet.address, 2)).to.be.equal(p1balance);
+        expect(await env.rankToken.balanceOfUnlocked(adr.player2.wallet.address, 2)).to.be.equal(p2balance);
       });
       describe('when this game is over', () => {
         const balancesBeforeJoined: BigNumber[] = [];
@@ -1171,7 +1179,7 @@ describe(scriptName, () => {
           const players = getPlayers(adr, BOGSettings.BOG_MIN_PLAYERS, 0);
           const lastCreatedGameId = await env.bestOfGame.getContractState().then(r => r.BestOfState.numGames);
           for (let i = 0; i < players.length; i++) {
-            balancesBeforeJoined[i] = await env.rankToken.balanceOf(players[i].wallet.address, 2);
+            balancesBeforeJoined[i] = await env.rankToken.balanceOfUnlocked(players[i].wallet.address, 2);
           }
           await fillParty(players, env.bestOfGame, lastCreatedGameId, true, true, adr.gameMaster1);
 
