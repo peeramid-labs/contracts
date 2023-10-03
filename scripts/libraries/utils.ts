@@ -1,7 +1,7 @@
 // import { ethers } from "ethers";
-import { ethers } from "hardhat";
-import { Wallet, BigNumber } from "ethers";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { ethers } from 'hardhat';
+import { Wallet, BigNumber } from 'ethers';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 export function getInterfaceID(contractInterface: any) {
   let interfaceID: BigNumber = ethers.constants.Zero;
@@ -16,18 +16,21 @@ export function getInterfaceID(contractInterface: any) {
 export async function transferOwnership(
   signer: Wallet | SignerWithAddress,
   newOwnerAddress: string,
-  diamondAddress: string
+  diamondAddress: string,
 ) {
-  const ownershipFacet = await ethers.getContractAt(
-    "OwnershipFacet",
-    diamondAddress
-  );
-  const tx = await ownershipFacet
-    .connect(signer)
-    .transferOwnership(newOwnerAddress);
+  const ownershipFacet = await ethers.getContractAt('OwnershipFacet', diamondAddress);
+  const tx = await ownershipFacet.connect(signer).transferOwnership(newOwnerAddress);
   // console.log("Diamond cut tx: ", tx.hash);
   const receipt = await tx.wait();
   if (!receipt.status) {
     throw Error(`Transfer ownership failed: ${tx.hash}`);
   }
+}
+
+export function getProcessEnv(print: boolean, key: string) {
+  const ret = process.env[key];
+  if (!ret) {
+    throw new Error(key + ' must be exported in env');
+  }
+  return print ? 'X'.repeat(ret.length) : ret;
 }
