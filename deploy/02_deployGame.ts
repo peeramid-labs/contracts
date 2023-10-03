@@ -18,25 +18,12 @@ import { ethers } from 'hardhat';
 import { BestOfInit } from '../types/typechain/src/initializers/BestOfInit';
 import { RankToken } from '../types/typechain/src/tokens/RankToken';
 import { BestOfDiamond } from '../types/typechain/hardhat-diamond-abi/HardhatDiamondABI.sol';
+import { getProcessEnv } from '../scripts/libraries/utils';
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployments, getNamedAccounts } = hre;
   const { deploy, diamond, getOrNull } = deployments;
   const { deployer } = await getNamedAccounts();
   if (process.env.NODE_ENV !== 'TEST') {
-    if (
-      !process.env.BLOCKS_PER_TURN ||
-      !process.env.MAX_PLAYERS ||
-      !process.env.MIN_PLAYERS ||
-      !process.env.BLOCKS_TO_JOIN ||
-      !process.env.GAME_PRICE_ETH ||
-      !process.env.JOIN_GAME_PRICE_ETH ||
-      !process.env.MAX_TURNS ||
-      !process.env.NUM_WINNERS ||
-      !process.env.VOTE_CREDITS ||
-      !process.env.SUBJECT
-    )
-      throw new Error('Best of initializer variables not set');
-
     if (!process.env.BESTOF_CONTRACT_VERSION || !process.env.BESTOF_CONTRACT_NAME)
       throw new Error('EIP712 intializer args not set');
   }
@@ -68,17 +55,17 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
           subject: BOG_SUBJECT,
         }
       : {
-          blocksPerTurn: process.env.BLOCKS_PER_TURN,
-          maxTurns: process.env.MAX_TURNS,
-          maxPlayersSize: process.env.MAX_PLAYERS,
-          minPlayersSize: process.env.MIN_PLAYERS,
+          blocksPerTurn: getProcessEnv(false, 'BLOCKS_PER_TURN'),
+          maxTurns: getProcessEnv(false, 'MAX_TURNS'),
+          maxPlayersSize: getProcessEnv(false, 'MAX_PLAYERS'),
+          minPlayersSize: getProcessEnv(false, 'MIN_PLAYERS'),
           rankTokenAddress: rankToken.address,
-          blocksToJoin: process.env.BLOCKS_TO_JOIN,
-          gamePrice: ethers.utils.parseEther(process.env.GAME_PRICE_ETH),
-          joinGamePrice: ethers.utils.parseEther(process.env.JOIN_GAME_PRICE_ETH),
-          numWinners: process.env.NUM_WINNERS,
-          voteCredits: process.env.VOTE_CREDITS,
-          subject: process.env.SUBJECT,
+          blocksToJoin: getProcessEnv(false, 'BLOCKS_TO_JOIN'),
+          gamePrice: ethers.utils.parseEther(getProcessEnv(false, 'GAME_PRICE_ETH')),
+          joinGamePrice: ethers.utils.parseEther(getProcessEnv(false, 'JOIN_GAME_PRICE_ETH')),
+          numWinners: getProcessEnv(false, 'NUM_WINNERS'),
+          voteCredits: getProcessEnv(false, 'VOTE_CREDITS'),
+          subject: getProcessEnv(false, 'SUBJECT'),
         };
 
   const { gameOwner } = await getNamedAccounts();

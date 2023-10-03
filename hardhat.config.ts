@@ -82,7 +82,7 @@ export default {
   },
   namedAccounts: {
     deployer: {
-      default: '0x7231161f85637Dea4DCa51e30ff443eD508c3313',
+      default: '0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1',
     },
     gameOwner: {
       hardhat: '0xBfdF0Ee33BF4a2640D67f720Ae6594E81f8114d4',
@@ -120,9 +120,7 @@ export default {
     },
     anvil: {
       url: process.env.ANVIL_RPC_URL ?? '',
-      accounts: {
-        mnemonic: 'test test test test test test test test test test test junk',
-      }, // LOCALUSE ONLY BABE
+      accounts: process.env.PRIVATE_KEY && [process.env.PRIVATE_KEY],
     },
   },
   paths: {
