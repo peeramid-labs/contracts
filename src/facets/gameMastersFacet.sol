@@ -255,5 +255,4 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
         }
         _nextTurn(gameId, newProposals);
     }
-
 }
