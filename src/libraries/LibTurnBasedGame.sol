@@ -297,7 +297,6 @@ library LibTBG {
         return _game.hasStarted;
     }
 
-
     function nextTurn(uint256 gameId) internal returns (bool, bool, bool, address[] memory) {
         GameInstance storage _game = _getGame(gameId);
         enforceHasStarted(gameId);

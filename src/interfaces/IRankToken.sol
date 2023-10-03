@@ -15,6 +15,10 @@ interface IRankToken is IERC1155 {
 
     function levelUp(address to, uint256 id, bytes memory data) external;
 
+    /**
+     * @dev Updates the address of the ranking instance contract.
+     * @param newRankingInstance The new address of the ranking instance contract.
+     */
     function updateRankingInstance(address newRankingInstance) external;
 
     function getRankingInstance() external view returns (address);
