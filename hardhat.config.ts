@@ -171,6 +171,7 @@ export default {
         'RequirementsFacet',
         'GameMastersFacet',
         'EIP712InspectorFacet',
+        'GameOwnersFacet'
       ],
       strict: true,
       filter(abiElement: unknown, index: number, abi: unknown[], fullyQualifiedName: string) {
