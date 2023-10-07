@@ -82,19 +82,21 @@ export default {
   },
   namedAccounts: {
     deployer: {
-      default: '0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1',
+      hardhat: '0xF52E5dF676f51E410c456CC34360cA6F27959420',
+      anvil: '0x6Cf8d74C7875de8C2FfB09228F4bf2A21b25e583',
+      default: '0xF52E5dF676f51E410c456CC34360cA6F27959420', //TODO this must be set for networks
     },
-    gameOwner: {
-      hardhat: '0xBfdF0Ee33BF4a2640D67f720Ae6594E81f8114d4',
-      default: '0xE48BC6673B4EEBec6A230f9112Cb2c1ac17bc273',
+    owner: {
+      default: '0x520E00225C4a43B6c55474Db44a4a44199b4c3eE',
+      anvil: '0x507c2d32185667156de5B4C440FEEf3800078bDb',
     },
   },
   defaultNetwork: 'hardhat',
   networks: {
     hardhat: {
       accounts: {
-        mnemonic: 'describe ribbon asthma today achieve nut label uniform seed charge library away',
-      }, // LOCALUSE ONLY BABE
+        mnemonic: 'casual vacant letter raw trend tool vacant opera buzz jaguar bridge myself',
+      }, // ONLY LOCAL
     },
     mumbai: {
       url: 'https://matic-mumbai.chainstacklabs.com',
@@ -115,12 +117,14 @@ export default {
     localhost: {
       url: 'http://127.0.0.1:8545',
       accounts: {
-        mnemonic: 'test test test test test test test test test test test junk',
-      }, // LOCALUSE ONLY BABE
+        mnemonic: 'casual vacant letter raw trend tool vacant opera buzz jaguar bridge myself',
+      }, // ONLY LOCAL
     },
     anvil: {
       url: process.env.ANVIL_RPC_URL ?? '',
-      accounts: process.env.PRIVATE_KEY && [process.env.PRIVATE_KEY],
+      accounts: {
+        mnemonic: process.env.ANVIL_MNEMONIC,
+      },
     },
   },
   paths: {
@@ -171,7 +175,7 @@ export default {
         'RequirementsFacet',
         'GameMastersFacet',
         'EIP712InspectorFacet',
-        'GameOwnersFacet'
+        'GameOwnersFacet',
       ],
       strict: true,
       filter(abiElement: unknown, index: number, abi: unknown[], fullyQualifiedName: string) {
