@@ -43,25 +43,10 @@ contract BestOfFacet is IBestOf, IERC1155Receiver, DiamondReentrancyGuard, IERC7
         }
     }
 
-    function createGame(address gameMaster, uint256 gameId, uint256 gameRank) public payable nonReentrant {
-        LibBestOf.enforceIsInitialized();
-        BOGSettings storage settings = BOGStorage();
-        gameId.createGame(gameMaster);
-        // LibBestOf.fulfillTokenRequirement(msg.sender, address(this), gameId);
-        require(gameRank != 0, "game rank not specified");
-        require(msg.value >= settings.gamePrice, "Not enough payment");
-        BOGInstance storage game = gameId.getGameStorage();
-        game.createdBy = msg.sender;
-        settings.numGames += 1;
-        game.rank = gameRank;
-
-        IRankToken rankTokenContract = IRankToken(settings.rankTokenAddress);
-        rankTokenContract.mint(address(this), 1, gameRank + 1, "");
-        rankTokenContract.mint(address(this), 3, gameRank, "");
-
+    function createGame(address gameMaster, uint256 gameId, uint256 gameRank) public nonReentrant {
+        gameId.newGame(gameMaster, gameRank, msg.sender);
         LibCoinVending.ConfigPosition memory emptyConfig;
         LibCoinVending.configure(bytes32(gameId), emptyConfig);
-
         emit gameCreated(gameId, gameMaster, msg.sender, gameRank);
     }
 
@@ -91,43 +76,31 @@ contract BestOfFacet is IBestOf, IERC1155Receiver, DiamondReentrancyGuard, IERC7
         createGame(gameMaster, settings.numGames + 1, gameRank);
     }
 
+    function onPlayerQuit(uint256 gameId, address player) private {
+        LibCoinVending.refund(bytes32(gameId), player);
+        emit PlayerLeft(gameId, player);
+    }
+
     function cancelGame(uint256 gameId) public nonReentrant {
-        gameId.enforceGameExists();
-        LibBestOf.enforceIsGameCreator(gameId);
-        require(!gameId.hasStarted(), "Game already has started");
-        address[] memory players = gameId.getPlayers();
-        for (uint256 i = 0; i < players.length; i++) {
-            gameId.removeAndUnlockPlayer(players[i]);
-            LibCoinVending.refund(bytes32(gameId), players[i]);
-            emit PlayerLeft(gameId, players[i]);
-        }
-        // gameId.closeGame();
+        gameId.enforceIsGameCreator(msg.sender);
+        gameId.cancelGame(onPlayerQuit, LibDiamond.contractOwner());
         emit GameClosed(gameId);
     }
 
     function leaveGame(uint256 gameId) public nonReentrant {
-        gameId.removeAndUnlockPlayer(msg.sender);
-        LibCoinVending.refund(bytes32(gameId), msg.sender);
-        emit PlayerLeft(gameId, msg.sender);
+        gameId.quitGame(msg.sender, true, onPlayerQuit);
     }
 
     function openRegistration(uint256 gameId) public {
-        LibBestOf.enforceIsGameCreator(gameId);
+        gameId.enforceIsGameCreator(msg.sender);
         gameId.enforceIsPreRegistrationStage();
         gameId.openRegistration();
         emit RegistrationOpen(gameId);
     }
 
-    // function getCreateGameRequirements() public view returns (TokenAction memory) {
-    //     BOGSettings storage settings = BOGStorage();
-    //     return settings.newGameReq;
-    // }
-
     function joinGame(uint256 gameId) public payable nonReentrant {
-        gameId.enforceGameExists();
+        gameId.joinGame(msg.sender);
         LibCoinVending.fund(bytes32(gameId));
-        gameId.fulfillRankRq(msg.sender);
-        gameId.addPlayer(msg.sender);
         emit PlayerJoined(gameId, msg.sender);
     }
 

@@ -53,6 +53,7 @@ contract BestOfInit {
         uint256 numWinners;
         uint256 voteCredits;
         string subject;
+        address agendaToken;
     }
 
     // You can add parameters to this function in order to pass in
@@ -81,6 +82,8 @@ contract BestOfInit {
         IBestOf.BOGSettings storage _BOG = BOGStorage();
         _BOG.gamePrice = initializer.gamePrice;
         _BOG.joinGamePrice = initializer.joinGamePrice;
+        require(initializer.agendaToken != address(0), "initializer.agendaToken not set");
+        _BOG.gamePaymentToken = initializer.agendaToken;
         IRankToken rankContract = IRankToken(initializer.rankTokenAddress);
         require(
             rankContract.supportsInterface(type(IRankToken).interfaceId),

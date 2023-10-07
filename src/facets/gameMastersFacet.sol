@@ -12,12 +12,13 @@ import "../abstracts/draft-EIP712Diamond.sol";
 import {RankToken} from "../tokens/RankToken.sol";
 import {LibCoinVending} from "../libraries/LibCoinVending.sol";
 import "hardhat/console.sol";
+import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
+import "../vendor/libraries/LibDiamond.sol";
 
 contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
     using LibTBG for uint256;
     using LibBestOf for uint256;
     using LibTBG for LibTBG.GameInstance;
-
     event OverTime(uint256 indexed gameId);
     event LastTurn(uint256 indexed gameId);
 
@@ -80,17 +81,9 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
 
     function releaseAndReward(uint256 gameId, address player, address[] memory leaderboard) private {}
 
-    function _endGame(uint256 gameId, address[] memory leaderboard, address[] memory players) internal nonReentrant {
+    function onPlayersGameEnd(uint256 gameId, address player) private {
         IBestOf.BOGInstance storage game = gameId.getGameStorage();
-
-        for (uint256 i = 0; i < players.length; i++) {
-            LibCoinVending.release(bytes32(gameId), game.createdBy, leaderboard[0], players[i]);
-            gameId.removeAndUnlockPlayer(players[i]);
-        }
-        // gameId.closeGame();
-        gameId.emitRankRewards(leaderboard);
-        (, uint256[] memory scores) = gameId.getScores();
-        emit GameOver(gameId, players, scores);
+        LibCoinVending.release(bytes32(gameId), game.createdBy, gameId.getLeaderBoard()[0], player);
     }
 
     event ProposalSubmitted(
@@ -110,7 +103,7 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
     event VoteSubmitted(uint256 indexed gameId, uint256 indexed turn, address indexed player, bytes32 votesHidden);
 
     function submitVote(uint256 gameId, bytes32 votesHash, address voter) public {
-        LibBestOf.enforceIsGM(gameId);
+        LibBestOf.enforceIsGM(gameId, msg.sender);
         gameId.enforceGameExists();
         gameId.enforceHasStarted();
         // bytes memory message = abi.encode(
@@ -133,7 +126,7 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
 
     function submitProposal(ProposalParams memory proposalData) public {
         proposalData.gameId.enforceGameExists();
-        LibBestOf.enforceIsGM(proposalData.gameId);
+        proposalData.gameId.enforceIsGM(msg.sender);
         require(!proposalData.gameId.isGameOver(), "Game over");
         proposalData.gameId.enforceHasStarted();
 
@@ -213,7 +206,7 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
     function _nextTurn(uint256 gameId, string[] memory newProposals) private {
         _beforeNextTurn(gameId);
         address[] memory players = gameId.getPlayers();
-        (bool _isLastTurn, bool _isOvertime, bool _isGameOver, address[] memory leaderboard) = gameId.nextTurn();
+        (bool _isLastTurn, bool _isOvertime, bool _isGameOver, ) = gameId.nextTurn();
         (, uint256[] memory scores) = gameId.getScores();
         emit TurnEnded(gameId, gameId.getTurn() - 1, players, scores, newProposals);
         if (_isLastTurn && _isOvertime) {
@@ -223,7 +216,8 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
             emit LastTurn(gameId);
         }
         if (_isGameOver) {
-            _endGame(gameId, leaderboard, players);
+            uint256[] memory finalScores = gameId.closeGame(LibDiamond.contractOwner(), onPlayersGameEnd);
+            emit GameOver(gameId, players, finalScores);
         }
         _afterNextTurn(gameId, newProposals);
     }
@@ -236,7 +230,7 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
         string[] memory newProposals, //REFERRING TO UPCOMING VOTING ROUND
         uint256[] memory proposerIndicies //REFERRING TO game.players index in PREVIOUS VOTING ROUND
     ) public {
-        LibBestOf.enforceIsGM(gameId);
+        gameId.enforceIsGM(msg.sender);
 
         IBestOf.BOGInstance storage game = gameId.getGameStorage();
         require(!gameId.isGameOver(), "Game over");

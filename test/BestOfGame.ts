@@ -363,9 +363,11 @@ describe(scriptName, () => {
     expect(await env.rankToken.owner()).to.be.equal(adr.contractDeployer.wallet.address);
   });
   it('Can create game only with valid payments', async () => {
+    await env.agendaToken.connect(adr.gameCreator1.wallet).approve(env.bestOfGame.address, 0);
     await expect(
       env.bestOfGame.connect(adr.gameCreator1.wallet)['createGame(address,uint256)'](adr.gameMaster1.wallet.address, 1),
-    ).to.revertedWith('Not enough payment');
+    ).to.revertedWith('ERC20: insufficient allowance');
+    await env.agendaToken.connect(adr.gameCreator1.wallet).approve(env.bestOfGame.address, ethers.constants.MaxUint256);
     await expect(
       env.bestOfGame
         .connect(adr.gameCreator1.wallet)
@@ -373,6 +375,12 @@ describe(scriptName, () => {
           value: BOGSettings.BOG_GAME_PRICE,
         }),
     ).to.emit(env.bestOfGame, 'gameCreated');
+    await env.agendaToken
+      .connect(adr.gameCreator1.wallet)
+      .burn(await env.agendaToken.balanceOf(adr.gameCreator1.wallet.address));
+    await expect(
+      env.bestOfGame.connect(adr.gameCreator1.wallet)['createGame(address,uint256)'](adr.gameMaster1.wallet.address, 1),
+    ).to.revertedWith('ERC20: transfer amount exceeds balance');
   });
 
   it('Cannot perform actions on games that do not exist', async () => {

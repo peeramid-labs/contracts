@@ -177,7 +177,7 @@
     ],
     "name": "createGame",
     "outputs": [],
-    "stateMutability": "payable",
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -239,6 +239,11 @@
                 "internalType": "uint256",
                 "name": "gamePrice",
                 "type": "uint256"
+              },
+              {
+                "internalType": "address",
+                "name": "gamePaymentToken",
+                "type": "address"
               },
               {
                 "internalType": "uint256",

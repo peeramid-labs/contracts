@@ -67,6 +67,11 @@
             "internalType": "string",
             "name": "subject",
             "type": "string"
+          },
+          {
+            "internalType": "address",
+            "name": "agendaToken",
+            "type": "address"
           }
         ],
         "internalType": "struct BestOfInit.contractInitializer",

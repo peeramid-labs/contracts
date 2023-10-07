@@ -7,7 +7,7 @@ import aes from 'crypto-js/aes';
 import { contract, ethers } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BestOfDiamond } from '../types/typechain/hardhat-diamond-abi/HardhatDiamondABI.sol';
-import { MockERC1155, MockERC20, MockERC721 } from '../types/typechain/';
+import { Agenda, MockERC1155, MockERC20, MockERC721 } from '../types/typechain/';
 import { ProposalTypes } from '../types';
 const { ZERO_ADDRESS, ZERO_BYTES32 } = require('@openzeppelin/test-helpers/src/constants');
 import { BigNumber, BigNumberish, Bytes, BytesLike, Wallet } from 'ethers';
@@ -58,6 +58,7 @@ export interface AdrSetupResult {
 }
 
 export interface EnvSetupResult {
+  agendaToken: Agenda;
   bestOfGame: BestOfDiamond;
   rankToken: RankToken;
   mockERC20: MockERC20;
@@ -75,9 +76,10 @@ export const setupAddresses = async (
   _eth: typeof import('/Users/t/GitHub/daocacao/node_modules/ethers/lib/ethers') & HardhatEthersHelpers,
 ): Promise<AdrSetupResult> => {
   const [
-    _contractDeployer,
-    _multipassOwner,
     ,
+    ,
+    ,
+    //Using first ones in hardhat deploy scripts
     _player1,
     _player2,
     _player3,
@@ -97,7 +99,7 @@ export const setupAddresses = async (
     _player17,
   ] = await ethers.getSigners();
 
-  const { gameOwner: gameOwnerAddress } = await getNamedAccounts();
+  const { deployer, owner } = await getNamedAccounts();
 
   const createRandomIdentityAndSeedEth = async (name: string) => {
     let newWallet = await ethers.Wallet.createRandom();
@@ -128,14 +130,13 @@ export const setupAddresses = async (
   const player18 = await createRandomIdentityAndSeedEth('player18');
 
   const contractDeployer: SignerIdentity = {
-    wallet: _contractDeployer,
+    wallet: await hre.ethers.getSigner(deployer),
     name: 'contractDeployer',
     id: 'contractDeployer-id',
   };
 
-  const accounts = config.networks.hardhat.accounts as any;
   const gameOwner: SignerIdentity = {
-    wallet: ethers.Wallet.fromMnemonic(accounts.mnemonic, accounts.path + `/${2}`).connect(_eth.provider),
+    wallet: await hre.ethers.getSigner(owner),
     name: 'gameOwner',
     id: 'gameOwner-id',
   };
@@ -288,10 +289,14 @@ export const BOGSettings = {
 
 export const setupTest = deployments.createFixture(async ({ deployments, getNamedAccounts, ethers: _eth }, options) => {
   const adr = await setupAddresses(getNamedAccounts, _eth);
-  const { deployer: hhdeploydeployer } = await hre.getNamedAccounts();
+  const { deployer, owner } = await hre.getNamedAccounts();
 
   await adr.contractDeployer.wallet.sendTransaction({
-    to: hhdeploydeployer,
+    to: deployer,
+    value: _eth.utils.parseEther('1'),
+  });
+  await adr.contractDeployer.wallet.sendTransaction({
+    to: owner,
     value: _eth.utils.parseEther('1'),
   });
   await deployments.fixture(['ranktoken', 'gameofbest']);
@@ -311,6 +316,7 @@ export const setupTest = deployments.createFixture(async ({ deployments, getName
   )) as MockERC721;
   await mockERC721.deployed();
   const env = await setupEnvironment({
+    AgendaToken: await deployments.get('Agenda'),
     RankToken: await deployments.get('RankToken'),
     BestOfGame: await deployments.get('BestOfGame'),
     mockERC20: mockERC20,
@@ -318,6 +324,103 @@ export const setupTest = deployments.createFixture(async ({ deployments, getName
     mockERC1155: mockERC1155,
     adr,
   });
+  await env.agendaToken
+    .connect(adr.gameOwner.wallet)
+    .mint(adr.gameCreator1.wallet.address, ethers.utils.parseEther('1000000'));
+  await env.agendaToken
+    .connect(adr.gameOwner.wallet)
+    .mint(adr.gameCreator2.wallet.address, ethers.utils.parseEther('1000000'));
+  await env.agendaToken
+    .connect(adr.gameOwner.wallet)
+    .mint(adr.gameCreator3.wallet.address, ethers.utils.parseEther('1000000'));
+  await env.agendaToken
+    .connect(adr.gameOwner.wallet)
+    .mint(adr.player1.wallet.address, ethers.utils.parseEther('1000000'));
+  await env.agendaToken
+    .connect(adr.gameOwner.wallet)
+    .mint(adr.player2.wallet.address, ethers.utils.parseEther('1000000'));
+  await env.agendaToken
+    .connect(adr.gameOwner.wallet)
+    .mint(adr.player3.wallet.address, ethers.utils.parseEther('1000000'));
+  await env.agendaToken
+    .connect(adr.gameOwner.wallet)
+    .mint(adr.player4.wallet.address, ethers.utils.parseEther('1000000'));
+  await env.agendaToken
+    .connect(adr.gameOwner.wallet)
+    .mint(adr.player5.wallet.address, ethers.utils.parseEther('1000000'));
+  await env.agendaToken
+    .connect(adr.gameOwner.wallet)
+    .mint(adr.player6.wallet.address, ethers.utils.parseEther('1000000'));
+    await env.agendaToken
+    .connect(adr.gameOwner.wallet)
+    .mint(adr.player7.wallet.address, ethers.utils.parseEther('1000000'));
+    await env.agendaToken
+    .connect(adr.gameOwner.wallet)
+    .mint(adr.player8.wallet.address, ethers.utils.parseEther('1000000'));
+    await env.agendaToken
+    .connect(adr.gameOwner.wallet)
+    .mint(adr.player9.wallet.address, ethers.utils.parseEther('1000000'));
+    await env.agendaToken
+    .connect(adr.gameOwner.wallet)
+    .mint(adr.player10.wallet.address, ethers.utils.parseEther('1000000'));
+  await env.agendaToken
+    .connect(adr.gameOwner.wallet)
+    .mint(adr.maliciousActor1.wallet.address, ethers.utils.parseEther('1000000'));
+  await env.agendaToken
+    .connect(adr.gameOwner.wallet)
+    .mint(adr.maliciousActor2.wallet.address, ethers.utils.parseEther('1000000'));
+  await env.agendaToken
+    .connect(adr.gameOwner.wallet)
+    .mint(adr.maliciousActor3.wallet.address, ethers.utils.parseEther('1000000'));
+  await env.agendaToken
+    .connect(adr.gameCreator1.wallet)
+    ['increaseAllowance(address,uint256)'](env.bestOfGame.address, ethers.constants.MaxUint256);
+  await env.agendaToken
+    .connect(adr.gameCreator2.wallet)
+    ['increaseAllowance(address,uint256)'](env.bestOfGame.address, ethers.constants.MaxUint256);
+  await env.agendaToken
+    .connect(adr.gameCreator3.wallet)
+    ['increaseAllowance(address,uint256)'](env.bestOfGame.address, ethers.constants.MaxUint256);
+  await env.agendaToken
+    .connect(adr.player1.wallet)
+    ['increaseAllowance(address,uint256)'](env.bestOfGame.address, ethers.constants.MaxUint256);
+  await env.agendaToken
+    .connect(adr.player2.wallet)
+    ['increaseAllowance(address,uint256)'](env.bestOfGame.address, ethers.constants.MaxUint256);
+  await env.agendaToken
+    .connect(adr.player3.wallet)
+    ['increaseAllowance(address,uint256)'](env.bestOfGame.address, ethers.constants.MaxUint256);
+  await env.agendaToken
+    .connect(adr.player4.wallet)
+    ['increaseAllowance(address,uint256)'](env.bestOfGame.address, ethers.constants.MaxUint256);
+  await env.agendaToken
+    .connect(adr.player5.wallet)
+    ['increaseAllowance(address,uint256)'](env.bestOfGame.address, ethers.constants.MaxUint256);
+  await env.agendaToken
+    .connect(adr.player6.wallet)
+    ['increaseAllowance(address,uint256)'](env.bestOfGame.address, ethers.constants.MaxUint256);
+  await env.agendaToken
+    .connect(adr.player7.wallet)
+    ['increaseAllowance(address,uint256)'](env.bestOfGame.address, ethers.constants.MaxUint256);
+  await env.agendaToken
+    .connect(adr.player8.wallet)
+    ['increaseAllowance(address,uint256)'](env.bestOfGame.address, ethers.constants.MaxUint256);
+  await env.agendaToken
+    .connect(adr.player9.wallet)
+    ['increaseAllowance(address,uint256)'](env.bestOfGame.address, ethers.constants.MaxUint256);
+  await env.agendaToken
+    .connect(adr.player10.wallet)
+    ['increaseAllowance(address,uint256)'](env.bestOfGame.address, ethers.constants.MaxUint256);
+
+  await env.agendaToken
+    .connect(adr.maliciousActor1.wallet)
+    ['increaseAllowance(address,uint256)'](env.bestOfGame.address, ethers.constants.MaxUint256);
+  await env.agendaToken
+    .connect(adr.maliciousActor2.wallet)
+    ['increaseAllowance(address,uint256)'](env.bestOfGame.address, ethers.constants.MaxUint256);
+  await env.agendaToken
+    .connect(adr.maliciousActor3.wallet)
+    ['increaseAllowance(address,uint256)'](env.bestOfGame.address, ethers.constants.MaxUint256);
 
   return {
     adr,
@@ -326,6 +429,7 @@ export const setupTest = deployments.createFixture(async ({ deployments, getName
 });
 // export const setupTest = () => setupTest();
 export const setupEnvironment = async (setup: {
+  AgendaToken: Deployment;
   RankToken: Deployment;
   BestOfGame: Deployment;
   mockERC20: MockERC20;
@@ -334,10 +438,11 @@ export const setupEnvironment = async (setup: {
   adr: AdrSetupResult;
 }): Promise<EnvSetupResult> => {
   const rankToken = (await ethers.getContractAt(setup.RankToken.abi, setup.RankToken.address)) as RankToken;
-
+  const agendaToken = (await ethers.getContractAt(setup.AgendaToken.abi, setup.AgendaToken.address)) as Agenda;
   const bestOfGame = (await ethers.getContractAt(setup.BestOfGame.abi, setup.BestOfGame.address)) as BestOfDiamond;
 
   return {
+    agendaToken,
     bestOfGame,
     rankToken,
     mockERC1155: setup.mockERC1155,

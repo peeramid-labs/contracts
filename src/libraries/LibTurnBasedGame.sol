@@ -46,7 +46,6 @@ library LibTBG {
     struct TBGStorageStruct {
         GameSettings settings;
         mapping(uint256 => GameInstance) games;
-        uint256 gameNum;
         mapping(address => uint256) playerInGame;
         uint256 totalGamesCreated;
         uint256 maxQuadraticVote;
@@ -85,19 +84,39 @@ library LibTBG {
 
     function createGame(uint256 gameId, address gm) internal {
         TBGStorageStruct storage tbg = TBGStorage();
+        require(!gameExists(gameId), "createGame->Already exists");
         require(gm != address(0), "createGame->GM");
         require(gameId != 0, "createGame->gameId");
         require(tbg.games[gameId].gameMaster == address(0), "createGame->gameId");
-        tbg.gameNum += 1;
-        gameId = tbg.gameNum;
-        tbg.games[tbg.gameNum].gameMaster = gm;
+        tbg.games[gameId].gameMaster = gm;
         tbg.totalGamesCreated += 1;
 
         //totalGamesCreated ensures nonce-like behaviur:
         //even if game would get deleted and re-created with same name, data storage would be different
-        tbg.games[tbg.gameNum].implemenationStoragePointer = keccak256(
+        tbg.games[gameId].implemenationStoragePointer = keccak256(
             abi.encode(gameId, tbg.totalGamesCreated, TBG_STORAGE_POSITION)
         );
+    }
+
+    function deleteGame(uint256 gameId) internal {
+        TBGStorageStruct storage tbg = TBGStorage();
+        GameInstance storage _game = _getGame(gameId);
+        address[] memory players = _game.players.values();
+        for (uint256 i = 0; i < players.length; i++) {
+            tbg.games[gameId].score[players[i]] = 0;
+            tbg.games[gameId].madeMove[players[i]] = false;
+        }
+        delete tbg.games[gameId].gameMaster;
+        delete tbg.games[gameId].currentTurn;
+        delete tbg.games[gameId].hasEnded;
+        delete tbg.games[gameId].hasStarted;
+        delete tbg.games[gameId].implemenationStoragePointer;
+        delete tbg.games[gameId].isOvertime;
+        delete tbg.games[gameId].leaderboard;
+        delete tbg.games[gameId].numPlayersMadeMove;
+        delete tbg.games[gameId].players;
+        delete tbg.games[gameId].registrationOpenAt;
+        delete tbg.games[gameId].turnStartedAt;
     }
 
     function canBeJoined(uint256 gameId) internal view returns (bool) {
@@ -295,6 +314,11 @@ library LibTBG {
     function hasStarted(uint256 gameId) internal view returns (bool) {
         GameInstance storage _game = _getGame(gameId);
         return _game.hasStarted;
+    }
+
+    function getLeaderBoard(uint256 gameId) internal view returns (address[] memory) {
+        GameInstance storage _game = _getGame(gameId);
+        return _game.leaderboard;
     }
 
     function nextTurn(uint256 gameId) internal returns (bool, bool, bool, address[] memory) {

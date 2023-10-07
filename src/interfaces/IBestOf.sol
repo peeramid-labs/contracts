@@ -12,6 +12,7 @@ interface IBestOf {
 
     struct BOGSettings {
         uint256 gamePrice;
+        address gamePaymentToken;
         uint256 joinGamePrice;
         uint256 numGames;
         address rankTokenAddress;
@@ -42,6 +43,7 @@ interface IBestOf {
         uint256 numCommitments;
         mapping(address => VoteHidden) votesHidden;
         address[] additionalRanks;
+        uint256 paymentsBalance;
     }
 
     event RegistrationOpen(uint256 indexed gameid);

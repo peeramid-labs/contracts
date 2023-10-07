@@ -12,7 +12,7 @@ contract RequirementsFacet {
     event RequirementsConfigured(uint256 indexed gameId, LibCoinVending.ConfigPosition config);
 
     function setJoinRequirements(uint256 gameId, LibCoinVending.ConfigPosition memory config) public {
-        gameId.enforceIsGameCreator();
+        gameId.enforceIsGameCreator(msg.sender);
         gameId.enforceIsPreRegistrationStage();
         LibCoinVending.configure(bytes32(gameId), config);
         emit RequirementsConfigured(gameId, config);
