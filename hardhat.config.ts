@@ -123,7 +123,7 @@ export default {
     anvil: {
       url: process.env.ANVIL_RPC_URL ?? '',
       accounts: {
-        mnemonic: process.env.ANVIL_MNEMONIC,
+        mnemonic: process.env.ANVIL_MNEMONIC ?? 'x',
       },
     },
   },
