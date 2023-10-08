@@ -65,7 +65,7 @@ contract BestOfFacet is IBestOf, IERC1155Receiver, DiamondReentrancyGuard, IERC7
         }
     }
 
-    function createGame(address gameMaster, uint256 gameRank) public nonReentrant {
+    function createGame(address gameMaster, uint256 gameRank) public {
         LibBestOf.enforceIsInitialized();
         BOGSettings storage settings = BOGStorage();
         createGame(gameMaster, settings.numGames + 1, gameRank);
