@@ -5,7 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: './.github/setup'
+      - uses: './.github/setup/action'
       - name: Building
         run: pnpm build
       - name: Linting
@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: './.github/setup'
+      - uses: './.github/setup/action.yml'
 
       - name: Running tests
         run: pnpm test:parallel
