@@ -50,12 +50,7 @@ contract BestOfFacet is IBestOf, IERC1155Receiver, DiamondReentrancyGuard, IERC7
         emit gameCreated(gameId, gameMaster, msg.sender, gameRank);
     }
 
-    function createGame(
-        address gameMaster,
-        uint256 gameId,
-        uint256 gameRank,
-        address[] memory additionalRanks
-    ) public payable nonReentrant {
+    function createGame(address gameMaster, uint256 gameId, uint256 gameRank, address[] memory additionalRanks) public {
         createGame(gameMaster, gameId, gameRank);
         BOGInstance storage game = gameId.getGameStorage();
         if (additionalRanks.length != 0) {
@@ -70,7 +65,7 @@ contract BestOfFacet is IBestOf, IERC1155Receiver, DiamondReentrancyGuard, IERC7
         }
     }
 
-    function createGame(address gameMaster, uint256 gameRank) public payable {
+    function createGame(address gameMaster, uint256 gameRank) public nonReentrant {
         LibBestOf.enforceIsInitialized();
         BOGSettings storage settings = BOGStorage();
         createGame(gameMaster, settings.numGames + 1, gameRank);
