@@ -154,7 +154,7 @@
     ],
     "name": "createGame",
     "outputs": [],
-    "stateMutability": "payable",
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -205,7 +205,7 @@
     ],
     "name": "createGame",
     "outputs": [],
-    "stateMutability": "payable",
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
