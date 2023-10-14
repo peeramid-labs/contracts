@@ -37,6 +37,10 @@ contract RankToken is ERC1155, Ownable, IRankToken {
         _setURI(uri);
     }
 
+    function setContractURI(string memory uri) public onlyOwner {
+        _contractURI = uri;
+    }
+
     function mint(address to, uint256 amount, uint256 poolId, bytes memory data) public onlyRankingInstance {
         require(to != address(0), "RankToken->mint: Address not specified");
         require(amount != 0, "RankToken->mint: amount not specified");
