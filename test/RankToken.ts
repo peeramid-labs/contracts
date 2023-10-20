@@ -2,7 +2,7 @@ import { ethers } from 'hardhat';
 import { expect } from 'chai';
 import hre, { deployments } from 'hardhat';
 import { AdrSetupResult, setupAddresses } from './utils';
-import { RankToken } from '../types/typechain';
+import { RankToken } from '../types';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { Wallet } from 'ethers';
 
@@ -107,7 +107,7 @@ describe('Rank Token Test', async function () {
       it('reports correct balance of unlocked', async () => {
         expect(
           (await env.connect(adr.maliciousActor1.wallet).balanceOfUnlocked(adr.player1.wallet.address, 1)).toNumber(),
-        ).to.be.equal(2); 
+        ).to.be.equal(2);
       });
       it('Can be unlocked only by a rankingInstance', async () => {
         await expect(env.connect(rankingInstance).unlockFromInstance(adr.player1.wallet.address, 1, 1))
