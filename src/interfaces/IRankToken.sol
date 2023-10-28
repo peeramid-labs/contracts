@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.20;
 
-import {IERC1155} from "@openzeppelin/contracts/interfaces/IERC1155.sol";
+import {ILockableERC1155} from "./ILockableERC1155.sol";
 
-interface IRankToken is IERC1155 {
+interface IRankToken is ILockableERC1155 {
     event RankingInstanceUpdated(address indexed newRankingInstance);
-    event TokensLocked(address indexed account, uint256 indexed id, uint256 value);
-    event TokensUnlocked(address indexed account, uint256 indexed id, uint256 value);
+
     event LevelUp(address indexed account, uint256 id);
 
     function mint(address to, uint256 amount, uint256 poolId, bytes memory data) external;
@@ -26,10 +25,4 @@ interface IRankToken is IERC1155 {
     function findNewRank(address account, uint256 oldRank) external view returns (uint256);
 
     function getAccountRank(address account) external view returns (uint256);
-
-    function unlockFromInstance(address account, uint256 id, uint256 amount) external;
-
-    function lockInInstance(address account, uint256 id, uint256 amount) external;
-
-    function balanceOfUnlocked(address account, uint256 id) external view returns (uint256);
 }
