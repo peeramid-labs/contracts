@@ -4,20 +4,14 @@
 // import { time } from "@openzeppelin/test-helpers";
 import hre, { deployments, config } from 'hardhat';
 import aes from 'crypto-js/aes';
-import { contract, ethers } from 'hardhat';
+import { ethers } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { BestOfDiamond } from '../types/typechain/hardhat-diamond-abi/HardhatDiamondABI.sol';
-import { Agenda, MockERC1155, MockERC20, MockERC721 } from '../types/typechain/';
-import { ProposalTypes } from '../types';
-const { ZERO_ADDRESS, ZERO_BYTES32 } = require('@openzeppelin/test-helpers/src/constants');
-import { BigNumber, BigNumberish, Bytes, BytesLike, Wallet } from 'ethers';
+import { Agenda, MockERC1155, MockERC20, MockERC721, RankToken, BestOfDiamond } from '../types';
+import { BigNumber, BigNumberish, BytesLike, Wallet } from 'ethers';
 // @ts-ignore
-import { RankToken } from '../types/typechain/src/tokens/RankToken';
-// import { BestOfInit } from "../types/typechain/src/initializers/BestOfInit";
 import { assert } from 'console';
 import { Deployment } from 'hardhat-deploy/types';
 import { HardhatEthersHelpers } from '@nomiclabs/hardhat-ethers/types';
-import { keccak256 } from 'ethers/lib/utils';
 
 export interface SignerIdentity {
   name: string;
@@ -351,16 +345,16 @@ export const setupTest = deployments.createFixture(async ({ deployments, getName
   await env.agendaToken
     .connect(adr.gameOwner.wallet)
     .mint(adr.player6.wallet.address, ethers.utils.parseEther('1000000'));
-    await env.agendaToken
+  await env.agendaToken
     .connect(adr.gameOwner.wallet)
     .mint(adr.player7.wallet.address, ethers.utils.parseEther('1000000'));
-    await env.agendaToken
+  await env.agendaToken
     .connect(adr.gameOwner.wallet)
     .mint(adr.player8.wallet.address, ethers.utils.parseEther('1000000'));
-    await env.agendaToken
+  await env.agendaToken
     .connect(adr.gameOwner.wallet)
     .mint(adr.player9.wallet.address, ethers.utils.parseEther('1000000'));
-    await env.agendaToken
+  await env.agendaToken
     .connect(adr.gameOwner.wallet)
     .mint(adr.player10.wallet.address, ethers.utils.parseEther('1000000'));
   await env.agendaToken
@@ -715,7 +709,7 @@ export type MockVotes = Array<{
   // publicSignature: string;
 }>;
 
-function shuffle(array) {
+function shuffle(array: any[]) {
   let currentIndex = array.length,
     randomIndex;
 
@@ -755,7 +749,7 @@ export const mockVotes = async ({
   }> = [];
   for (let k = 0; k < players.length; k++) {
     let creditsLeft = BOG_VOTE_CREDITS;
-    let playerVote: BigNumberish[];
+    let playerVote: BigNumberish[] = [];
     if (distribution == 'ftw') {
       playerVote = players.map((proposer, idx) => {
         if (k !== idx) {

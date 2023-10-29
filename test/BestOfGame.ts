@@ -1076,7 +1076,10 @@ describe(scriptName, () => {
             await expect(env.bestOfGame.connect(adr.player1.wallet).joinGame(2))
               .to.emit(env.bestOfGame, 'PlayerJoined')
               .withArgs(2, adr.player1.wallet.address);
-            await expect(env.bestOfGame.connect(adr.player2.wallet).joinGame(2)).to.revertedWith('not enough balance');
+            await expect(env.bestOfGame.connect(adr.player2.wallet).joinGame(2)).to.be.revertedWithCustomError(
+              env.rankToken,
+              'insufficient',
+            );
           });
         });
       });
@@ -1126,9 +1129,9 @@ describe(scriptName, () => {
           'PlayerJoined',
         );
         await env.rankToken.connect(adr.player6.wallet).setApprovalForAll(env.bestOfGame.address, true);
-        await expect(env.bestOfGame.connect(adr.player6.wallet).joinGame(lastCreatedGameId)).to.be.revertedWith(
-          'not enough balance',
-        );
+        await expect(
+          env.bestOfGame.connect(adr.player6.wallet).joinGame(lastCreatedGameId),
+        ).to.be.revertedWithCustomError(env.rankToken, 'insufficient');
       });
       it('Locks rank tokens when player joins', async () => {
         const balance = await env.rankToken.balanceOf(adr.player1.wallet.address, 2);
@@ -1136,7 +1139,7 @@ describe(scriptName, () => {
         await env.rankToken.connect(adr.player1.wallet).setApprovalForAll(env.bestOfGame.address, true);
         await env.bestOfGame.connect(adr.player1.wallet).joinGame(lastCreatedGameId);
         const balance2 = await env.rankToken.balanceOf(adr.player1.wallet.address, 2);
-        expect(await env.rankToken.balanceOfUnlocked(adr.player1.wallet.address, 2)).to.be.equal(
+        expect(await env.rankToken.unlockedBalanceOf(adr.player1.wallet.address, 2)).to.be.equal(
           balance.toNumber() - 1,
         );
       });
@@ -1144,9 +1147,9 @@ describe(scriptName, () => {
         const lastCreatedGameId = await env.bestOfGame.getContractState().then(r => r.BestOfState.numGames);
         await env.rankToken.connect(adr.player1.wallet).setApprovalForAll(env.bestOfGame.address, true);
         await env.bestOfGame.connect(adr.player1.wallet).joinGame(lastCreatedGameId);
-        expect(await env.rankToken.balanceOfUnlocked(adr.player1.wallet.address, 2)).to.be.equal(0);
+        expect(await env.rankToken.unlockedBalanceOf(adr.player1.wallet.address, 2)).to.be.equal(0);
         await env.bestOfGame.connect(adr.player1.wallet).leaveGame(lastCreatedGameId);
-        expect(await env.rankToken.balanceOfUnlocked(adr.player1.wallet.address, 2)).to.be.equal(1);
+        expect(await env.rankToken.unlockedBalanceOf(adr.player1.wallet.address, 2)).to.be.equal(1);
       });
       it('Returns rank token if was game closed', async () => {
         const lastCreatedGameId = await env.bestOfGame.getContractState().then(r => r.BestOfState.numGames);
@@ -1154,14 +1157,14 @@ describe(scriptName, () => {
         await env.rankToken.connect(adr.player2.wallet).setApprovalForAll(env.bestOfGame.address, true);
         await env.bestOfGame.connect(adr.player1.wallet).joinGame(lastCreatedGameId);
         await env.bestOfGame.connect(adr.player2.wallet).joinGame(lastCreatedGameId);
-        let p1balance = await env.rankToken.balanceOfUnlocked(adr.player1.wallet.address, 2);
+        let p1balance = await env.rankToken.unlockedBalanceOf(adr.player1.wallet.address, 2);
         p1balance = p1balance.add(1);
 
-        let p2balance = await env.rankToken.balanceOfUnlocked(adr.player2.wallet.address, 2);
+        let p2balance = await env.rankToken.unlockedBalanceOf(adr.player2.wallet.address, 2);
         p2balance = p2balance.add(1);
         await env.bestOfGame.connect(adr.player1.wallet).cancelGame(lastCreatedGameId);
-        expect(await env.rankToken.balanceOfUnlocked(adr.player1.wallet.address, 2)).to.be.equal(p1balance);
-        expect(await env.rankToken.balanceOfUnlocked(adr.player2.wallet.address, 2)).to.be.equal(p2balance);
+        expect(await env.rankToken.unlockedBalanceOf(adr.player1.wallet.address, 2)).to.be.equal(p1balance);
+        expect(await env.rankToken.unlockedBalanceOf(adr.player2.wallet.address, 2)).to.be.equal(p2balance);
       });
       describe('when this game is over', () => {
         const balancesBeforeJoined: BigNumber[] = [];
@@ -1169,7 +1172,7 @@ describe(scriptName, () => {
           const players = getPlayers(adr, BOGSettings.BOG_MIN_PLAYERS, 0);
           const lastCreatedGameId = await env.bestOfGame.getContractState().then(r => r.BestOfState.numGames);
           for (let i = 0; i < players.length; i++) {
-            balancesBeforeJoined[i] = await env.rankToken.balanceOfUnlocked(players[i].wallet.address, 2);
+            balancesBeforeJoined[i] = await env.rankToken.unlockedBalanceOf(players[i].wallet.address, 2);
           }
           await fillParty(players, env.bestOfGame, lastCreatedGameId, true, true, adr.gameMaster1);
 
