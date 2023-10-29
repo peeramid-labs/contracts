@@ -98,7 +98,7 @@
         "type": "address"
       },
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "uint256",
         "name": "rank",
         "type": "uint256"
