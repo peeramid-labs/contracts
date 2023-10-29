@@ -16,12 +16,11 @@
  * TypeScript only knows them as `string`.
  */
 
-import type { JsonFragment } from "@ethersproject/abi";
-import chalk from "chalk";
-import Table from "cli-table";
-import { BaseContract, constants, Contract, utils } from "ethers";
-import fetch from "node-fetch";
-import readline from "readline";
+import type { JsonFragment } from '@ethersproject/abi';
+import chalk from 'chalk';
+import Table from 'cli-table';
+import { BaseContract, constants, Contract, utils } from 'ethers';
+import readline from 'readline';
 
 export const enum FacetCutAction {
   Add = 0,
@@ -39,20 +38,19 @@ const signaturesToIgnore = [
   // The SolidState contracts adds a `supportsInterface` function,
   // but we already provide that function through DiamondLoupeFacet
   // ["DiamondLoupeFacet", "supportsInterface(bytes4)"],
-  ["BestOfFacet", "supportsInterface(bytes4)"],
-  ["DNSFacet", "supportsInterface(bytes4)"],
+  ['BestOfFacet', 'supportsInterface(bytes4)'],
+  ['DNSFacet', 'supportsInterface(bytes4)'],
+  // ['OwnershipFacet', 'OwnershipTransferred(address,address)'],
 ] as const;
 
 export function isIncluded(contractName: string, signature: string): boolean {
-  const isIgnored = signaturesToIgnore.some(
-    ([contractNameMatcher, ignoredSignature]) => {
-      if (contractName.match(contractNameMatcher)) {
-        return signature === ignoredSignature;
-      } else {
-        return false;
-      }
+  const isIgnored = signaturesToIgnore.some(([contractNameMatcher, ignoredSignature]) => {
+    if (contractName.match(contractNameMatcher)) {
+      return signature === ignoredSignature;
+    } else {
+      return false;
     }
-  );
+  });
 
   return !isIgnored;
 }
@@ -173,11 +171,9 @@ export class DiamondChanges {
    */
   public async getRemoveCuts(cuts: FacetCut[]): Promise<FacetCut[]> {
     if (!this.previous) {
-      throw new Error(
-        "You must construct DiamondChanges with previous cuts to find removals"
-      );
+      throw new Error('You must construct DiamondChanges with previous cuts to find removals');
     }
-    const functionSelectors = cuts.flatMap((cut) => cut.functionSelectors);
+    const functionSelectors = cuts.flatMap(cut => cut.functionSelectors);
 
     const seenSelectors = new Set(functionSelectors);
 
@@ -218,7 +214,7 @@ export class DiamondChanges {
    */
   public async verify(): Promise<boolean> {
     const table = new Table({
-      head: ["Change", "Signature", "Facet"],
+      head: ['Change', 'Signature', 'Facet'],
       style: {
         // Avoiding the red color heading
         head: undefined,
@@ -230,20 +226,20 @@ export class DiamondChanges {
     // be the most concerned about (and ignored the least)
 
     for (const [contractName, signature] of this.changes.ignored) {
-      table.push([chalk.gray("Ignored"), signature, contractName]);
+      table.push([chalk.gray('Ignored'), signature, contractName]);
     }
 
     for (const [contractName, signature] of this.changes.replaced) {
-      table.push([chalk.green("Replaced"), signature, contractName]);
+      table.push([chalk.green('Replaced'), signature, contractName]);
     }
 
     for (const [contractName, signature] of this.changes.added) {
-      table.push([chalk.blue("Added"), signature, contractName]);
+      table.push([chalk.blue('Added'), signature, contractName]);
     }
 
     for (const selector of this.changes.removed) {
       const signature = await this.lookupSelector(selector);
-      table.push([chalk.red("Removed"), signature, ""]);
+      table.push([chalk.red('Removed'), signature, '']);
     }
 
     if (table.length > 0) {
@@ -252,23 +248,17 @@ export class DiamondChanges {
         input: process.stdin,
         output: process.stdout,
       });
-      return new Promise((resolve) => {
-        rl.question(
-          "Review the table of Diamond changes. Proceed with upgrade? yN ",
-          (answer) => {
-            if (
-              answer.toLowerCase() === "y" ||
-              answer.toLowerCase() === "yes"
-            ) {
-              resolve(true);
-            } else {
-              resolve(false);
-            }
+      return new Promise(resolve => {
+        rl.question('Review the table of Diamond changes. Proceed with upgrade? yN ', answer => {
+          if (answer.toLowerCase() === 'y' || answer.toLowerCase() === 'yes') {
+            resolve(true);
+          } else {
+            resolve(false);
           }
-        );
+        });
       });
     } else {
-      table.push(["None", "", ""]);
+      table.push(['None', '', '']);
       console.log(table.toString());
       return false;
     }
@@ -296,11 +286,7 @@ export class DiamondChanges {
     return selectors;
   }
 
-  private diffSelectors(
-    contractName: string,
-    contract: HasInterface,
-    previous: Facet[]
-  ): SelectorDiff {
+  private diffSelectors(contractName: string, contract: HasInterface, previous: Facet[]): SelectorDiff {
     const signatures = this.getSignatures(contract);
 
     const diff: SelectorDiff = { add: [], replace: [] };
@@ -309,7 +295,7 @@ export class DiamondChanges {
       if (isIncluded(contractName, signature)) {
         const selector = contract.interface.getSighash(signature);
         const selectorExists = previous.some(({ functionSelectors }) => {
-          return functionSelectors.some((val) => selector === val);
+          return functionSelectors.some(val => selector === val);
         });
         if (selectorExists) {
           this.changes.replaced.push([contractName, signature]);
@@ -327,15 +313,12 @@ export class DiamondChanges {
   }
 
   private async isDiamondSpecSelector(selector: string): Promise<boolean> {
-    const DiamondCutFacetABI =
-      await require("../abi/contracts/vendor/facets/DiamondCutFacet.sol/DiamondCutFacet.json");
+    const DiamondCutFacetABI = await require('../abi/contracts/vendor/facets/DiamondCutFacet.sol/DiamondCutFacet.json');
     const DiamondLoupeFacetABI =
-      await require("../abi/contracts/vendor/facets/DiamondLoupeFacet.sol/DiamondLoupeFacet.json");
-    const OwnershipFacetABI =
-      await require("../abi/contracts/vendor/facets/OwnershipFacet.sol/OwnershipFacet.json");
+      await require('../abi/contracts/vendor/facets/DiamondLoupeFacet.sol/DiamondLoupeFacet.json');
+    const OwnershipFacetABI = await require('../abi/contracts/vendor/facets/OwnershipFacet.sol/OwnershipFacet.json');
     const diamondCutFacetInterface = Contract.getInterface(DiamondCutFacetABI);
-    const diamondLoupeFacetInterface =
-      Contract.getInterface(DiamondLoupeFacetABI);
+    const diamondLoupeFacetInterface = Contract.getInterface(DiamondLoupeFacetABI);
     const ownershipFacetInterface = Contract.getInterface(OwnershipFacetABI);
 
     const diamondCutSignatures = this.getSignatures({
@@ -348,15 +331,9 @@ export class DiamondChanges {
       interface: ownershipFacetInterface,
     });
     return [
-      ...diamondCutSignatures.map((signature) =>
-        diamondCutFacetInterface.getSighash(signature)
-      ),
-      ...diamondLoupeSignatures.map((signature) =>
-        diamondLoupeFacetInterface.getSighash(signature)
-      ),
-      ...ownershipSignatures.map((signature) =>
-        ownershipFacetInterface.getSighash(signature)
-      ),
+      ...diamondCutSignatures.map(signature => diamondCutFacetInterface.getSighash(signature)),
+      ...diamondLoupeSignatures.map(signature => diamondLoupeFacetInterface.getSighash(signature)),
+      ...ownershipSignatures.map(signature => ownershipFacetInterface.getSighash(signature)),
     ].includes(selector);
   }
 
@@ -371,22 +348,17 @@ export class DiamondChanges {
     const fallbackMsg = `${selector} (unable to find a signature)`;
 
     try {
-      const response = await fetch(
-        `https://www.4byte.directory/api/v1/signatures/?hex_signature=${selector}`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await fetch(`https://www.4byte.directory/api/v1/signatures/?hex_signature=${selector}`, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
 
       const json: FourBytesJson | undefined = await response.json();
 
       if (json && json.count > 0) {
         // Join with `|` because there theoretically could be some overlap
-        return json.results
-          .flatMap((result) => result.text_signature)
-          .join(" | ");
+        return json.results.flatMap(result => result.text_signature).join(' | ');
       } else {
         return fallbackMsg;
       }
