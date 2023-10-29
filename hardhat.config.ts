@@ -1,18 +1,13 @@
 import { task } from 'hardhat/config';
 import { ethers } from 'hardhat';
 import '@nomicfoundation/hardhat-chai-matchers';
-import '@nomiclabs/hardhat-truffle5';
-import '@nomiclabs/hardhat-web3';
-import '@nomiclabs/hardhat-ethers';
 import 'hardhat-diamond-abi';
 import '@nomicfoundation/hardhat-toolbox';
-import '@typechain/hardhat';
 import 'hardhat-abi-exporter';
 import { toSignature, isIncluded } from './scripts/diamond';
 import { cutFacets, replaceFacet } from './scripts/libraries/diamond';
 // import * as ipfsUtils from "./utils/ipfs";
 // import fs from "fs";
-import 'hardhat-gas-reporter';
 import 'hardhat-contract-sizer';
 import 'hardhat-deploy';
 import 'solidity-docgen';
@@ -133,7 +128,17 @@ export default {
   solidity: {
     compilers: [
       {
-        version: '0.8.8',
+        version: '0.8.4',
+        
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 2000,
+          },
+        },
+      },
+      {
+        version: '0.8.20',
         settings: {
           optimizer: {
             enabled: true,
@@ -153,29 +158,29 @@ export default {
     ],
   },
   diamondAbi: [
-    {
-      // (required) The name of your Diamond ABI
-      name: 'MultipassDiamond',
-      include: ['DNSFacet', 'OwnershipFacet', 'DiamondLoupeFacet', 'EIP712InspectorFacet'],
-      // We explicitly set `strict` to `true` because we want to validate our facets don't accidentally provide overlapping functions
-      strict: true,
-      // We use our diamond utils to filter some functions we ignore from the combined ABI
-      filter(abiElement: unknown, index: number, abi: unknown[], fullyQualifiedName: string) {
-        // const changes = new diamondUtils.DiamondChanges();
-        const signature = toSignature(abiElement);
-        return isIncluded(fullyQualifiedName, signature);
-      },
-    },
+    // {
+    //   // (required) The name of your Diamond ABI
+    //   name: 'MultipassDiamond',
+    //   include: ['DNSFacet', 'OwnershipFacet', 'DiamondLoupeFacet', 'EIP712InspectorFacet'],
+    //   // We explicitly set `strict` to `true` because we want to validate our facets don't accidentally provide overlapping functions
+    //   strict: true,
+    //   // We use our diamond utils to filter some functions we ignore from the combined ABI
+    //   filter(abiElement: unknown, index: number, abi: unknown[], fullyQualifiedName: string) {
+    //     // const changes = new diamondUtils.DiamondChanges();
+    //     const signature = toSignature(abiElement);
+    //     return isIncluded(fullyQualifiedName, signature);
+    //   },
+    // },
     {
       name: 'BestOfDiamond',
       include: [
         'BestOfFacet',
-        'OwnershipFacet',
         'DiamondLoupeFacet',
         'RequirementsFacet',
         'GameMastersFacet',
         'EIP712InspectorFacet',
         'GameOwnersFacet',
+        'OwnershipFacet',
       ],
       strict: true,
       filter(abiElement: unknown, index: number, abi: unknown[], fullyQualifiedName: string) {

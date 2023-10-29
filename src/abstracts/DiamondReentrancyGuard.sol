@@ -8,7 +8,7 @@
  * GitHub: https://github.com/bugout-dev/dao
  */
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.20;
 import "../libraries/LibReentrancyGuard.sol";
 
 abstract contract DiamondReentrancyGuard {

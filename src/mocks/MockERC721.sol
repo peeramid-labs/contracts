@@ -2,7 +2,7 @@
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.20;
 
 contract MockERC721 is ERC721Burnable, Ownable {
     uint256 numTokens;
