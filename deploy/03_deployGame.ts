@@ -15,11 +15,11 @@ import {
   BOG_SUBJECT,
 } from '../test/utils';
 import { ethers } from 'hardhat';
-import { BestOfInit } from '../types/typechain/src/initializers/BestOfInit';
-import { RankToken } from '../types/typechain/src/tokens/RankToken';
-import { BestOfDiamond } from '../types/typechain/hardhat-diamond-abi/HardhatDiamondABI.sol';
+import { BestOfInit } from '../types/src/initializers/BestOfInit';
+import { RankToken } from '../types/src/tokens/RankToken';
+import { BestOfDiamond } from '../types/hardhat-diamond-abi/HardhatDiamondABI.sol';
 import { getProcessEnv } from '../scripts/libraries/utils';
-import { Agenda } from '../types/typechain';
+import { Agenda } from '../types';
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployments, getNamedAccounts } = hre;
   const { deploy, diamond, getOrNull } = deployments;
@@ -29,8 +29,8 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       throw new Error('EIP712 intializer args not set');
   }
 
-  const rankTokenDeployment = await deployments.getOrNull('RankToken');
-  const agendaTokenDeployment = await deployments.getOrNull('Agenda');
+  const rankTokenDeployment = await deployments.get('RankToken');
+  const agendaTokenDeployment = await deployments.get('Agenda');
   const rankToken = new ethers.Contract(
     rankTokenDeployment.address,
     rankTokenDeployment.abi,

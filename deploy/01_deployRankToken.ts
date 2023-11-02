@@ -11,7 +11,7 @@ const tURI = path.join(ASSETS_PREFIX, 'rank');
 // } from "../../test/utils";
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployments, getNamedAccounts } = hre;
-  const { deploy, diamond } = deployments;
+  const { deploy } = deployments;
 
   const { deployer } = await getNamedAccounts();
   let URI: string, ContractURI: string;
