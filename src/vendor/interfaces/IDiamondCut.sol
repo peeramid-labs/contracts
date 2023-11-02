@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.20;
 
 /******************************************************************************\
 *  Adapted from
@@ -29,5 +29,4 @@ interface IDiamondCut {
     ///                  _calldata is executed with delegatecall on _init
     function diamondCut(FacetCut[] calldata _diamondCut, address _init, bytes calldata _calldata) external;
 
-    event DiamondCut(FacetCut[] _diamondCut, address _init, bytes _calldata);
 }
