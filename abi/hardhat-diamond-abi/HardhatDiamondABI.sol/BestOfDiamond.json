@@ -1564,9 +1564,9 @@
       },
       {
         "indexed": false,
-        "internalType": "bytes32",
+        "internalType": "string",
         "name": "votesHidden",
-        "type": "bytes32"
+        "type": "string"
       }
     ],
     "name": "VoteSubmitted",
@@ -1696,9 +1696,9 @@
         "type": "uint256"
       },
       {
-        "internalType": "bytes32",
-        "name": "votesHash",
-        "type": "bytes32"
+        "internalType": "string",
+        "name": "encryptedVotes",
+        "type": "string"
       },
       {
         "internalType": "address",

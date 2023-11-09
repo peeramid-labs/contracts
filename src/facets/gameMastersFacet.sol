@@ -100,9 +100,9 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
         address proposer;
     }
 
-    event VoteSubmitted(uint256 indexed gameId, uint256 indexed turn, address indexed player, bytes32 votesHidden);
+    event VoteSubmitted(uint256 indexed gameId, uint256 indexed turn, address indexed player, string votesHidden);
 
-    function submitVote(uint256 gameId, bytes32 votesHash, address voter) public {
+    function submitVote(uint256 gameId, string memory encryptedVotes, address voter) public {
         LibBestOf.enforceIsGM(gameId, msg.sender);
         gameId.enforceGameExists();
         gameId.enforceHasStarted();
@@ -121,7 +121,7 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
         // game.votesHidden[msg.sender].votedFor = votesHidden;
         // game.votesHidden[voter].proof = bytes memory (0);
         gameId.playerMove(voter); // This will enforce player is in in the game
-        emit VoteSubmitted(gameId, gameId.getTurn(), voter, votesHash);
+        emit VoteSubmitted(gameId, gameId.getTurn(), voter, encryptedVotes);
     }
 
     function submitProposal(ProposalParams memory proposalData) public {
