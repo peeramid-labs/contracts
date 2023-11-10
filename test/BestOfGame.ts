@@ -676,6 +676,8 @@ describe(scriptName, () => {
                 getPlayers(adr, BOGSettings.BOG_MIN_PLAYERS).map(identity => identity.wallet.address),
                 getPlayers(adr, BOGSettings.BOG_MIN_PLAYERS).map(() => '0'),
                 [],
+                [],
+                [],
               );
           });
           describe('When all proposals received', () => {
@@ -811,6 +813,8 @@ describe(scriptName, () => {
                       2,
                       getPlayers(adr, BOGSettings.BOG_MIN_PLAYERS).map(identity => identity.wallet.address),
                       expectedScores,
+                      [],
+                      [],
                       [],
                     );
                 });

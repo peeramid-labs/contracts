@@ -28,8 +28,8 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
         address[] players,
         uint256[] scores,
         string[] newProposals,
-        uint256[] proposerIndicies
-        // uint256[3][] votesRevealed
+        uint256[] proposerIndicies,
+        uint256[][] votes
     );
 
     event GameOver(uint256 indexed gameId, address[] indexed players, uint256[] indexed scores);
@@ -204,12 +204,10 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
         }
     }
 
-    function _nextTurn(uint256 gameId, string[] memory newProposals, uint256[] memory proposerIndicies) private {
+    function _nextTurn(uint256 gameId, string[] memory newProposals) private {
         _beforeNextTurn(gameId);
-        address[] memory players = gameId.getPlayers();
         (bool _isLastTurn, bool _isOvertime, bool _isGameOver, ) = gameId.nextTurn();
-        (, uint256[] memory scores) = gameId.getScores();
-        emit TurnEnded(gameId, gameId.getTurn() - 1, players, scores, newProposals,proposerIndicies);
+
         if (_isLastTurn && _isOvertime) {
             emit OverTime(gameId);
         }
@@ -218,6 +216,7 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
         }
         if (_isGameOver) {
             uint256[] memory finalScores = gameId.closeGame(LibDiamond.contractOwner(), onPlayersGameEnd);
+            address[] memory players = gameId.getPlayers();
             emit GameOver(gameId, players, finalScores);
         }
         _afterNextTurn(gameId, newProposals);
@@ -248,6 +247,9 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
         if (gameId.getTurn() != 1) {
             gameId.calculateScoresQuadratic(votes, proposerIndicies);
         }
-        _nextTurn(gameId, newProposals, proposerIndicies);
+        address[] memory players = gameId.getPlayers();
+        (, uint256[] memory scores) = gameId.getScores();
+         emit TurnEnded(gameId, gameId.getTurn(), players, scores, newProposals,proposerIndicies,votes);
+        _nextTurn(gameId, newProposals);
     }
 }

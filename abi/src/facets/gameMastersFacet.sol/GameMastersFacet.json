@@ -119,6 +119,18 @@
         "internalType": "string[]",
         "name": "newProposals",
         "type": "string[]"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256[]",
+        "name": "proposerIndicies",
+        "type": "uint256[]"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256[][]",
+        "name": "votes",
+        "type": "uint256[][]"
       }
     ],
     "name": "TurnEnded",
