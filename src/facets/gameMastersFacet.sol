@@ -27,7 +27,8 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
         uint256 indexed turn,
         address[] players,
         uint256[] scores,
-        string[] newProposals
+        string[] newProposals,
+        uint256[] proposerIndicies
         // uint256[3][] votesRevealed
     );
 
@@ -203,12 +204,12 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
         }
     }
 
-    function _nextTurn(uint256 gameId, string[] memory newProposals) private {
+    function _nextTurn(uint256 gameId, string[] memory newProposals, uint256[] memory proposerIndicies) private {
         _beforeNextTurn(gameId);
         address[] memory players = gameId.getPlayers();
         (bool _isLastTurn, bool _isOvertime, bool _isGameOver, ) = gameId.nextTurn();
         (, uint256[] memory scores) = gameId.getScores();
-        emit TurnEnded(gameId, gameId.getTurn() - 1, players, scores, newProposals);
+        emit TurnEnded(gameId, gameId.getTurn() - 1, players, scores, newProposals,proposerIndicies);
         if (_isLastTurn && _isOvertime) {
             emit OverTime(gameId);
         }
@@ -247,6 +248,6 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
         if (gameId.getTurn() != 1) {
             gameId.calculateScoresQuadratic(votes, proposerIndicies);
         }
-        _nextTurn(gameId, newProposals);
+        _nextTurn(gameId, newProposals, proposerIndicies);
     }
 }
