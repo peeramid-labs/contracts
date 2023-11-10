@@ -3,6 +3,17 @@
     "inputs": [
       {
         "internalType": "string",
+        "name": "paramter",
+        "type": "string"
+      }
+    ],
+    "name": "invalidConfiguration",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
         "name": "name",
         "type": "string"
       },
@@ -15,7 +26,7 @@
         "components": [
           {
             "internalType": "uint256",
-            "name": "blocksPerTurn",
+            "name": "timePerTurn",
             "type": "uint256"
           },
           {
@@ -35,7 +46,7 @@
           },
           {
             "internalType": "uint256",
-            "name": "blocksToJoin",
+            "name": "timeToJoin",
             "type": "uint256"
           },
           {

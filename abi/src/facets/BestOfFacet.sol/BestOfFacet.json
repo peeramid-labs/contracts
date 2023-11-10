@@ -293,7 +293,7 @@
             "components": [
               {
                 "internalType": "uint256",
-                "name": "blocksPerTurn",
+                "name": "timePerTurn",
                 "type": "uint256"
               },
               {
@@ -308,7 +308,7 @@
               },
               {
                 "internalType": "uint256",
-                "name": "blocksToJoin",
+                "name": "timeToJoin",
                 "type": "uint256"
               },
               {
