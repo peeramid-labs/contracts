@@ -69,7 +69,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
           maxPlayersSize: getProcessEnv(false, 'MAX_PLAYERS'),
           minPlayersSize: getProcessEnv(false, 'MIN_PLAYERS'),
           rankTokenAddress: rankToken.address,
-          timeToJoin: getProcessEnv(false, 'BLOCKS_TO_JOIN'),
+          timeToJoin: getProcessEnv(false, 'TIME_TO_JOIN'),
           gamePrice: ethers.utils.parseEther(getProcessEnv(false, 'GAME_PRICE_ETH')),
           joinGamePrice: ethers.utils.parseEther(getProcessEnv(false, 'JOIN_GAME_PRICE_ETH')),
           numWinners: getProcessEnv(false, 'NUM_WINNERS'),
