@@ -11,16 +11,17 @@ import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {LibArray} from "../libraries/LibArray.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
+error invalidConfiguration(string paramter);
 library LibTBG {
     // using EnumerableMap for EnumerableMap.AddressToUintMap;
     // using EnumerableMap for EnumerableMap.UintToAddressMap;
     using EnumerableSet for EnumerableSet.AddressSet;
 
     struct GameSettings {
-        uint256 blocksPerTurn;
+        uint256 timePerTurn;
         uint256 maxPlayersSize;
         uint256 minPlayersSize;
-        uint256 blocksToJoin;
+        uint256 timeToJoin;
         uint256 maxTurns;
         uint256 numWinners;
         uint256 voteCredits;
@@ -68,15 +69,16 @@ library LibTBG {
 
     function init(GameSettings memory settings) internal {
         TBGStorageStruct storage tbg = TBGStorage();
-        require(settings.blocksPerTurn != 0, "init->blocksPerTurn");
-        require(settings.maxPlayersSize != 0, "init->maxPartySize");
-        require(settings.minPlayersSize > 2, "init->minPartySize");
-        require(settings.maxTurns != 0, "init->maxTurns");
-        require((settings.numWinners != 0) && (settings.numWinners < settings.minPlayersSize), "init->numWinners");
-        require(settings.blocksToJoin != 0, "init->blocksToJoin");
-        require(settings.maxPlayersSize >= settings.minPlayersSize, "init->maxPlayersSize");
-        require(settings.voteCredits > 0, "init->voteCredits");
-        require(bytes(settings.subject).length != 0, "init->subject");
+        if(settings.timePerTurn == 0) revert invalidConfiguration('timePerTurn');
+        if(settings.maxPlayersSize == 0) revert invalidConfiguration('maxPlayersSize');
+        if(settings.minPlayersSize < 2) revert invalidConfiguration('minPlayersSize');
+        if(settings.maxTurns == 0) revert invalidConfiguration('maxTurns');
+        if(settings.numWinners == 0 || settings.numWinners >= settings.minPlayersSize) revert invalidConfiguration('numWinners');
+        if(settings.timeToJoin == 0) revert invalidConfiguration('timeToJoin');
+        if(settings.maxPlayersSize < settings.minPlayersSize) revert invalidConfiguration('maxPlayersSize');
+        if(settings.voteCredits < 1) revert invalidConfiguration('voteCredits');
+        if(bytes(settings.subject).length == 0) revert invalidConfiguration('subject length');
+
 
         tbg.settings = settings;
         tbg.maxQuadraticVote = Math.sqrt(settings.voteCredits);
@@ -159,7 +161,7 @@ library LibTBG {
         GameInstance storage _game = _getGame(gameId);
         assert(gameId != 0);
         assert(_game.hasStarted == true);
-        if (block.number <= tbg.settings.blocksPerTurn + _game.turnStartedAt) return false;
+        if (block.timestamp <= tbg.settings.timePerTurn + _game.turnStartedAt) return false;
         return true;
     }
 
@@ -232,7 +234,7 @@ library LibTBG {
     function openRegistration(uint256 gameId) internal {
         require(gameExists(gameId), "game not found");
         GameInstance storage _game = _getGame(gameId);
-        _game.registrationOpenAt = block.number;
+        _game.registrationOpenAt = block.timestamp;
     }
 
     function isRegistrationOpen(uint256 gameId) internal view returns (bool) {
@@ -241,7 +243,7 @@ library LibTBG {
         if (_game.registrationOpenAt == 0) {
             return false;
         } else {
-            return _game.registrationOpenAt < block.number + tbg.settings.blocksToJoin ? true : false;
+            return _game.registrationOpenAt < block.timestamp + tbg.settings.timeToJoin ? true : false;
         }
     }
 
@@ -251,7 +253,7 @@ library LibTBG {
         bool retval = true;
         if (_game.hasStarted != false) retval = false;
         if (_game.registrationOpenAt == 0) retval = false;
-        if (block.number <= _game.registrationOpenAt + tbg.settings.blocksToJoin) retval = false;
+        if (block.timestamp <= _game.registrationOpenAt + tbg.settings.timeToJoin) retval = false;
         if (gameId == 0) retval = false;
         if (_game.players.length() < tbg.settings.minPlayersSize) retval = false;
         return retval;
@@ -262,13 +264,13 @@ library LibTBG {
         TBGStorageStruct storage tbg = TBGStorage();
         require(_game.hasStarted == false, "startGame->already started");
         require(_game.registrationOpenAt != 0, "startGame->Game registration was not yet open");
-        require(block.number > _game.registrationOpenAt + tbg.settings.blocksToJoin, "startGame->Still Can Join");
+        require(block.timestamp > _game.registrationOpenAt + tbg.settings.timeToJoin, "startGame->Still Can Join");
         require(gameId != 0, "startGame->Game not found");
         require(_game.players.length() >= tbg.settings.minPlayersSize, "startGame->Not enough players");
         _game.hasStarted = true;
         _game.hasEnded = false;
         _game.currentTurn = 1;
-        _game.turnStartedAt = block.number;
+        _game.turnStartedAt = block.timestamp;
         _resetPlayerStates(_game);
     }
 
@@ -327,7 +329,7 @@ library LibTBG {
         enforceIsNotOver(gameId);
         _clearCurrentMoves(_game);
         _game.currentTurn += 1;
-        _game.turnStartedAt = block.number;
+        _game.turnStartedAt = block.timestamp;
         bool _isLastTurn = isLastTurn(gameId);
         bool _isOvertime = _game.isOvertime;
         address[] memory sortedLeaders = new address[](getPlayers(gameId).length);

@@ -50,13 +50,13 @@ contract GameOwnersFacet {
         _BOG.rankTokenAddress = newRankToken;
     }
 
-    function setBlocksPerTurn(uint256 newBlocksPerTurn) external {
+    function setTimePerTurn(uint256 newTimePerTurn) external {
         LibDiamond.enforceIsContractOwner();
-        if (newBlocksPerTurn == 0) {
+        if (newTimePerTurn == 0) {
             revert ZeroValue();
         }
         LibTBG.TBGStorageStruct storage tbg = LibTBG.TBGStorage();
-        tbg.settings.blocksPerTurn = newBlocksPerTurn;
+        tbg.settings.timePerTurn = newTimePerTurn;
     }
 
     function setMaxPlayersSize(uint256 newMaxPlayersSize) external {
@@ -77,13 +77,13 @@ contract GameOwnersFacet {
         tbg.settings.minPlayersSize = newMinPlayersSize;
     }
 
-    function setBlocksToJoin(uint256 newBlocksToJoin) external {
+    function setBlocksToJoin(uint256 newTimeToJoin) external {
         LibDiamond.enforceIsContractOwner();
-        if (newBlocksToJoin == 0) {
+        if (newTimeToJoin == 0) {
             revert ZeroValue();
         }
         LibTBG.TBGStorageStruct storage tbg = LibTBG.TBGStorage();
-        tbg.settings.blocksToJoin = newBlocksToJoin;
+        tbg.settings.timeToJoin = newTimeToJoin;
     }
 
     function setMaxTurns(uint256 newMaxTurns) external {

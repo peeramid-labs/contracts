@@ -3,11 +3,11 @@ import { DeployFunction } from 'hardhat-deploy/types';
 import {
   BESTOF_CONTRACT_NAME,
   BESTOF_CONTRACT_VERSION,
-  BOG_BLOCKS_PER_TURN,
+  BOG_TIME_PER_TURN,
   BOG_MAX_PLAYERS,
   BOG_MIN_PLAYERS,
   BOG_MAX_TURNS,
-  BOG_BLOCKS_TO_JOIN,
+  BOG_TIME_TO_JOIN,
   BOG_GAME_PRICE,
   BOG_JOIN_GAME_PRICE,
   BOG_NUM_WINNERS,
@@ -50,12 +50,12 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const settings: BestOfInit.ContractInitializerStruct =
     process.env.NODE_ENV === 'TEST'
       ? {
-          blocksPerTurn: BOG_BLOCKS_PER_TURN,
+          timePerTurn: BOG_TIME_PER_TURN,
           maxTurns: BOG_MAX_TURNS,
           maxPlayersSize: BOG_MAX_PLAYERS,
           minPlayersSize: BOG_MIN_PLAYERS,
           rankTokenAddress: rankToken.address,
-          blocksToJoin: BOG_BLOCKS_TO_JOIN,
+          timeToJoin: BOG_TIME_TO_JOIN,
           gamePrice: BOG_GAME_PRICE,
           joinGamePrice: BOG_JOIN_GAME_PRICE,
           numWinners: BOG_NUM_WINNERS,
@@ -64,12 +64,12 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
           agendaToken: agendaToken.address,
         }
       : {
-          blocksPerTurn: getProcessEnv(false, 'BLOCKS_PER_TURN'),
+          timePerTurn: getProcessEnv(false, 'TIME_PER_TURN'),
           maxTurns: getProcessEnv(false, 'MAX_TURNS'),
           maxPlayersSize: getProcessEnv(false, 'MAX_PLAYERS'),
           minPlayersSize: getProcessEnv(false, 'MIN_PLAYERS'),
           rankTokenAddress: rankToken.address,
-          blocksToJoin: getProcessEnv(false, 'BLOCKS_TO_JOIN'),
+          timeToJoin: getProcessEnv(false, 'BLOCKS_TO_JOIN'),
           gamePrice: ethers.utils.parseEther(getProcessEnv(false, 'GAME_PRICE_ETH')),
           joinGamePrice: ethers.utils.parseEther(getProcessEnv(false, 'JOIN_GAME_PRICE_ETH')),
           numWinners: getProcessEnv(false, 'NUM_WINNERS'),

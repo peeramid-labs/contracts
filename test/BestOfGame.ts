@@ -218,7 +218,7 @@ const startGame = async (
   gameId: BigNumberish,
   // players: [SignerIdentity, SignerIdentity, ...SignerIdentity[]]
 ) => {
-  await mineBlocks(BOGSettings.BOG_BLOCKS_TO_JOIN + 1);
+  await mineBlocks(BOGSettings.BOG_TIME_TO_JOIN + 1);
   await env.bestOfGame.connect(adr.gameMaster1.wallet).startGame(gameId);
   // proposalsStruct = await mockProposals({
   //   players: players,
@@ -267,7 +267,7 @@ const fillParty = async (
     await env.rankToken.connect(players[i].wallet).setApprovalForAll(env.bestOfGame.address, true);
     await gameContract.connect(players[i].wallet).joinGame(gameId, { value: ethers.utils.parseEther('0.4') });
   }
-  if (mineJoinBlocks) await mineBlocks(BOGSettings.BOG_BLOCKS_TO_JOIN + 1);
+  if (mineJoinBlocks) await mineBlocks(BOGSettings.BOG_TIME_TO_JOIN + 1);
   if (startGame && gameMaster) {
     await env.bestOfGame.connect(gameMaster.wallet).startGame(gameId);
   }
@@ -337,9 +337,9 @@ describe(scriptName, () => {
     expect(state.BestOfState.numGames).to.be.equal(0);
     expect(state.BestOfState.rankTokenAddress).to.be.equal(env.rankToken.address);
     expect(state.TBGSEttings.maxTurns).to.be.equal(BOGSettings.BOG_MAX_TURNS);
-    expect(state.TBGSEttings.blocksPerTurn).to.be.equal(BOGSettings.BOG_BLOCKS_PER_TURN);
+    expect(state.TBGSEttings.timePerTurn).to.be.equal(BOGSettings.BOG_TIME_PER_TURN);
     expect(state.TBGSEttings.minPlayersSize).to.be.equal(BOGSettings.BOG_MIN_PLAYERS);
-    expect(state.TBGSEttings.blocksToJoin).to.be.equal(BOGSettings.BOG_BLOCKS_TO_JOIN);
+    expect(state.TBGSEttings.timeToJoin).to.be.equal(BOGSettings.BOG_TIME_TO_JOIN);
     expect(state.TBGSEttings.maxTurns).to.be.equal(BOGSettings.BOG_MAX_TURNS);
   });
   it('Transfer ownership can be done only by contract owner', async () => {
@@ -570,7 +570,7 @@ describe(scriptName, () => {
         ).to.be.revertedWith('Game has not yet started');
       });
       it('Cannot be started if not enough players', async () => {
-        await mineBlocks(BOGSettings.BOG_BLOCKS_TO_JOIN + 1);
+        await mineBlocks(BOGSettings.BOG_TIME_TO_JOIN + 1);
         await expect(env.bestOfGame.connect(adr.gameMaster1.wallet).startGame(1)).to.be.revertedWith(
           'startGame->Not enough players',
         );
@@ -583,7 +583,7 @@ describe(scriptName, () => {
           await expect(env.bestOfGame.connect(adr.gameMaster1.wallet).startGame(1)).to.be.revertedWith(
             'startGame->Still Can Join',
           );
-          await mineBlocks(BOGSettings.BOG_BLOCKS_TO_JOIN + 1);
+          await mineBlocks(BOGSettings.BOG_TIME_TO_JOIN + 1);
           await expect(env.bestOfGame.connect(adr.gameMaster1.wallet).startGame(1)).to.be.emit(
             env.bestOfGame,
             'GameStarted',
@@ -667,7 +667,7 @@ describe(scriptName, () => {
             ).to.be.revertedWith('Only game master');
           });
           it('Can end turn if timeout reached with zero scores', async () => {
-            await mineBlocks(BOGSettings.BOG_BLOCKS_PER_TURN + 1);
+            await mineBlocks(BOGSettings.BOG_TIME_PER_TURN + 1);
             await expect(env.bestOfGame.connect(adr.gameMaster1.wallet).endTurn(1, [], [], []))
               .to.be.emit(env.bestOfGame, 'TurnEnded')
               .withArgs(
@@ -752,7 +752,7 @@ describe(scriptName, () => {
               //       );
               //   }
 
-              //   await mineBlocks(BOGSettings.BOG_BLOCKS_PER_TURN + 1);
+              //   await mineBlocks(BOGSettings.BOG_TIME_PER_TURN + 1);
               //   await expect(
               //     env.bestOfGame.connect(adr.gameMaster1.wallet).endTurn(
               //       1,
@@ -784,7 +784,7 @@ describe(scriptName, () => {
                   ).to.be.revertedWith('Some players still have time to propose');
                 });
                 it('Can end turn if timeout reached', async () => {
-                  await mineBlocks(BOGSettings.BOG_BLOCKS_PER_TURN + 1);
+                  await mineBlocks(BOGSettings.BOG_TIME_PER_TURN + 1);
                   expect(await env.bestOfGame.getTurn(1)).to.be.equal(2);
                   const players = getPlayers(adr, BOGSettings.BOG_MIN_PLAYERS);
                   const expectedScores: number[] = players.map(v => 0);

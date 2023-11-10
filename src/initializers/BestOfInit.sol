@@ -42,11 +42,11 @@ contract BestOfInit {
     }
 
     struct contractInitializer {
-        uint256 blocksPerTurn;
+        uint256 timePerTurn;
         uint256 maxPlayersSize;
         uint256 minPlayersSize;
         address rankTokenAddress;
-        uint256 blocksToJoin;
+        uint256 timeToJoin;
         uint256 gamePrice;
         uint256 joinGamePrice;
         uint256 maxTurns;
@@ -93,10 +93,10 @@ contract BestOfInit {
         _BOG.contractInitialized = true;
 
         LibTBG.GameSettings memory settings;
-        settings.blocksPerTurn = initializer.blocksPerTurn;
+        settings.timePerTurn = initializer.timePerTurn;
         settings.maxPlayersSize = initializer.maxPlayersSize;
         settings.minPlayersSize = initializer.minPlayersSize;
-        settings.blocksToJoin = initializer.blocksToJoin;
+        settings.timeToJoin = initializer.timeToJoin;
         settings.maxTurns = initializer.maxTurns;
         settings.numWinners = initializer.numWinners;
         settings.subject = initializer.subject;

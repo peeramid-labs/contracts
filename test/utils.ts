@@ -257,22 +257,22 @@ export const setupAddresses = async (
 const baseFee = 1 * 10 ** 18;
 export const BESTOF_CONTRACT_NAME = 'BESTOFNAME';
 export const BESTOF_CONTRACT_VERSION = '0.0.1';
-export const BOG_BLOCKS_PER_TURN = '25';
+export const BOG_TIME_PER_TURN = '25';
 export const BOG_MAX_PLAYERS = 5;
 export const BOG_MIN_PLAYERS = 4;
 export const BOG_MAX_TURNS = 3;
-export const BOG_BLOCKS_TO_JOIN = '200';
+export const BOG_TIME_TO_JOIN = '200';
 export const BOG_GAME_PRICE = ethers.utils.parseEther('0.001');
 export const BOG_JOIN_GAME_PRICE = ethers.utils.parseEther('0.001');
 export const BOG_NUM_WINNERS = 3;
 export const BOG_VOTE_CREDITS = 14;
 export const BOG_SUBJECT = 'Best Music on youtube';
 export const BOGSettings = {
-  BOG_BLOCKS_PER_TURN,
+  BOG_TIME_PER_TURN,
   BOG_MAX_PLAYERS,
   BOG_MIN_PLAYERS,
   BOG_MAX_TURNS,
-  BOG_BLOCKS_TO_JOIN,
+  BOG_TIME_TO_JOIN,
   BOG_GAME_PRICE,
   BOG_JOIN_GAME_PRICE,
   BOG_NUM_WINNERS,
