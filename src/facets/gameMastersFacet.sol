@@ -21,7 +21,7 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
     using LibTBG for LibTBG.GameInstance;
     event OverTime(uint256 indexed gameId);
     event LastTurn(uint256 indexed gameId);
-
+    event ProposalScore(uint256 indexed gameId, uint256 indexed turn, string indexed proposalHash, string proposal, uint256  score);
     event TurnEnded(
         uint256 indexed gameId,
         uint256 indexed turn,
@@ -235,7 +235,8 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
         IBestOf.BOGInstance storage game = gameId.getGameStorage();
         require(!gameId.isGameOver(), "Game over");
         gameId.enforceHasStarted();
-        if (gameId.getTurn() != 1) {
+        uint256 turn = gameId.getTurn();
+        if(turn != 1) {
             require(gameId.canEndTurn() == true, "Cannot do this now");
         }
         if (!gameId.isLastTurn()) {
@@ -244,10 +245,15 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
                 "Some players still have time to propose"
             );
         }
-        if (gameId.getTurn() != 1) {
-            gameId.calculateScoresQuadratic(votes, proposerIndicies);
-        }
         address[] memory players = gameId.getPlayers();
+        if (turn != 1) {
+            (,uint256[] memory roundScores) = gameId.calculateScoresQuadratic(votes, proposerIndicies);
+            for(uint256  i = 0; i<players.length; i++)
+            {
+                string memory proposal = game.ongoingProposals[proposerIndicies[i]];
+                emit ProposalScore(gameId,turn,proposal,proposal,roundScores[i]);
+            }
+        }
         (, uint256[] memory scores) = gameId.getScores();
          emit TurnEnded(gameId, gameId.getTurn(), players, scores, newProposals,proposerIndicies,votes);
         _nextTurn(gameId, newProposals);

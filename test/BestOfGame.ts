@@ -798,7 +798,6 @@ describe(scriptName, () => {
                       //somebody did not vote at all
                     }
                   }
-
                   await expect(
                     env.bestOfGame.connect(adr.gameMaster1.wallet).endTurn(
                       1,
@@ -817,6 +816,32 @@ describe(scriptName, () => {
                       [],
                       [],
                     );
+                });
+                it('Emits correct ProposalScore event values', async () => {
+                  await mineBlocks(BOGSettings.BOG_TIME_PER_TURN + 1);
+                  expect(await env.bestOfGame.getTurn(1)).to.be.equal(2);
+                  const players = getPlayers(adr, BOGSettings.BOG_MIN_PLAYERS);
+                  const expectedScores: number[] = players.map(v => 0);
+                  for (let i = 0; i < players.length; i++) {
+                    // expectedScores[i] = 0;
+                    if (votes.length > i) {
+                      votes[i].vote.forEach((vote, idx) => {
+                        expectedScores[idx] += Number(vote);
+                      });
+                    } else {
+                      //somebody did not vote at all
+                    }
+                  }
+                  await expect(
+                    env.bestOfGame.connect(adr.gameMaster1.wallet).endTurn(
+                      1,
+                      votes.map(vote => vote.vote),
+                      [],
+                      votersAddresses.map((p, idx) => idx),
+                    ),
+                  )
+                    .to.emit(env.bestOfGame, 'ProposalScore')
+                    .withArgs('1', '2', proposalsStruct[0].proposal, proposalsStruct[0].proposal, expectedScores[0]);
                 });
               });
             });

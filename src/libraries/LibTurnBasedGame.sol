@@ -49,7 +49,7 @@ library LibTBG {
         mapping(uint256 => GameInstance) games;
         mapping(address => uint256) playerInGame;
         uint256 totalGamesCreated;
-        uint256 maxQuadraticVote;
+        uint256 maxQuadraticPoints;
     }
 
     bytes32 constant TBG_STORAGE_POSITION = keccak256("turnbasedgame.storage.position");
@@ -81,7 +81,7 @@ library LibTBG {
 
 
         tbg.settings = settings;
-        tbg.maxQuadraticVote = Math.sqrt(settings.voteCredits);
+        tbg.maxQuadraticPoints = Math.sqrt(settings.voteCredits);
     }
 
     function createGame(uint256 gameId, address gm) internal {
@@ -423,7 +423,7 @@ library LibTBG {
         for (uint256 i = 0; i < players.length; i++) {
             uint256 creditsUsed = 0;
             if (!_game.madeMove[players[i]]) {
-                score += tbg.maxQuadraticVote;
+                score += tbg.maxQuadraticPoints;
                 creditsUsed = tbg.settings.voteCredits;
             } else {
                 uint256[] memory playerVote = votes[i];
@@ -441,21 +441,23 @@ library LibTBG {
         uint256 gameId,
         uint256[][] memory votesRevealed,
         uint256[] memory proposerIndicies
-    ) internal {
+    ) internal returns (uint256[] memory, uint256[] memory) {
         address[] memory players = getPlayers(gameId);
         uint256[] memory scores = new uint256[](players.length);
+        uint256[] memory roundScores = new uint256[](players.length);
         for (uint256 playerIdx = 0; playerIdx < players.length; playerIdx++) {
             //for each player
 
             if (proposerIndicies[playerIdx] < players.length) {
                 //if proposal exists
+                roundScores[playerIdx] = getScoreQuadratic(gameId,votesRevealed, proposerIndicies[playerIdx]);
                 scores[playerIdx] =
-                    getScore(gameId, players[playerIdx]) +
-                    getScoreQuadratic(gameId, votesRevealed, proposerIndicies[playerIdx]);
-                setScore(gameId, players[playerIdx], scores[playerIdx]);
+                    getScore(gameId,players[playerIdx]) + roundScores[playerIdx];
+                setScore(gameId,players[playerIdx], scores[playerIdx]);
             } else {
                 //Player did not propose
             }
         }
+        return (scores,roundScores);
     }
 }
