@@ -180,8 +180,16 @@ library LibTBG {
     function canEndTurn(uint256 gameId) internal view returns (bool) {
         GameInstance storage _game = _getGame(gameId);
         bool turnTimedOut = isTurnTimedOut(gameId);
-        bool everyoneMadeMove = _game.numPlayersMadeMove == _game.players.length() ? true : false;
+        bool everyoneMadeMove = (_game.numPlayersMadeMove+1) == _game.players.length() ? true : false;
         if ((everyoneMadeMove && !turnTimedOut) || turnTimedOut) return true;
+        return false;
+    }
+
+    function canEndTurnEarly(uint256 gameId) internal view returns (bool) {
+        GameInstance storage _game = _getGame(gameId);
+        bool turnTimedOut = isTurnTimedOut(gameId);
+        bool everyoneMadeMove = (_game.numPlayersMadeMove+1) == _game.players.length() ? true : false;
+        if (everyoneMadeMove || turnTimedOut) return true;
         return false;
     }
 
@@ -250,12 +258,20 @@ library LibTBG {
     function canStart(uint256 gameId) internal view returns (bool) {
         GameInstance storage _game = _getGame(gameId);
         TBGStorageStruct storage tbg = TBGStorage();
+        bool retval = canStartEarly(gameId);
+        if (_game.players.length() < tbg.settings.minPlayersSize) retval = false;
+        return retval;
+    }
+
+    function canStartEarly(uint256 gameId) internal view returns (bool) {
+        GameInstance storage _game = _getGame(gameId);
+        TBGStorageStruct storage tbg = TBGStorage();
         bool retval = true;
         if (_game.hasStarted != false) retval = false;
         if (_game.registrationOpenAt == 0) retval = false;
         if (block.timestamp <= _game.registrationOpenAt + tbg.settings.timeToJoin) retval = false;
         if (gameId == 0) retval = false;
-        if (_game.players.length() < tbg.settings.minPlayersSize) retval = false;
+        if (_game.players.length()+1 == tbg.settings.maxPlayersSize) retval = false;
         return retval;
     }
 

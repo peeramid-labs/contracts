@@ -122,6 +122,8 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
         // game.votesHidden[msg.sender].votedFor = votesHidden;
         // game.votesHidden[voter].proof = bytes memory (0);
         gameId.playerMove(voter); // This will enforce player is in in the game
+        IBestOf.BOGInstance storage game = gameId.getGameStorage();
+        game.numVotesThisTurn += 1;
         emit VoteSubmitted(gameId, gameId.getTurn(), voter, encryptedVotes);
     }
 
@@ -136,6 +138,9 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
         require(!proposalData.gameId.isLastTurn(), "Cannot propose in last turn");
         require(bytes(proposalData.encryptedProposal).length != 0, "Cannot propose empty");
         require(game.proposalCommitmentHashes[proposalData.proposer] == "", "Already proposed!");
+        uint256 turn = proposalData.gameId.getTurn();
+        if(turn == 1 || game.numVotesThisTurn == 0) proposalData.gameId.playerMove(proposalData.proposer);
+
         // bytes memory message = abi.encode(
         //   LibBestOf._PROPOSAL_PROOF_TYPEHASH,
         //   gameId,
@@ -151,7 +156,7 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
         game.numCommitments += 1;
         emit ProposalSubmitted(
             proposalData.gameId,
-            proposalData.gameId.getTurn(),
+            turn,
             proposalData.proposer,
             proposalData.commitmentHash,
             proposalData.encryptedProposal
@@ -194,14 +199,17 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
             game.votesHidden[players[i]].hash = bytes32(0);
             // delete game.votesHidden[players[i]].proof;
         }
+         game.numVotesThisTurn = 0;
     }
 
+    // Move new proposals in to ongoing proposals
     function _afterNextTurn(uint256 gameId, string[] memory newProposals) private {
         IBestOf.BOGInstance storage game = gameId.getGameStorage();
         for (uint256 i = 0; i < newProposals.length; i++) {
             game.ongoingProposals[i] = newProposals[i];
             game.numOngoingProposals += 1;
         }
+
     }
 
     function _nextTurn(uint256 gameId, string[] memory newProposals) private {
@@ -237,7 +245,7 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
         gameId.enforceHasStarted();
         uint256 turn = gameId.getTurn();
         if(turn != 1) {
-            require(gameId.canEndTurn() == true, "Cannot do this now");
+            require(gameId.canEndTurnEarly() == true, "Cannot do this now");
         }
         if (!gameId.isLastTurn()) {
             require(

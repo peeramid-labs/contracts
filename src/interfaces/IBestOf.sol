@@ -44,6 +44,7 @@ interface IBestOf {
         mapping(address => VoteHidden) votesHidden;
         address[] additionalRanks;
         uint256 paymentsBalance;
+        uint256 numVotesThisTurn;
     }
 
     event RegistrationOpen(uint256 indexed gameid);
