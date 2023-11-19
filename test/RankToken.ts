@@ -48,11 +48,11 @@ describe('Rank Token Test', async function () {
     await env.connect(rankingInstance).mint(adr.player1.wallet.address, 4, 1, '0x');
     await expect(env.connect(adr.player1.wallet).levelUp(adr.player1.wallet.address, 1, '0x'))
       .to.emit(env, 'LevelUp')
-      .withArgs(adr.player1.wallet.address, ethers.BigNumber.from('1'));
+      .withArgs(adr.player1.wallet.address, 1n);
     await env.connect(rankingInstance).mint(adr.player1.wallet.address, 3, 2, '0x');
     await expect(env.connect(rankingInstance).levelUp(adr.player1.wallet.address, 2, '0x'))
       .to.emit(env, 'LevelUp')
-      .withArgs(adr.player1.wallet.address, ethers.BigNumber.from('2'));
+      .withArgs(adr.player1.wallet.address, 2n);
     // await env.connect(rankingInstance).mint(adr.player1.wallet.address, 3, 3, '0x');
     // await expect(
     //   env.connect(adr.maliciousActor1.wallet).levelUp(adr.player1.wallet.address, 3, '0x'),

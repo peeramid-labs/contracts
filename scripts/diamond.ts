@@ -19,7 +19,8 @@
 import type { JsonFragment } from '@ethersproject/abi';
 import chalk from 'chalk';
 import Table from 'cli-table';
-import { BaseContract, constants, Contract, utils } from 'ethers';
+import { BaseContract, Contract } from 'ethers';
+import ethers from 'ethers';
 import readline from 'readline';
 
 export const enum FacetCutAction {
@@ -30,7 +31,8 @@ export const enum FacetCutAction {
 
 // Turns an abiElement into a signature string, like `"init(bytes4)"`
 export function toSignature(abiElement: unknown): string {
-  return utils.Fragment.fromObject(abiElement as JsonFragment).format();
+  ethers.FunctionFragment.from(abiElement);
+  return ethers.FunctionFragment.from(abiElement as JsonFragment).format();
 }
 
 /* In the form of `[ContractNameMatcher, IgnoredSignature]` */
@@ -66,9 +68,8 @@ interface Facet {
   facetAddress: string;
   functionSelectors: string[];
 }
-
 interface HasInterface {
-  interface: utils.Interface;
+  interface: ethers.Interface;
 }
 
 interface Changeset {
@@ -130,27 +131,28 @@ export class DiamondChanges {
    */
   public getFacetCuts(contractName: string, contract: Contract): FacetCut[] {
     const facetCuts: FacetCut[] = [];
+    if (typeof contract.target !== 'string') throw new Error('contract.target must be string');
 
     if (this.previous) {
       const diff = this.diffSelectors(contractName, contract, this.previous);
 
       if (diff.add.length > 0) {
         facetCuts.push({
-          facetAddress: contract.address,
+          facetAddress: contract.target,
           action: FacetCutAction.Add,
           functionSelectors: diff.add,
         });
       }
       if (diff.replace.length > 0) {
         facetCuts.push({
-          facetAddress: contract.address,
+          facetAddress: contract.target,
           action: FacetCutAction.Replace,
           functionSelectors: diff.replace,
         });
       }
     } else {
       facetCuts.push({
-        facetAddress: contract.address,
+        facetAddress: contract.target,
         action: FacetCutAction.Add,
         functionSelectors: this.getSelectors(contractName, contract),
       });
@@ -194,7 +196,7 @@ export class DiamondChanges {
 
     if (toRemove.length) {
       removeCuts.push({
-        facetAddress: constants.AddressZero,
+        facetAddress: ethers.ZeroAddress,
         action: FacetCutAction.Remove,
         functionSelectors: toRemove,
       });
@@ -265,11 +267,11 @@ export class DiamondChanges {
   }
 
   private getSignatures(contract: HasInterface): string[] {
-    return Object.keys(contract.interface.functions);
+    return Object.keys(contract.interface.fragments);
   }
 
   private getSelector(contract: HasInterface, signature: string): string {
-    return contract.interface.getSighash(signature);
+    return contract.interface.getS(signature);
   }
 
   private getSelectors(contractName: string, contract: HasInterface): string[] {

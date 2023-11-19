@@ -22,7 +22,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
   const result = await deploy('RankToken', {
     from: deployer,
-    args: [URI, owner, ContractURI, ethers.BigNumber.from(3), [], []],
+    args: [URI, owner, ContractURI, 3n, [], []],
     skipIfAlreadyDeployed: true,
   });
   console.log('deployed rank token at', result.address);
