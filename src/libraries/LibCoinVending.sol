@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Author: Tim Pechersky <@Peersky>
 
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.20;
 
 import {MockERC20} from "../mocks/MockERC20.sol";
 import {ERC1155Burnable} from "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Burnable.sol";

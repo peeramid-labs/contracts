@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Author: Tim Pechersky <@Peersky>
 
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.20;
 
 import {LibCoinVending} from "../libraries/LibCoinVending.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
