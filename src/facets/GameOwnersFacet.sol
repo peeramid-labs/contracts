@@ -40,10 +40,10 @@ contract GameOwnersFacet {
     function setRankTokenAddress(address newRankToken) external {
         LibDiamond.enforceIsContractOwner();
         if (newRankToken == address(0)) {
-            revert ZeroValue();
+            require(false, 'zerovalue'); //revert ZeroValue();
         }
         if (!ERC165Checker.supportsInterface(newRankToken, type(IERC1155).interfaceId)) {
-            revert WrongAddress();
+            require(false, 'wrongaddress'); //revert WrongAddress();
         }
 
         IBestOf.BOGSettings storage _BOG = BOGStorage();
@@ -53,7 +53,7 @@ contract GameOwnersFacet {
     function setTimePerTurn(uint256 newTimePerTurn) external {
         LibDiamond.enforceIsContractOwner();
         if (newTimePerTurn == 0) {
-            revert ZeroValue();
+            require(false, 'zerovalue'); // revert ZeroValue();
         }
         LibTBG.TBGStorageStruct storage tbg = LibTBG.TBGStorage();
         tbg.settings.timePerTurn = newTimePerTurn;
@@ -63,7 +63,7 @@ contract GameOwnersFacet {
         LibDiamond.enforceIsContractOwner();
         LibTBG.TBGStorageStruct storage tbg = LibTBG.TBGStorage();
         if (newMaxPlayersSize < tbg.settings.minPlayersSize) {
-            revert OutOfBounds();
+            require(false, 'outofbonds'); // revert OutOfBounds();
         }
         tbg.settings.maxPlayersSize = newMaxPlayersSize;
     }
@@ -72,7 +72,7 @@ contract GameOwnersFacet {
         LibDiamond.enforceIsContractOwner();
         LibTBG.TBGStorageStruct storage tbg = LibTBG.TBGStorage();
         if (newMinPlayersSize > tbg.settings.maxPlayersSize) {
-            revert OutOfBounds();
+             require(false, 'outofbonds'); // revert OutOfBounds();
         }
         tbg.settings.minPlayersSize = newMinPlayersSize;
     }
@@ -80,7 +80,7 @@ contract GameOwnersFacet {
     function setBlocksToJoin(uint256 newTimeToJoin) external {
         LibDiamond.enforceIsContractOwner();
         if (newTimeToJoin == 0) {
-            revert ZeroValue();
+             require(false, 'ZeroValue'); //revert ZeroValue();
         }
         LibTBG.TBGStorageStruct storage tbg = LibTBG.TBGStorage();
         tbg.settings.timeToJoin = newTimeToJoin;
@@ -89,7 +89,7 @@ contract GameOwnersFacet {
     function setMaxTurns(uint256 newMaxTurns) external {
         LibDiamond.enforceIsContractOwner();
         if (newMaxTurns == 0) {
-            revert ZeroValue();
+            require(false, 'ZeroValue'); // revert ZeroValue();
         }
         LibTBG.TBGStorageStruct storage tbg = LibTBG.TBGStorage();
         tbg.settings.maxTurns = newMaxTurns;

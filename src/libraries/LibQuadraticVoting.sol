@@ -28,15 +28,15 @@ library LibQuadraticVoting {
         } while (accumulator < voteCredits);
         // This enforces requirement that all vote credits can indeed be spended (no leftovers)
         if (accumulator != voteCredits)
-            revert quadraticVotingError("voteCredits bust be i^2 series", accumulator, voteCredits);
+             require(false, 'quadraticVotingError'); //revert quadraticVotingError("voteCredits bust be i^2 series", accumulator, voteCredits);
         q.minQuadraticPositons = iterator;
         // In order to spend all vote credits there must be at least minQuadraticPositons+1 (becuase proposer is also a player and cannot vote for himself)
-        if (minExpectedVoteItems <= q.minQuadraticPositons)
-            revert quadraticVotingError(
-                "Minimum Voting positions above min players",
-                q.minQuadraticPositons,
-                minExpectedVoteItems
-            );
+        if (minExpectedVoteItems <= q.minQuadraticPositons)  require(false, 'quadraticVotingError');
+            // revert quadraticVotingError(
+            //     "Minimum Voting positions above min players",
+            //     q.minQuadraticPositons,
+            //     minExpectedVoteItems
+            // );
         q.voteCredits = voteCredits;
         return q;
     }
@@ -101,7 +101,7 @@ library LibQuadraticVoting {
                     scores[proposalIdx] += voterVotes[proposalIdx];
                     creditsUsed[vi] += voterVotes[proposalIdx] ** 2;
                     if (creditsUsed[vi] > q.voteCredits)
-                        revert quadraticVotingError("Quadratic: vote credits overrun", q.voteCredits, creditsUsed[vi]);
+                        require(false, 'quadraticVotingError'); // revert quadraticVotingError("Quadratic: vote credits overrun", q.voteCredits, creditsUsed[vi]);
                 }
             }
         }

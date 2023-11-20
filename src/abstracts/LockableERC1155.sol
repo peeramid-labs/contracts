@@ -11,13 +11,14 @@ abstract contract LockableERC1155 is ERC1155, ILockableERC1155 {
 
     function lock(address account, uint256 id, uint256 amount) public virtual {
         if (balanceOf(account, id) < lockedAmounts[account][id] + amount)
-            revert insufficient(id, lockedAmounts[account][id], amount);
+            require(false, 'insufficient');
+            // revert insufficient(id, lockedAmounts[account][id], amount);
         lockedAmounts[account][id] += amount;
         emit TokensLocked(account, id, amount);
     }
 
     function unlock(address account, uint256 id, uint256 amount) public virtual {
-        if (lockedAmounts[account][id] < amount) revert insufficient(id, lockedAmounts[account][id], amount);
+        if (lockedAmounts[account][id] < amount) require(false, 'insufficient');//revert insufficient(id, lockedAmounts[account][id], amount);
         lockedAmounts[account][id] -= amount;
         emit TokensUnlocked(account, id, amount);
     }
@@ -37,7 +38,7 @@ abstract contract LockableERC1155 is ERC1155, ILockableERC1155 {
         for (uint256 i = 0; i < ids.length; i++) {
             if (from != address(0)) {
                 if (lockedAmounts[from][ids[i]] + amounts[i] > balanceOf(from, ids[i])) {
-                    revert insufficient(ids[i], unlockedBalanceOf(from, ids[i]), amounts[i]);
+                    require(false,'insufficient');//revert insufficient(ids[i], unlockedBalanceOf(from, ids[i]), amounts[i]);
                 }
             }
         }

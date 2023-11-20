@@ -12,6 +12,7 @@ import {LibArray} from "../libraries/LibArray.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 error invalidConfiguration(string paramter);
+
 library LibTBG {
     // using EnumerableMap for EnumerableMap.AddressToUintMap;
     // using EnumerableMap for EnumerableMap.UintToAddressMap;
@@ -69,16 +70,16 @@ library LibTBG {
 
     function init(GameSettings memory settings) internal {
         TBGStorageStruct storage tbg = TBGStorage();
-        if(settings.timePerTurn == 0) revert invalidConfiguration('timePerTurn');
-        if(settings.maxPlayersSize == 0) revert invalidConfiguration('maxPlayersSize');
-        if(settings.minPlayersSize < 2) revert invalidConfiguration('minPlayersSize');
-        if(settings.maxTurns == 0) revert invalidConfiguration('maxTurns');
-        if(settings.numWinners == 0 || settings.numWinners >= settings.minPlayersSize) revert invalidConfiguration('numWinners');
-        if(settings.timeToJoin == 0) revert invalidConfiguration('timeToJoin');
-        if(settings.maxPlayersSize < settings.minPlayersSize) revert invalidConfiguration('maxPlayersSize');
-        if(settings.voteCredits < 1) revert invalidConfiguration('voteCredits');
-        if(bytes(settings.subject).length == 0) revert invalidConfiguration('subject length');
-
+        if (settings.timePerTurn == 0) require(false, "invalidConfiguration"); //  revert invalidConfiguration('timePerTurn');
+        if (settings.maxPlayersSize == 0) require(false, "invalidConfiguration"); // revert invalidConfiguration('maxPlayersSize');
+        if (settings.minPlayersSize < 2) require(false, "invalidConfiguration"); //revert invalidConfiguration('minPlayersSize');
+        if (settings.maxTurns == 0) require(false, "invalidConfiguration"); //revert invalidConfiguration('maxTurns');
+        if (settings.numWinners == 0 || settings.numWinners >= settings.minPlayersSize)
+            require(false, "invalidConfiguration"); //revert invalidConfiguration('numWinners');
+        if (settings.timeToJoin == 0) require(false, "invalidConfiguration"); // revert invalidConfiguration('timeToJoin');
+        if (settings.maxPlayersSize < settings.minPlayersSize) require(false, "invalidConfiguration"); //revert invalidConfiguration('maxPlayersSize');
+        if (settings.voteCredits < 1) require(false, "invalidConfiguration"); //revert invalidConfiguration('voteCredits');
+        if (bytes(settings.subject).length == 0) require(false, "invalidConfiguration"); //revert invalidConfiguration('subject length');
 
         tbg.settings = settings;
         tbg.maxQuadraticPoints = Math.sqrt(settings.voteCredits);
@@ -180,7 +181,7 @@ library LibTBG {
     function canEndTurn(uint256 gameId) internal view returns (bool) {
         GameInstance storage _game = _getGame(gameId);
         bool turnTimedOut = isTurnTimedOut(gameId);
-        bool everyoneMadeMove = (_game.numPlayersMadeMove+1) == _game.players.length() ? true : false;
+        bool everyoneMadeMove = (_game.numPlayersMadeMove + 1) == _game.players.length() ? true : false;
         if ((everyoneMadeMove && !turnTimedOut) || turnTimedOut) return true;
         return false;
     }
@@ -188,7 +189,7 @@ library LibTBG {
     function canEndTurnEarly(uint256 gameId) internal view returns (bool) {
         GameInstance storage _game = _getGame(gameId);
         bool turnTimedOut = isTurnTimedOut(gameId);
-        bool everyoneMadeMove = (_game.numPlayersMadeMove+1) == _game.players.length() ? true : false;
+        bool everyoneMadeMove = (_game.numPlayersMadeMove + 1) == _game.players.length() ? true : false;
         if (everyoneMadeMove || turnTimedOut) return true;
         return false;
     }
@@ -271,7 +272,7 @@ library LibTBG {
         if (_game.registrationOpenAt == 0) retval = false;
         if (block.timestamp <= _game.registrationOpenAt + tbg.settings.timeToJoin) retval = false;
         if (gameId == 0) retval = false;
-        if (_game.players.length()+1 == tbg.settings.maxPlayersSize) retval = false;
+        if (_game.players.length() + 1 == tbg.settings.maxPlayersSize) retval = false;
         return retval;
     }
 
@@ -466,14 +467,13 @@ library LibTBG {
 
             if (proposerIndicies[playerIdx] < players.length) {
                 //if proposal exists
-                roundScores[playerIdx] = getScoreQuadratic(gameId,votesRevealed, proposerIndicies[playerIdx]);
-                scores[playerIdx] =
-                    getScore(gameId,players[playerIdx]) + roundScores[playerIdx];
-                setScore(gameId,players[playerIdx], scores[playerIdx]);
+                roundScores[playerIdx] = getScoreQuadratic(gameId, votesRevealed, proposerIndicies[playerIdx]);
+                scores[playerIdx] = getScore(gameId, players[playerIdx]) + roundScores[playerIdx];
+                setScore(gameId, players[playerIdx], scores[playerIdx]);
             } else {
                 //Player did not propose
             }
         }
-        return (scores,roundScores);
+        return (scores, roundScores);
     }
 }
