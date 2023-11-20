@@ -307,7 +307,7 @@
                 "type": "tuple"
               }
             ],
-            "internalType": "struct IBestOf.BOGSettings",
+            "internalType": "struct IRankifyInstanceCommons.RInstanceSettings",
             "name": "BestOfState",
             "type": "tuple"
           },
@@ -359,7 +359,7 @@
             "type": "tuple"
           }
         ],
-        "internalType": "struct IBestOf.ContractState",
+        "internalType": "struct IRankifyInstanceCommons.RInstanceState",
         "name": "",
         "type": "tuple"
       }

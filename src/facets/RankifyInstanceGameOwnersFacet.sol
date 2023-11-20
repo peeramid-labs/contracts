@@ -2,7 +2,7 @@
 pragma solidity ^0.8.4;
 
 import {LibTBG} from "../libraries/LibTurnBasedGame.sol";
-import {IBestOf} from "../interfaces/IBestOf.sol";
+import {IRankifyInstanceCommons} from "../interfaces/IRankifyInstanceCommons.sol";
 
 import "../abstracts/draft-EIP712Diamond.sol";
 import "../vendor/libraries/LibDiamond.sol";
@@ -13,12 +13,12 @@ error ZeroValue();
 error WrongAddress();
 error OutOfBounds();
 
-contract GameOwnersFacet {
+contract RankifyInstanceGameOwnersFacet {
     using LibTBG for LibTBG.GameInstance;
     using LibTBG for uint256;
     using LibTBG for LibTBG.GameSettings;
 
-    function BOGStorage() internal pure returns (IBestOf.BOGSettings storage bog) {
+    function RInstanceStorage() internal pure returns (IRankifyInstanceCommons.RInstanceSettings storage bog) {
         bytes32 position = LibTBG.getDataStorage();
         assembly {
             bog.slot := position
@@ -27,14 +27,14 @@ contract GameOwnersFacet {
 
     function setGamePrice(uint256 newPrice) external {
         LibDiamond.enforceIsContractOwner();
-        IBestOf.BOGSettings storage _BOG = BOGStorage();
-        _BOG.gamePrice = newPrice;
+        IRankifyInstanceCommons.RInstanceSettings storage _RInstance = RInstanceStorage();
+        _RInstance.gamePrice = newPrice;
     }
 
     function setJoinGamePrice(uint256 newPrice) external {
         LibDiamond.enforceIsContractOwner();
-        IBestOf.BOGSettings storage _BOG = BOGStorage();
-        _BOG.joinGamePrice = newPrice;
+        IRankifyInstanceCommons.RInstanceSettings storage _RInstance = RInstanceStorage();
+        _RInstance.joinGamePrice = newPrice;
     }
 
     function setRankTokenAddress(address newRankToken) external {
@@ -46,8 +46,8 @@ contract GameOwnersFacet {
             require(false, 'wrongaddress'); //revert WrongAddress();
         }
 
-        IBestOf.BOGSettings storage _BOG = BOGStorage();
-        _BOG.rankTokenAddress = newRankToken;
+        IRankifyInstanceCommons.RInstanceSettings storage _RInstance = RInstanceStorage();
+        _RInstance.rankTokenAddress = newRankToken;
     }
 
     function setTimePerTurn(uint256 newTimePerTurn) external {

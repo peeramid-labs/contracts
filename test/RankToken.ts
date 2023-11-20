@@ -72,8 +72,7 @@ describe('Rank Token Test', async function () {
       );
     });
     it('Cannot lock more then user has', async () => {
-      await expect(env.connect(rankingInstance).lock(adr.player1.wallet.address, 1, 4)).to.be.revertedWithCustomError(
-        env,
+      await expect(env.connect(rankingInstance).lock(adr.player1.wallet.address, 1, 4)).to.be.revertedWith(
         'insufficient',
       );
     });
@@ -122,16 +121,16 @@ describe('Rank Token Test', async function () {
         await expect(env.connect(rankingInstance).unlock(adr.player1.wallet.address, 1, 1))
           .to.emit(env, 'TokensUnlocked')
           .withArgs(adr.player1.wallet.address, 1, 1);
-        await expect(
-          env.connect(rankingInstance).unlock(adr.player1.wallet.address, 2, 1),
-        ).to.be.revertedWithCustomError(env, 'insufficient');
+        await expect(env.connect(rankingInstance).unlock(adr.player1.wallet.address, 2, 1)).to.be.revertedWith(
+          'insufficient',
+        );
       });
       it('Can transfer only unlocked tokens', async () => {
         await expect(
           env
             .connect(adr.player1.wallet)
             .safeTransferFrom(adr.player1.wallet.address, adr.player2.wallet.address, 1, 3, '0x'),
-        ).to.be.revertedWithCustomError(env, 'insufficient');
+        ).to.be.revertedWith('insufficient');
         await expect(
           env
             .connect(adr.player1.wallet)
@@ -154,7 +153,7 @@ describe('Rank Token Test', async function () {
           env
             .connect(adr.player1.wallet)
             .safeTransferFrom(adr.player1.wallet.address, adr.player2.wallet.address, 1, 4, '0x'),
-        ).to.be.revertedWithCustomError(env, 'insufficient');
+        ).to.be.revertedWith('insufficient');
       });
     });
   });

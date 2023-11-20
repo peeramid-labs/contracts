@@ -5,13 +5,13 @@ import {LibTBG} from "../libraries/LibTurnBasedGame.sol";
 import {LibCoinVending} from "../libraries/LibCoinVending.sol";
 import {LibQuadraticVoting} from "../libraries/LibQuadraticVoting.sol";
 
-interface IBestOf {
+interface IRankifyInstanceCommons {
     struct Score {
         address participant;
         uint256 score;
     }
 
-    struct BOGSettings {
+    struct RInstanceSettings {
         uint256 gamePrice;
         address gamePaymentToken;
         uint256 joinGamePrice;
@@ -21,8 +21,8 @@ interface IBestOf {
         LibQuadraticVoting.qVotingStruct voting;
     }
 
-    struct ContractState {
-        BOGSettings BestOfState;
+    struct RInstanceState {
+        RInstanceSettings BestOfState;
         LibTBG.GameSettings TBGSEttings;
     }
 
@@ -36,7 +36,7 @@ interface IBestOf {
         bytes proof;
     }
 
-    struct BOGInstance {
+    struct RInstance {
         uint256 rank;
         address createdBy;
         mapping(uint256 => string) ongoingProposals; //Previous Turn Proposals (These are being voted on)

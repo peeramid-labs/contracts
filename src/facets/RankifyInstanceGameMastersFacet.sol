@@ -3,8 +3,8 @@ pragma solidity ^0.8.4;
 
 import {LibArray} from "../libraries/LibArray.sol";
 import {LibTBG} from "../libraries/LibTurnBasedGame.sol";
-import {LibBestOf} from "../libraries/LibBestOf.sol";
-import {IBestOf} from "../interfaces/IBestOf.sol";
+import {LibRankify} from "../libraries/LibRankify.sol";
+import {IRankifyInstanceCommons} from "../interfaces/IRankifyInstanceCommons.sol";
 import "../abstracts/DiamondReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
@@ -15,9 +15,9 @@ import "hardhat/console.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import "../vendor/libraries/LibDiamond.sol";
 
-contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
+contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
     using LibTBG for uint256;
-    using LibBestOf for uint256;
+    using LibRankify for uint256;
     using LibTBG for LibTBG.GameInstance;
     event OverTime(uint256 indexed gameId);
     event LastTurn(uint256 indexed gameId);
@@ -43,35 +43,6 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
         return keccak256(abi.encodePacked(player, turnSalt));
     }
 
-    // function validateVote(
-    //     uint256 gameId,
-    //     address voter,
-    //     uint256[] memory votes,
-    //     bytes32 turnSalt,
-    //     address[] memory prevProposersRevealed
-    // ) public view {
-    //     IBestOf.BOGInstance storage game = gameId.getGameStorage();
-    //     bytes32 salt = playerSalt(voter, turnSalt);
-    //     require(gameId.isPlayerInGame(voter), "Player not in that game");
-    //     bytes memory proof = game.votesHidden[voter].proof;
-    //     //make sure voter did not vote for himself
-    //     for (uint256 i = 0; i < votes.length; i++) {
-    //         require(prevProposersRevealed[votes[i]] != voter, "voted for himself");
-    //     }
-    // }
-
-    // function validateVotes(
-    //     uint256 gameId,
-    //     address[] memory voters,
-    //     uint256[][] memory votes,
-    //     bytes32 turnSalt,
-    //     address[] memory prevProposersRevealed
-    // ) private view {
-    //     for (uint256 i = 0; i < gameId.getPlayersNumber(); i++) {
-    //         validateVote(gameId, voters[i], votes[i], turnSalt, prevProposersRevealed);
-    //     }
-    // }
-
     function _isValidSignature(
         bytes memory message,
         bytes memory signature,
@@ -83,7 +54,7 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
     function releaseAndReward(uint256 gameId, address player, address[] memory leaderboard) private {}
 
     function onPlayersGameEnd(uint256 gameId, address player) private {
-        IBestOf.BOGInstance storage game = gameId.getGameStorage();
+        IRankifyInstanceCommons.RInstance storage game = gameId.getGameStorage();
         LibCoinVending.release(bytes32(gameId), game.createdBy, gameId.getLeaderBoard()[0], player);
     }
 
@@ -104,13 +75,13 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
     event VoteSubmitted(uint256 indexed gameId, uint256 indexed turn, address indexed player, string votesHidden);
 
     function submitVote(uint256 gameId, string memory encryptedVotes, address voter) public {
-        LibBestOf.enforceIsGM(gameId, msg.sender);
+        LibRankify.enforceIsGM(gameId, msg.sender);
         gameId.enforceGameExists();
         gameId.enforceHasStarted();
         require(!gameId.isGameOver(), "Game over");
         gameId.enforceIsPlayingGame(voter);
         require(gameId.getTurn() > 1, "No proposals exist at turn 1: cannot vote");
-        IBestOf.BOGInstance storage game = gameId.getGameStorage();
+        IRankifyInstanceCommons.RInstance storage game = gameId.getGameStorage();
         game.numVotesThisTurn += 1;
         game.playerVoted[voter] = true;
         gameId.tryPlayerMove(voter);
@@ -123,7 +94,7 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
         require(!proposalData.gameId.isGameOver(), "Game over");
         proposalData.gameId.enforceHasStarted();
 
-        IBestOf.BOGInstance storage game = proposalData.gameId.getGameStorage();
+        IRankifyInstanceCommons.RInstance storage game = proposalData.gameId.getGameStorage();
         require(LibTBG.getPlayersGame(proposalData.proposer) == proposalData.gameId, "not a player");
         require(!proposalData.gameId.isLastTurn(), "Cannot propose in last turn");
         require(bytes(proposalData.encryptedProposal).length != 0, "Cannot propose empty");
@@ -145,7 +116,7 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
     // Clean up game instance for upcoming round
     function _beforeNextTurn(uint256 gameId) internal {
         address[] memory players = gameId.getPlayers();
-        IBestOf.BOGInstance storage game = gameId.getGameStorage();
+        IRankifyInstanceCommons.RInstance storage game = gameId.getGameStorage();
         game.numCommitments = 0;
         for (uint256 i = 0; i < players.length; i++) {
             game.proposalCommitmentHashes[players[i]] = bytes32(0);
@@ -162,7 +133,7 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
 
     // Move new proposals in to ongoing proposals
     function _afterNextTurn(uint256 gameId, string[] memory newProposals) private {
-        IBestOf.BOGInstance storage game = gameId.getGameStorage();
+        IRankifyInstanceCommons.RInstance storage game = gameId.getGameStorage();
         for (uint256 i = 0; i < newProposals.length; i++) {
             game.ongoingProposals[i] = newProposals[i];
             game.numOngoingProposals += 1;
@@ -197,7 +168,7 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
         uint256[] memory proposerIndicies //REFERRING TO game.players index in PREVIOUS VOTING ROUND
     ) public {
         gameId.enforceIsGM(msg.sender);
-        IBestOf.BOGInstance storage game = gameId.getGameStorage();
+        IRankifyInstanceCommons.RInstance storage game = gameId.getGameStorage();
         require(!gameId.isGameOver(), "Game over");
         gameId.enforceHasStarted();
         uint256 turn = gameId.getTurn();

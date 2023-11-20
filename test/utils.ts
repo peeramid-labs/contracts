@@ -6,7 +6,7 @@ import hre, { deployments, config } from 'hardhat';
 import aes from 'crypto-js/aes';
 import { ethers } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { Agenda, MockERC1155, MockERC20, MockERC721, RankToken, BestOfDiamond } from '../types';
+import { Rankify, MockERC1155, MockERC20, MockERC721, RankToken, RankifyDiamondInstance } from '../types';
 import { BigNumber, BigNumberish, BytesLike, Wallet } from 'ethers';
 // @ts-ignore
 import { assert } from 'console';
@@ -52,8 +52,8 @@ export interface AdrSetupResult {
 }
 
 export interface EnvSetupResult {
-  agendaToken: Agenda;
-  bestOfGame: BestOfDiamond;
+  rankifyToken: Rankify;
+  rankifyInstance: RankifyDiamondInstance;
   rankToken: RankToken;
   mockERC20: MockERC20;
   mockERC1155: MockERC1155;
@@ -255,30 +255,30 @@ export const setupAddresses = async (
 };
 
 const baseFee = 1 * 10 ** 18;
-export const BESTOF_CONTRACT_NAME = 'BESTOFNAME';
-export const BESTOF_CONTRACT_VERSION = '0.0.1';
-export const BOG_TIME_PER_TURN = '25';
-export const BOG_MAX_PLAYERS = 6;
-export const BOG_MIN_PLAYERS = 5;
-export const BOG_MAX_TURNS = 3;
-export const BOG_TIME_TO_JOIN = '200';
-export const BOG_GAME_PRICE = ethers.utils.parseEther('0.001');
-export const BOG_JOIN_GAME_PRICE = ethers.utils.parseEther('0.001');
-export const BOG_NUM_WINNERS = 3;
-export const BOG_VOTE_CREDITS = 14;
-export const BOG_SUBJECT = 'Best Music on youtube';
-export const BOGSettings = {
-  BOG_TIME_PER_TURN,
-  BOG_MAX_PLAYERS,
-  BOG_MIN_PLAYERS,
-  BOG_MAX_TURNS,
-  BOG_TIME_TO_JOIN,
-  BOG_GAME_PRICE,
-  BOG_JOIN_GAME_PRICE,
-  BOG_NUM_WINNERS,
-  BOG_VOTE_CREDITS,
-  BOG_SUBJECT,
-  // BOG_NUM_ACTIONS_TO_TAKE,
+export const RANKIFY_INSTANCE_CONTRACT_NAME = 'RANKIFY_INSTANCENAME';
+export const RANKIFY_INSTANCE_CONTRACT_VERSION = '0.0.1';
+export const RInstance_TIME_PER_TURN = '25';
+export const RInstance_MAX_PLAYERS = 6;
+export const RInstance_MIN_PLAYERS = 5;
+export const RInstance_MAX_TURNS = 3;
+export const RInstance_TIME_TO_JOIN = '200';
+export const RInstance_GAME_PRICE = ethers.utils.parseEther('0.001');
+export const RInstance_JOIN_GAME_PRICE = ethers.utils.parseEther('0.001');
+export const RInstance_NUM_WINNERS = 3;
+export const RInstance_VOTE_CREDITS = 14;
+export const RInstance_SUBJECT = 'Best Music on youtube';
+export const RInstanceSettings = {
+  RInstance_TIME_PER_TURN,
+  RInstance_MAX_PLAYERS,
+  RInstance_MIN_PLAYERS,
+  RInstance_MAX_TURNS,
+  RInstance_TIME_TO_JOIN,
+  RInstance_GAME_PRICE,
+  RInstance_JOIN_GAME_PRICE,
+  RInstance_NUM_WINNERS,
+  RInstance_VOTE_CREDITS,
+  RInstance_SUBJECT,
+  // RInstance_NUM_ACTIONS_TO_TAKE,
 };
 
 export const setupTest = deployments.createFixture(async ({ deployments, getNamedAccounts, ethers: _eth }, options) => {
@@ -310,111 +310,111 @@ export const setupTest = deployments.createFixture(async ({ deployments, getName
   )) as MockERC721;
   await mockERC721.deployed();
   const env = await setupEnvironment({
-    AgendaToken: await deployments.get('Agenda'),
+    RankifyToken: await deployments.get('Rankify'),
     RankToken: await deployments.get('RankToken'),
-    BestOfGame: await deployments.get('BestOfGame'),
+    RankifyInstance: await deployments.get('RankifyInstance'),
     mockERC20: mockERC20,
     mockERC721: mockERC721,
     mockERC1155: mockERC1155,
     adr,
   });
-  await env.agendaToken
+  await env.rankifyToken
     .connect(adr.gameOwner.wallet)
     .mint(adr.gameCreator1.wallet.address, ethers.utils.parseEther('1000000'));
-  await env.agendaToken
+  await env.rankifyToken
     .connect(adr.gameOwner.wallet)
     .mint(adr.gameCreator2.wallet.address, ethers.utils.parseEther('1000000'));
-  await env.agendaToken
+  await env.rankifyToken
     .connect(adr.gameOwner.wallet)
     .mint(adr.gameCreator3.wallet.address, ethers.utils.parseEther('1000000'));
-  await env.agendaToken
+  await env.rankifyToken
     .connect(adr.gameOwner.wallet)
     .mint(adr.player1.wallet.address, ethers.utils.parseEther('1000000'));
-  await env.agendaToken
+  await env.rankifyToken
     .connect(adr.gameOwner.wallet)
     .mint(adr.player2.wallet.address, ethers.utils.parseEther('1000000'));
-  await env.agendaToken
+  await env.rankifyToken
     .connect(adr.gameOwner.wallet)
     .mint(adr.player3.wallet.address, ethers.utils.parseEther('1000000'));
-  await env.agendaToken
+  await env.rankifyToken
     .connect(adr.gameOwner.wallet)
     .mint(adr.player4.wallet.address, ethers.utils.parseEther('1000000'));
-  await env.agendaToken
+  await env.rankifyToken
     .connect(adr.gameOwner.wallet)
     .mint(adr.player5.wallet.address, ethers.utils.parseEther('1000000'));
-  await env.agendaToken
+  await env.rankifyToken
     .connect(adr.gameOwner.wallet)
     .mint(adr.player6.wallet.address, ethers.utils.parseEther('1000000'));
-  await env.agendaToken
+  await env.rankifyToken
     .connect(adr.gameOwner.wallet)
     .mint(adr.player7.wallet.address, ethers.utils.parseEther('1000000'));
-  await env.agendaToken
+  await env.rankifyToken
     .connect(adr.gameOwner.wallet)
     .mint(adr.player8.wallet.address, ethers.utils.parseEther('1000000'));
-  await env.agendaToken
+  await env.rankifyToken
     .connect(adr.gameOwner.wallet)
     .mint(adr.player9.wallet.address, ethers.utils.parseEther('1000000'));
-  await env.agendaToken
+  await env.rankifyToken
     .connect(adr.gameOwner.wallet)
     .mint(adr.player10.wallet.address, ethers.utils.parseEther('1000000'));
-  await env.agendaToken
+  await env.rankifyToken
     .connect(adr.gameOwner.wallet)
     .mint(adr.maliciousActor1.wallet.address, ethers.utils.parseEther('1000000'));
-  await env.agendaToken
+  await env.rankifyToken
     .connect(adr.gameOwner.wallet)
     .mint(adr.maliciousActor2.wallet.address, ethers.utils.parseEther('1000000'));
-  await env.agendaToken
+  await env.rankifyToken
     .connect(adr.gameOwner.wallet)
     .mint(adr.maliciousActor3.wallet.address, ethers.utils.parseEther('1000000'));
-  await env.agendaToken
+  await env.rankifyToken
     .connect(adr.gameCreator1.wallet)
-    ['increaseAllowance(address,uint256)'](env.bestOfGame.address, ethers.constants.MaxUint256);
-  await env.agendaToken
+    ['increaseAllowance(address,uint256)'](env.rankifyInstance.address, ethers.constants.MaxUint256);
+  await env.rankifyToken
     .connect(adr.gameCreator2.wallet)
-    ['increaseAllowance(address,uint256)'](env.bestOfGame.address, ethers.constants.MaxUint256);
-  await env.agendaToken
+    ['increaseAllowance(address,uint256)'](env.rankifyInstance.address, ethers.constants.MaxUint256);
+  await env.rankifyToken
     .connect(adr.gameCreator3.wallet)
-    ['increaseAllowance(address,uint256)'](env.bestOfGame.address, ethers.constants.MaxUint256);
-  await env.agendaToken
+    ['increaseAllowance(address,uint256)'](env.rankifyInstance.address, ethers.constants.MaxUint256);
+  await env.rankifyToken
     .connect(adr.player1.wallet)
-    ['increaseAllowance(address,uint256)'](env.bestOfGame.address, ethers.constants.MaxUint256);
-  await env.agendaToken
+    ['increaseAllowance(address,uint256)'](env.rankifyInstance.address, ethers.constants.MaxUint256);
+  await env.rankifyToken
     .connect(adr.player2.wallet)
-    ['increaseAllowance(address,uint256)'](env.bestOfGame.address, ethers.constants.MaxUint256);
-  await env.agendaToken
+    ['increaseAllowance(address,uint256)'](env.rankifyInstance.address, ethers.constants.MaxUint256);
+  await env.rankifyToken
     .connect(adr.player3.wallet)
-    ['increaseAllowance(address,uint256)'](env.bestOfGame.address, ethers.constants.MaxUint256);
-  await env.agendaToken
+    ['increaseAllowance(address,uint256)'](env.rankifyInstance.address, ethers.constants.MaxUint256);
+  await env.rankifyToken
     .connect(adr.player4.wallet)
-    ['increaseAllowance(address,uint256)'](env.bestOfGame.address, ethers.constants.MaxUint256);
-  await env.agendaToken
+    ['increaseAllowance(address,uint256)'](env.rankifyInstance.address, ethers.constants.MaxUint256);
+  await env.rankifyToken
     .connect(adr.player5.wallet)
-    ['increaseAllowance(address,uint256)'](env.bestOfGame.address, ethers.constants.MaxUint256);
-  await env.agendaToken
+    ['increaseAllowance(address,uint256)'](env.rankifyInstance.address, ethers.constants.MaxUint256);
+  await env.rankifyToken
     .connect(adr.player6.wallet)
-    ['increaseAllowance(address,uint256)'](env.bestOfGame.address, ethers.constants.MaxUint256);
-  await env.agendaToken
+    ['increaseAllowance(address,uint256)'](env.rankifyInstance.address, ethers.constants.MaxUint256);
+  await env.rankifyToken
     .connect(adr.player7.wallet)
-    ['increaseAllowance(address,uint256)'](env.bestOfGame.address, ethers.constants.MaxUint256);
-  await env.agendaToken
+    ['increaseAllowance(address,uint256)'](env.rankifyInstance.address, ethers.constants.MaxUint256);
+  await env.rankifyToken
     .connect(adr.player8.wallet)
-    ['increaseAllowance(address,uint256)'](env.bestOfGame.address, ethers.constants.MaxUint256);
-  await env.agendaToken
+    ['increaseAllowance(address,uint256)'](env.rankifyInstance.address, ethers.constants.MaxUint256);
+  await env.rankifyToken
     .connect(adr.player9.wallet)
-    ['increaseAllowance(address,uint256)'](env.bestOfGame.address, ethers.constants.MaxUint256);
-  await env.agendaToken
+    ['increaseAllowance(address,uint256)'](env.rankifyInstance.address, ethers.constants.MaxUint256);
+  await env.rankifyToken
     .connect(adr.player10.wallet)
-    ['increaseAllowance(address,uint256)'](env.bestOfGame.address, ethers.constants.MaxUint256);
+    ['increaseAllowance(address,uint256)'](env.rankifyInstance.address, ethers.constants.MaxUint256);
 
-  await env.agendaToken
+  await env.rankifyToken
     .connect(adr.maliciousActor1.wallet)
-    ['increaseAllowance(address,uint256)'](env.bestOfGame.address, ethers.constants.MaxUint256);
-  await env.agendaToken
+    ['increaseAllowance(address,uint256)'](env.rankifyInstance.address, ethers.constants.MaxUint256);
+  await env.rankifyToken
     .connect(adr.maliciousActor2.wallet)
-    ['increaseAllowance(address,uint256)'](env.bestOfGame.address, ethers.constants.MaxUint256);
-  await env.agendaToken
+    ['increaseAllowance(address,uint256)'](env.rankifyInstance.address, ethers.constants.MaxUint256);
+  await env.rankifyToken
     .connect(adr.maliciousActor3.wallet)
-    ['increaseAllowance(address,uint256)'](env.bestOfGame.address, ethers.constants.MaxUint256);
+    ['increaseAllowance(address,uint256)'](env.rankifyInstance.address, ethers.constants.MaxUint256);
 
   return {
     adr,
@@ -423,21 +423,24 @@ export const setupTest = deployments.createFixture(async ({ deployments, getName
 });
 // export const setupTest = () => setupTest();
 export const setupEnvironment = async (setup: {
-  AgendaToken: Deployment;
+  RankifyToken: Deployment;
   RankToken: Deployment;
-  BestOfGame: Deployment;
+  RankifyInstance: Deployment;
   mockERC20: MockERC20;
   mockERC721: MockERC721;
   mockERC1155: MockERC1155;
   adr: AdrSetupResult;
 }): Promise<EnvSetupResult> => {
   const rankToken = (await ethers.getContractAt(setup.RankToken.abi, setup.RankToken.address)) as RankToken;
-  const agendaToken = (await ethers.getContractAt(setup.AgendaToken.abi, setup.AgendaToken.address)) as Agenda;
-  const bestOfGame = (await ethers.getContractAt(setup.BestOfGame.abi, setup.BestOfGame.address)) as BestOfDiamond;
+  const rankifyToken = (await ethers.getContractAt(setup.RankifyToken.abi, setup.RankifyToken.address)) as Rankify;
+  const rankifyInstance = (await ethers.getContractAt(
+    setup.RankifyInstance.abi,
+    setup.RankifyInstance.address,
+  )) as RankifyDiamondInstance;
 
   return {
-    agendaToken,
-    bestOfGame,
+    rankifyToken,
+    rankifyInstance,
     rankToken,
     mockERC1155: setup.mockERC1155,
     mockERC20: setup.mockERC20,
@@ -502,24 +505,6 @@ export interface ProposalSubmittion {
   proposerSignerId: SignerIdentity;
 }
 
-// export const signProposalMessage = async (
-//   message: ProposalMessage,
-//   verifierAddress: string,
-//   signer: SignerIdentity
-// ) => {
-//   let { chainId } = await ethers.provider.getNetwork();
-
-//   const domain = {
-//     name: BESTOF_CONTRACT_NAME,
-//     version: BESTOF_CONTRACT_VERSION,
-//     chainId,
-//     verifyingContract: verifierAddress,
-//   };
-//   const s = await signer.wallet._signTypedData(domain, ProposalTypes, {
-//     ...message,
-//   });
-//   return s;
-// };
 
 interface VoteMessage {
   vote1: BigNumberish;
@@ -594,8 +579,8 @@ export const signVoteMessage = async (message: VoteMessage, verifierAddress: str
   let { chainId } = await ethers.provider.getNetwork();
 
   const domain = {
-    name: BESTOF_CONTRACT_NAME,
-    version: BESTOF_CONTRACT_VERSION,
+    name: RANKIFY_INSTANCE_CONTRACT_NAME,
+    version: RANKIFY_INSTANCE_CONTRACT_VERSION,
     chainId,
     verifyingContract: verifierAddress,
   };
@@ -613,8 +598,8 @@ export const signPublicVoteMessage = async (
   let { chainId } = await ethers.provider.getNetwork();
 
   const domain = {
-    name: BESTOF_CONTRACT_NAME,
-    version: BESTOF_CONTRACT_VERSION,
+    name: RANKIFY_INSTANCE_CONTRACT_NAME,
+    version: RANKIFY_INSTANCE_CONTRACT_VERSION,
     chainId,
     verifyingContract: verifierAddress,
   };
@@ -748,7 +733,7 @@ export const mockVotes = async ({
     // publicSignature: string;
   }> = [];
   for (let k = 0; k < players.length; k++) {
-    let creditsLeft = BOG_VOTE_CREDITS;
+    let creditsLeft = RInstance_VOTE_CREDITS;
     let playerVote: BigNumberish[] = [];
     if (distribution == 'ftw') {
       playerVote = players.map((proposer, idx) => {

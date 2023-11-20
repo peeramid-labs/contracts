@@ -7,18 +7,18 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
   const { owner } = await getNamedAccounts();
 
-  const deployment = await diamond.deploy('BestOfGame', {
+  const deployment = await diamond.deploy('RankifyInstance', {
     log: true,
     from: owner,
     owner: owner,
 
     facets: [
-      'BestOfFacet',
-      'GameMastersFacet',
-      'RequirementsFacet',
+      'RankifyInstanceMainFacet',
+      'RankifyInstanceGameMastersFacet',
+      'RankifyInstanceRequirementsFacet',
       'EIP712InspectorFacet',
-      'BestOfInit',
-      'GameOwnersFacet',
+      'RankifyInstanceInit',
+      'RankifyInstanceGameOwnersFacet',
     ],
   });
 };

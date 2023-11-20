@@ -1,5 +1,5 @@
 {
-  "name": "vote4best-contracts",
+  "name": "rankify-contracts",
   "version": "0.2.2",
   "files": [
     "abi",
@@ -9,7 +9,7 @@
     "scripts",
     "docs"
   ],
-  "description": "Contracts for vote4best.app",
+  "description": "Contracts for rankify.it",
   "scripts": {
     "lint:fix": "eslint ./ --ext js,jsx,ts,tsx --fix && pnpm run lint:sol:fix",
     "lint": "eslint ./ --ext js,jsx,ts,tsx && pnpm run lint:sol",

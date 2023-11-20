@@ -129,7 +129,7 @@ export default {
     compilers: [
       {
         version: '0.8.4',
-        
+
         settings: {
           optimizer: {
             enabled: true,
@@ -172,15 +172,15 @@ export default {
     //   },
     // },
     {
-      name: 'BestOfDiamond',
+      name: 'RankifyDiamondInstance',
       include: [
-        'BestOfFacet',
         'DiamondLoupeFacet',
-        'RequirementsFacet',
-        'GameMastersFacet',
         'EIP712InspectorFacet',
-        'GameOwnersFacet',
         'OwnershipFacet',
+        'RankifyInstanceMainFacet',
+        'RankifyInstanceRequirementsFacet',
+        'RankifyInstanceGameMastersFacet',
+        'RankifyInstanceGameOwnersFacet',
       ],
       strict: true,
       filter(abiElement: unknown, index: number, abi: unknown[], fullyQualifiedName: string) {

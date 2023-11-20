@@ -1,67 +1,67 @@
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
 import {
-  BESTOF_CONTRACT_NAME,
-  BESTOF_CONTRACT_VERSION,
-  BOG_TIME_PER_TURN,
-  BOG_MAX_PLAYERS,
-  BOG_MIN_PLAYERS,
-  BOG_MAX_TURNS,
-  BOG_TIME_TO_JOIN,
-  BOG_GAME_PRICE,
-  BOG_JOIN_GAME_PRICE,
-  BOG_NUM_WINNERS,
-  BOG_VOTE_CREDITS,
-  BOG_SUBJECT,
+  RANKIFY_INSTANCE_CONTRACT_NAME,
+  RANKIFY_INSTANCE_CONTRACT_VERSION,
+  RInstance_TIME_PER_TURN,
+  RInstance_MAX_PLAYERS,
+  RInstance_MIN_PLAYERS,
+  RInstance_MAX_TURNS,
+  RInstance_TIME_TO_JOIN,
+  RInstance_GAME_PRICE,
+  RInstance_JOIN_GAME_PRICE,
+  RInstance_NUM_WINNERS,
+  RInstance_VOTE_CREDITS,
+  RInstance_SUBJECT,
 } from '../test/utils';
 import { ethers } from 'hardhat';
-import { BestOfInit } from '../types/src/initializers/BestOfInit';
+import { RankifyInstanceInit } from '../types/src/initializers/RankifyInstanceInit';
 import { RankToken } from '../types/src/tokens/RankToken';
-import { BestOfDiamond } from '../types/hardhat-diamond-abi/HardhatDiamondABI.sol';
+import { RankifyDiamondInstance } from '../types/hardhat-diamond-abi/HardhatDiamondABI.sol';
 import { getProcessEnv } from '../scripts/libraries/utils';
-import { Agenda } from '../types';
+import { Rankify } from '../types';
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployments, getNamedAccounts } = hre;
   const { deploy, diamond, getOrNull } = deployments;
   const { deployer, owner } = await getNamedAccounts();
   if (process.env.NODE_ENV !== 'TEST') {
-    if (!process.env.BESTOF_CONTRACT_VERSION || !process.env.BESTOF_CONTRACT_NAME)
+    if (!process.env.RANKIFY_INSTANCE_CONTRACT_VERSION || !process.env.RANKIFY_INSTANCE_CONTRACT_NAME)
       throw new Error('EIP712 intializer args not set');
   }
 
   const rankTokenDeployment = await deployments.get('RankToken');
-  const agendaTokenDeployment = await deployments.get('Agenda');
+  const rankifyTokenDeployment = await deployments.get('Rankify');
   const rankToken = new ethers.Contract(
     rankTokenDeployment.address,
     rankTokenDeployment.abi,
     hre.ethers.provider.getSigner(deployer),
   ) as RankToken;
-  console.log('agendaToken', agendaTokenDeployment.address);
-  const agendaToken = new ethers.Contract(
-    agendaTokenDeployment.address,
-    agendaTokenDeployment.abi,
+  console.log('rankifyToken', rankifyTokenDeployment.address);
+  const rankifyToken = new ethers.Contract(
+    rankifyTokenDeployment.address,
+    rankifyTokenDeployment.abi,
     hre.ethers.provider.getSigner(deployer),
-  ) as Agenda;
+  ) as Rankify;
 
   if (!rankToken) throw new Error('rank token not deployed');
 
-  console.log('Deploying best of game under enviroment', process.env.NODE_ENV === 'TEST' ? 'TEST' : 'PROD');
+  console.log('Deploying rankify instance under enviroment', process.env.NODE_ENV === 'TEST' ? 'TEST' : 'PROD');
 
-  const settings: BestOfInit.ContractInitializerStruct =
+  const settings: RankifyInstanceInit.ContractInitializerStruct =
     process.env.NODE_ENV === 'TEST'
       ? {
-          timePerTurn: BOG_TIME_PER_TURN,
-          maxTurns: BOG_MAX_TURNS,
-          maxPlayersSize: BOG_MAX_PLAYERS,
-          minPlayersSize: BOG_MIN_PLAYERS,
+          timePerTurn: RInstance_TIME_PER_TURN,
+          maxTurns: RInstance_MAX_TURNS,
+          maxPlayersSize: RInstance_MAX_PLAYERS,
+          minPlayersSize: RInstance_MIN_PLAYERS,
           rankTokenAddress: rankToken.address,
-          timeToJoin: BOG_TIME_TO_JOIN,
-          gamePrice: BOG_GAME_PRICE,
-          joinGamePrice: BOG_JOIN_GAME_PRICE,
-          numWinners: BOG_NUM_WINNERS,
-          voteCredits: BOG_VOTE_CREDITS,
-          subject: BOG_SUBJECT,
-          agendaToken: agendaToken.address,
+          timeToJoin: RInstance_TIME_TO_JOIN,
+          gamePrice: RInstance_GAME_PRICE,
+          joinGamePrice: RInstance_JOIN_GAME_PRICE,
+          numWinners: RInstance_NUM_WINNERS,
+          voteCredits: RInstance_VOTE_CREDITS,
+          subject: RInstance_SUBJECT,
+          rankifyToken: rankifyToken.address,
         }
       : {
           timePerTurn: getProcessEnv(false, 'TIME_PER_TURN'),
@@ -75,33 +75,35 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
           numWinners: getProcessEnv(false, 'NUM_WINNERS'),
           voteCredits: getProcessEnv(false, 'VOTE_CREDITS'),
           subject: getProcessEnv(false, 'SUBJECT'),
-          agendaToken: agendaToken.address,
+          rankifyToken: rankifyToken.address,
         };
 
-  const deployment = await diamond.deploy('BestOfGame', {
+  const deployment = await diamond.deploy('RankifyInstance', {
     log: true,
     from: deployer,
     owner: deployer,
 
     facets: [
-      'BestOfFacet',
-      'GameMastersFacet',
-      'RequirementsFacet',
+      'RankifyInstanceMainFacet',
+      'RankifyInstanceGameMastersFacet',
+      'RankifyInstanceRequirementsFacet',
       'EIP712InspectorFacet',
-      'BestOfInit',
-      'GameOwnersFacet',
+      'RankifyInstanceInit',
+      'RankifyInstanceGameOwnersFacet',
     ],
     execute: {
       methodName: 'init',
       args: [
-        process.env.NODE_ENV === 'TEST' ? BESTOF_CONTRACT_NAME : process.env.BESTOF_CONTRACT_NAME,
-        process.env.NODE_ENV === 'TEST' ? BESTOF_CONTRACT_VERSION : process.env.BESTOF_CONTRACT_VERSION,
+        process.env.NODE_ENV === 'TEST' ? RANKIFY_INSTANCE_CONTRACT_NAME : process.env.RANKIFY_INSTANCE_CONTRACT_NAME,
+        process.env.NODE_ENV === 'TEST'
+          ? RANKIFY_INSTANCE_CONTRACT_VERSION
+          : process.env.RANKIFY_INSTANCE_CONTRACT_VERSION,
         settings,
       ],
     },
   });
-  const bestOfGame = (await ethers.getContractAt(deployment.abi, deployment.address)) as BestOfDiamond;
-  await bestOfGame.connect(await hre.ethers.getSigner(deployer)).transferOwnership(owner);
+  const rankifyInstance = (await ethers.getContractAt(deployment.abi, deployment.address)) as RankifyDiamondInstance;
+  await rankifyInstance.connect(await hre.ethers.getSigner(deployer)).transferOwnership(owner);
   const rankingInstance = await rankToken.getRankingInstance();
   if (rankingInstance !== deployment.address) {
     await rankToken.updateRankingInstance(deployment.address);
@@ -109,5 +111,5 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 };
 
 func.tags = ['gameofbest', 'gamediamond'];
-func.dependencies = ['ranktoken', 'agenda'];
+func.dependencies = ['ranktoken', 'rankify'];
 export default func;

@@ -70,11 +70,11 @@
           },
           {
             "internalType": "address",
-            "name": "agendaToken",
+            "name": "rankifyToken",
             "type": "address"
           }
         ],
-        "internalType": "struct BestOfInit.contractInitializer",
+        "internalType": "struct RankifyInstanceInit.contractInitializer",
         "name": "initializer",
         "type": "tuple"
       }

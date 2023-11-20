@@ -38,7 +38,7 @@ const signaturesToIgnore = [
   // The SolidState contracts adds a `supportsInterface` function,
   // but we already provide that function through DiamondLoupeFacet
   // ["DiamondLoupeFacet", "supportsInterface(bytes4)"],
-  ['BestOfFacet', 'supportsInterface(bytes4)'],
+  ['RankifyInstanceMainFacet', 'supportsInterface(bytes4)'],
   ['DNSFacet', 'supportsInterface(bytes4)'],
   // ['OwnershipFacet', 'OwnershipTransferred(address,address)'],
 ] as const;

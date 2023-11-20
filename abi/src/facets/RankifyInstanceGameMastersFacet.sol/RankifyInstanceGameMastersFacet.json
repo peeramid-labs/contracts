@@ -310,7 +310,7 @@
             "type": "address"
           }
         ],
-        "internalType": "struct GameMastersFacet.ProposalParams",
+        "internalType": "struct RankifyInstanceGameMastersFacet.ProposalParams",
         "name": "proposalData",
         "type": "tuple"
       }

@@ -2,13 +2,13 @@
 pragma solidity ^0.8.4;
 
 import {LibTBG} from "../libraries/LibTurnBasedGame.sol";
-import {IBestOf} from "../interfaces/IBestOf.sol";
+import {IRankifyInstanceCommons} from "../interfaces/IRankifyInstanceCommons.sol";
 
 import {IERC1155Receiver} from "../interfaces/IERC1155Receiver.sol";
 import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import {IRankToken} from "../interfaces/IRankToken.sol";
 import "../abstracts/DiamondReentrancyGuard.sol";
-import {LibBestOf} from "../libraries/LibBestOf.sol";
+import {LibRankify} from "../libraries/LibRankify.sol";
 import {LibCoinVending} from "../libraries/LibCoinVending.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
@@ -17,11 +17,11 @@ import "../abstracts/draft-EIP712Diamond.sol";
 
 import "hardhat/console.sol";
 
-contract BestOfFacet is IBestOf, IERC1155Receiver, DiamondReentrancyGuard, IERC721Receiver, EIP712 {
+contract RankifyInstanceMainFacet is IRankifyInstanceCommons, IERC1155Receiver, DiamondReentrancyGuard, IERC721Receiver, EIP712 {
     using LibTBG for LibTBG.GameInstance;
     using LibTBG for uint256;
     using LibTBG for LibTBG.GameSettings;
-    using LibBestOf for uint256;
+    using LibRankify for uint256;
 
     function checkSignature(bytes memory message, bytes memory signature, address account) private view returns (bool) {
         bytes32 typedHash = _hashTypedDataV4(keccak256(message));
@@ -36,7 +36,7 @@ contract BestOfFacet is IBestOf, IERC1155Receiver, DiamondReentrancyGuard, IERC7
         return checkSignature(message, signature, account);
     }
 
-    function BOGStorage() internal pure returns (BOGSettings storage bog) {
+    function RInstanceStorage() internal pure returns (RInstanceSettings storage bog) {
         bytes32 position = LibTBG.getDataStorage();
         assembly {
             bog.slot := position
@@ -52,7 +52,7 @@ contract BestOfFacet is IBestOf, IERC1155Receiver, DiamondReentrancyGuard, IERC7
 
     function createGame(address gameMaster, uint256 gameId, uint256 gameRank, address[] memory additionalRanks) public {
         createGame(gameMaster, gameId, gameRank);
-        BOGInstance storage game = gameId.getGameStorage();
+        RInstance storage game = gameId.getGameStorage();
         if (additionalRanks.length != 0) {
             for (uint256 i = 0; i < additionalRanks.length; i++) {
                 IRankToken additonalRank = IRankToken(additionalRanks[i]);
@@ -66,8 +66,8 @@ contract BestOfFacet is IBestOf, IERC1155Receiver, DiamondReentrancyGuard, IERC7
     }
 
     function createGame(address gameMaster, uint256 gameRank) public {
-        LibBestOf.enforceIsInitialized();
-        BOGSettings storage settings = BOGStorage();
+        LibRankify.enforceIsInitialized();
+        RInstanceSettings storage settings = RInstanceStorage();
         createGame(gameMaster, settings.numGames + 1, gameRank);
     }
 
@@ -105,36 +105,6 @@ contract BestOfFacet is IBestOf, IERC1155Receiver, DiamondReentrancyGuard, IERC7
         emit GameStarted(gameId);
     }
 
-    //
-    /* Proof is GM signed message formulated as:
-    keccak256(
-        abi.encode(voteHidden[1], voteHidden[2], voteHidden[3],playerTurnSalt)
-    )
-
-    where playerTurnSalt is :
-    keccak256(abi.encode(msg.sender,turnSalt))
-
-    Where turnSalt is:
-    turnSalt = keccak256(abi.encode(gameId,turn,seed))
-
-    Where seed is secret of game master which it never reveals.
-
-    and voteHidden[i] = keccak256(abi.encode(proposerHidden,playerTurnSalt))
-
-    where proposerHidden is
-
-    proposerHidden = keccak256(abi.encode(playerAddress, turnSalt))
-
-    Therefore secret voting can be revealed by making turnSalt publiclly availible.
-
-    Having that, one can decode all hidden messages in local enviroment.
-
-
-    it is game master responsibility to check and sign only such message where
-    voteHidden1-3 are valid and can be decoded as
-
-*/
-
     function onERC1155Received(
         address operator,
         address,
@@ -142,7 +112,7 @@ contract BestOfFacet is IBestOf, IERC1155Receiver, DiamondReentrancyGuard, IERC7
         uint256,
         bytes calldata
     ) public view override returns (bytes4) {
-        LibBestOf.enforceIsInitialized();
+        LibRankify.enforceIsInitialized();
         if (operator == address(this)) {
             return bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"));
         }
@@ -156,7 +126,7 @@ contract BestOfFacet is IBestOf, IERC1155Receiver, DiamondReentrancyGuard, IERC7
         uint256[] calldata,
         bytes calldata
     ) external view override returns (bytes4) {
-        LibBestOf.enforceIsInitialized();
+        LibRankify.enforceIsInitialized();
         if (operator == address(this)) {
             return bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"));
         }
@@ -169,17 +139,17 @@ contract BestOfFacet is IBestOf, IERC1155Receiver, DiamondReentrancyGuard, IERC7
         uint256,
         bytes calldata
     ) external view override returns (bytes4) {
-        LibBestOf.enforceIsInitialized();
+        LibRankify.enforceIsInitialized();
         if (operator == address(this)) {
             return IERC721Receiver.onERC721Received.selector;
         }
         return bytes4("");
     }
 
-    function getContractState() public view returns (ContractState memory) {
-        BOGSettings storage settings = BOGStorage();
+    function getContractState() public view returns (RInstanceState memory) {
+        RInstanceSettings storage settings = RInstanceStorage();
         LibTBG.GameSettings memory tbgSettings = LibTBG.getGameSettings();
-        return (ContractState({BestOfState: settings, TBGSEttings: tbgSettings}));
+        return (RInstanceState({BestOfState: settings, TBGSEttings: tbgSettings}));
     }
 
     function getTurn(uint256 gameId) public view returns (uint256) {

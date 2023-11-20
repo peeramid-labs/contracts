@@ -3,11 +3,11 @@ pragma solidity ^0.8.4;
 
 import {LibTBG} from "../libraries/LibTurnBasedGame.sol";
 import {LibCoinVending} from "../libraries/LibCoinVending.sol";
-import {LibBestOf} from "../libraries/LibBestOf.sol";
+import {LibRankify} from "../libraries/LibRankify.sol";
 
-contract RequirementsFacet {
+contract RankifyInstanceRequirementsFacet {
     using LibTBG for uint256;
-    using LibBestOf for uint256;
+    using LibRankify for uint256;
     using LibTBG for LibTBG.GameInstance;
     event RequirementsConfigured(uint256 indexed gameId, LibCoinVending.ConfigPosition config);
 
