@@ -5,12 +5,14 @@ import {IBestOf} from "../interfaces/IBestOf.sol";
 import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import {IRankToken} from "../interfaces/IRankToken.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
+import {LibQuadraticVoting} from "./LibQuadraticVoting.sol";
 import "hardhat/console.sol";
 
 library LibBestOf {
     using LibTBG for LibTBG.GameInstance;
     using LibTBG for uint256;
     using LibTBG for LibTBG.GameSettings;
+    using LibQuadraticVoting for LibQuadraticVoting.qVotingStruct;
 
     function compareStrings(string memory a, string memory b) internal pure returns (bool) {
         return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
@@ -190,5 +192,60 @@ library LibBestOf {
                 _releaseRankToken(player, game.rank, game.additionalRanks[i]);
             }
         }
+    }
+
+    function tryPlayerMove(uint256 gameId, address player) internal returns (bool) {
+        uint256 turn = gameId.getTurn();
+        IBestOf.BOGSettings storage settings = BOGStorage();
+        IBestOf.BOGInstance storage game = getGameStorage(gameId);
+        bool expectVote = true;
+        bool expectProposal = true;
+        if (turn == 1)
+            expectVote = false; //Dont expect votes at firt turn
+        else if (gameId.isLastTurn()) expectProposal = false; //Dont expect proposals at last turn
+        if (game.numPrevProposals < settings.voting.minQuadraticPositons) expectVote = false; // If there is not enough proposals then round is skipped votes cannot be filled
+        bool madeMove = true;
+        if (expectVote && !game.playerVoted[player]) madeMove = false;
+        if (expectProposal && game.proposalCommitmentHashes[player] == "") madeMove = false;
+        // console.log("made move", madeMove, expectProposal);
+        // console.log(game.proposalCommitmentHashes[player] == "", game.playerVoted[player]);
+        if (madeMove) gameId.playerMove(player);
+        return madeMove;
+    }
+
+    //prevProposersRevealed MUST be submitted sorted according to proposals in ongoingProposals map
+    function calculateScoresQuadratic(
+        uint256 gameId,
+        uint256[][] memory votesRevealed,
+        uint256[] memory proposerIndicies
+    ) internal returns (uint256[] memory, uint256[] memory) {
+        address[] memory players = gameId.getPlayers();
+        uint256[] memory scores = new uint256[](players.length);
+        uint256[] memory roundScores = new uint256[](players.length);
+        bool[] memory playerVoted = new bool[](players.length);
+        IBestOf.BOGSettings storage settings = BOGStorage();
+        IBestOf.BOGInstance storage game = getGameStorage(gameId);
+        // Convert mappiing to array to pass it to libQuadratic
+        for (uint256 i = 0; i < players.length; i++) {
+            playerVoted[i] = game.playerVoted[players[i]];
+        }
+        roundScores = settings.voting.computeScoresByVPIndex(
+            votesRevealed,
+            playerVoted,
+            settings.voting.maxQuadraticPoints,
+            proposerIndicies.length
+
+        );
+        for (uint256 playerIdx = 0; playerIdx < players.length; playerIdx++) {
+            //for each player
+            if (proposerIndicies[playerIdx] < players.length) {
+                //if player propposed exists
+                scores[playerIdx] = gameId.getScore(players[playerIdx]) + roundScores[playerIdx];
+                gameId.setScore(players[playerIdx], scores[playerIdx]);
+            } else {
+                //Player did not propose
+            }
+        }
+        return (scores, roundScores);
     }
 }

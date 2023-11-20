@@ -18,6 +18,7 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {IBestOf} from "../interfaces/IBestOf.sol";
 import {IRankToken} from "../interfaces/IRankToken.sol";
 import {LibTBG} from "../libraries/LibTurnBasedGame.sol";
+import { LibQuadraticVoting} from "../libraries/LibQuadraticVoting.sol";
 // import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "hardhat/console.sol";
 
@@ -80,6 +81,7 @@ contract BestOfInit {
         ss._TYPE_HASH = typeHash;
 
         IBestOf.BOGSettings storage _BOG = BOGStorage();
+        _BOG.voting = LibQuadraticVoting.precomputeValues(initializer.voteCredits, initializer.minPlayersSize);
         _BOG.gamePrice = initializer.gamePrice;
         _BOG.joinGamePrice = initializer.joinGamePrice;
         require(initializer.agendaToken != address(0), "initializer.agendaToken not set");
@@ -100,7 +102,6 @@ contract BestOfInit {
         settings.maxTurns = initializer.maxTurns;
         settings.numWinners = initializer.numWinners;
         settings.subject = initializer.subject;
-        settings.voteCredits = initializer.voteCredits;
         LibTBG.init(settings);
 
         // add your own state variables

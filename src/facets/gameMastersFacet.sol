@@ -107,23 +107,13 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
         LibBestOf.enforceIsGM(gameId, msg.sender);
         gameId.enforceGameExists();
         gameId.enforceHasStarted();
-        // bytes memory message = abi.encode(
-        //     //ToDo: add address of a player to signature as well proof
-        //     LibBestOf._VOTE_SUBMIT_PROOF_TYPEHASH,
-        //     gameId,
-        //     gameId.getTurn(),
-        //     votesHidden[0],
-        //     votesHidden[1],
-        //     votesHidden[2]
-        // );
-        // IBestOf.BOGInstance storage game = gameId.getGameStorage();
         require(!gameId.isGameOver(), "Game over");
+        gameId.enforceIsPlayingGame(voter);
         require(gameId.getTurn() > 1, "No proposals exist at turn 1: cannot vote");
-        // game.votesHidden[msg.sender].votedFor = votesHidden;
-        // game.votesHidden[voter].proof = bytes memory (0);
-        gameId.playerMove(voter); // This will enforce player is in in the game
         IBestOf.BOGInstance storage game = gameId.getGameStorage();
         game.numVotesThisTurn += 1;
+        game.playerVoted[voter] = true;
+        gameId.tryPlayerMove(voter);
         emit VoteSubmitted(gameId, gameId.getTurn(), voter, encryptedVotes);
     }
 
@@ -139,21 +129,9 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
         require(bytes(proposalData.encryptedProposal).length != 0, "Cannot propose empty");
         require(game.proposalCommitmentHashes[proposalData.proposer] == "", "Already proposed!");
         uint256 turn = proposalData.gameId.getTurn();
-        if(turn == 1 || game.numVotesThisTurn == 0) proposalData.gameId.playerMove(proposalData.proposer);
-
-        // bytes memory message = abi.encode(
-        //   LibBestOf._PROPOSAL_PROOF_TYPEHASH,
-        //   gameId,
-        //   _turn,
-        //   proposalNHash,
-        //   keccak256(abi.encodePacked(encryptedProposal))
-        // );
-        // require(
-        //   _isValidSignature(message, gmSignature, gameId.getGM()),
-        //   "wrong signature"
-        // );
         game.proposalCommitmentHashes[proposalData.proposer] = proposalData.commitmentHash;
         game.numCommitments += 1;
+        proposalData.gameId.tryPlayerMove(proposalData.proposer);
         emit ProposalSubmitted(
             proposalData.gameId,
             turn,
@@ -163,43 +141,23 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
         );
     }
 
-    // function enforceValidProposalsRevealed(
-    //   uint256 gameId,
-    //   uint256 turn,
-    //   bytes32[] memory nullifiers // string[] memory proposals unused until ZKP is implemented
-    // ) private {
-    //   IBestOf.BOGInstance storage game = gameId.getGameStorage();
-    //   require(nullifiers.length == game.numCommitments, "unequal lengths");
-    //   uint256 length = nullifiers.length;
-    //   for (uint256 i = 0; i < length; i++) {
-    //     require(
-    //       !game.futureProposalNs[turn + 1][nullifiers[i]],
-    //       "Duplicate nullifier detected"
-    //     );
-    //     game.futureProposalNs[turn + 1][nullifiers[i]] = true;
-    //     bytes32 nHash = keccak256(abi.encode(nullifiers[i]));
-    //     require(
-    //       game.proposalCommitmentHashes[turn + 1][nHash],
-    //       "invalid nullifier"
-    //     );
-    //     //ToDo: ZKP verification that proposalNHash exists for a proposal. Until that assumption is that GM must be honest
-    //     // validateZKP(game.proposalCommitmentHashes[turn+1][nHash],proposals[i])
-    //   }
-    // }
 
     // Clean up game instance for upcoming round
     function _beforeNextTurn(uint256 gameId) internal {
         address[] memory players = gameId.getPlayers();
         IBestOf.BOGInstance storage game = gameId.getGameStorage();
-        game.numOngoingProposals = 0;
         game.numCommitments = 0;
         for (uint256 i = 0; i < players.length; i++) {
             game.proposalCommitmentHashes[players[i]] = bytes32(0);
             game.ongoingProposals[i] = "";
+            game.playerVoted[players[i]] = false;
             game.votesHidden[players[i]].hash = bytes32(0);
-            // delete game.votesHidden[players[i]].proof;
         }
+        // This data is to needed to correctly detetermine "PlayerMove" conditions during next turn
+         game.numVotesPrevTurn = game.numVotesThisTurn;
          game.numVotesThisTurn = 0;
+         game.numPrevProposals = game.numOngoingProposals;
+         game.numOngoingProposals = 0;
     }
 
     // Move new proposals in to ongoing proposals
@@ -239,13 +197,12 @@ contract GameMastersFacet is DiamondReentrancyGuard, EIP712 {
         uint256[] memory proposerIndicies //REFERRING TO game.players index in PREVIOUS VOTING ROUND
     ) public {
         gameId.enforceIsGM(msg.sender);
-
         IBestOf.BOGInstance storage game = gameId.getGameStorage();
         require(!gameId.isGameOver(), "Game over");
         gameId.enforceHasStarted();
         uint256 turn = gameId.getTurn();
         if(turn != 1) {
-            require(gameId.canEndTurnEarly() == true, "Cannot do this now");
+            require(gameId.canEndTurnEarly() == true, "endTurn->canEndTurnEarly");
         }
         if (!gameId.isLastTurn()) {
             require(

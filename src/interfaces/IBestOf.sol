@@ -3,6 +3,7 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import {LibTBG} from "../libraries/LibTurnBasedGame.sol";
 import {LibCoinVending} from "../libraries/LibCoinVending.sol";
+import {LibQuadraticVoting} from "../libraries/LibQuadraticVoting.sol";
 
 interface IBestOf {
     struct Score {
@@ -17,6 +18,7 @@ interface IBestOf {
         uint256 numGames;
         address rankTokenAddress;
         bool contractInitialized;
+        LibQuadraticVoting.qVotingStruct voting;
     }
 
     struct ContractState {
@@ -31,7 +33,7 @@ interface IBestOf {
 
     struct VoteHidden {
         bytes32 hash;
-        // bytes proof;
+        bytes proof;
     }
 
     struct BOGInstance {
@@ -39,12 +41,15 @@ interface IBestOf {
         address createdBy;
         mapping(uint256 => string) ongoingProposals; //Previous Turn Proposals (These are being voted on)
         uint256 numOngoingProposals;
+        uint256 numPrevProposals;
         mapping(address => bytes32) proposalCommitmentHashes; //Current turn Proposal submittion
         uint256 numCommitments;
         mapping(address => VoteHidden) votesHidden;
         address[] additionalRanks;
         uint256 paymentsBalance;
         uint256 numVotesThisTurn;
+        uint256 numVotesPrevTurn;
+        mapping(address => bool) playerVoted;
     }
 
     event RegistrationOpen(uint256 indexed gameid);

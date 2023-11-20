@@ -11,8 +11,6 @@ import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {LibArray} from "../libraries/LibArray.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
-error invalidConfiguration(string paramter);
-
 library LibTBG {
     // using EnumerableMap for EnumerableMap.AddressToUintMap;
     // using EnumerableMap for EnumerableMap.UintToAddressMap;
@@ -50,7 +48,6 @@ library LibTBG {
         mapping(uint256 => GameInstance) games;
         mapping(address => uint256) playerInGame;
         uint256 totalGamesCreated;
-        uint256 maxQuadraticPoints;
     }
 
     bytes32 constant TBG_STORAGE_POSITION = keccak256("turnbasedgame.storage.position");
@@ -70,19 +67,17 @@ library LibTBG {
 
     function init(GameSettings memory settings) internal {
         TBGStorageStruct storage tbg = TBGStorage();
-        if (settings.timePerTurn == 0) require(false, "invalidConfiguration"); //  revert invalidConfiguration('timePerTurn');
-        if (settings.maxPlayersSize == 0) require(false, "invalidConfiguration"); // revert invalidConfiguration('maxPlayersSize');
-        if (settings.minPlayersSize < 2) require(false, "invalidConfiguration"); //revert invalidConfiguration('minPlayersSize');
-        if (settings.maxTurns == 0) require(false, "invalidConfiguration"); //revert invalidConfiguration('maxTurns');
+        if (settings.timePerTurn == 0) require(false, "settings.timePerTurn"); //  revert invalidConfiguration('timePerTurn');
+        if (settings.maxPlayersSize == 0) require(false, "settings.maxPlayersSize"); // revert invalidConfiguration('maxPlayersSize');
+        if (settings.minPlayersSize < 2) require(false, "settings.minPlayersSize"); //revert invalidConfiguration('minPlayersSize');
+        if (settings.maxTurns == 0) require(false, "settings.maxTurns"); //revert invalidConfiguration('maxTurns');
         if (settings.numWinners == 0 || settings.numWinners >= settings.minPlayersSize)
-            require(false, "invalidConfiguration"); //revert invalidConfiguration('numWinners');
-        if (settings.timeToJoin == 0) require(false, "invalidConfiguration"); // revert invalidConfiguration('timeToJoin');
-        if (settings.maxPlayersSize < settings.minPlayersSize) require(false, "invalidConfiguration"); //revert invalidConfiguration('maxPlayersSize');
-        if (settings.voteCredits < 1) require(false, "invalidConfiguration"); //revert invalidConfiguration('voteCredits');
-        if (bytes(settings.subject).length == 0) require(false, "invalidConfiguration"); //revert invalidConfiguration('subject length');
+            require(false, "numWinners"); //revert invalidConfiguration('numWinners');
+        if (settings.timeToJoin == 0) require(false, "timeToJoin"); // revert invalidConfiguration('timeToJoin');
+        if (settings.maxPlayersSize < settings.minPlayersSize) require(false, "maxPlayersSize"); //revert invalidConfiguration('maxPlayersSize');
+        if (bytes(settings.subject).length == 0) require(false, "subject length"); //revert invalidConfiguration('subject length');
 
         tbg.settings = settings;
-        tbg.maxQuadraticPoints = Math.sqrt(settings.voteCredits);
     }
 
     function createGame(uint256 gameId, address gm) internal {
@@ -179,18 +174,15 @@ library LibTBG {
     }
 
     function canEndTurn(uint256 gameId) internal view returns (bool) {
-        GameInstance storage _game = _getGame(gameId);
         bool turnTimedOut = isTurnTimedOut(gameId);
-        bool everyoneMadeMove = (_game.numPlayersMadeMove + 1) == _game.players.length() ? true : false;
-        if ((everyoneMadeMove && !turnTimedOut) || turnTimedOut) return true;
+        if (turnTimedOut) return true;
         return false;
     }
 
     function canEndTurnEarly(uint256 gameId) internal view returns (bool) {
         GameInstance storage _game = _getGame(gameId);
-        bool turnTimedOut = isTurnTimedOut(gameId);
-        bool everyoneMadeMove = (_game.numPlayersMadeMove + 1) == _game.players.length() ? true : false;
-        if (everyoneMadeMove || turnTimedOut) return true;
+        bool everyoneMadeMove = (_game.numPlayersMadeMove) == _game.players.length() ? true : false;
+        if (everyoneMadeMove || canEndTurn(gameId)) return true;
         return false;
     }
 
@@ -330,6 +322,12 @@ library LibTBG {
         _game.numPlayersMadeMove += 1;
     }
 
+    function enforceIsPlayingGame(uint256 gameId, address player) internal view
+    {
+        TBGStorageStruct storage tbg = TBGStorage();
+        require(gameId == tbg.playerInGame[player], "is not in the game");
+    }
+
     function hasStarted(uint256 gameId) internal view returns (bool) {
         GameInstance storage _game = _getGame(gameId);
         return _game.hasStarted;
@@ -427,53 +425,4 @@ library LibTBG {
         return tbg.playerInGame[player];
     }
 
-    function getScoreQuadratic(
-        uint256 gameId,
-        uint256[][] memory votes,
-        uint256 proposerIdx
-    ) internal view returns (uint256) {
-        address[] memory players = getPlayers(gameId);
-        GameInstance storage _game = _getGame(gameId);
-        // uint256 proposalIdx = game.playersOngoingProposalIdx[proposer];
-        uint256 score = 0;
-        TBGStorageStruct storage tbg = TBGStorage();
-        for (uint256 i = 0; i < players.length; i++) {
-            uint256 creditsUsed = 0;
-            if (!_game.madeMove[players[i]]) {
-                score += tbg.maxQuadraticPoints;
-                creditsUsed = tbg.settings.voteCredits;
-            } else {
-                uint256[] memory playerVote = votes[i];
-                require(playerVote[i] == 0, "Voted for himself");
-                score += playerVote[proposerIdx];
-                creditsUsed += playerVote[proposerIdx] * playerVote[proposerIdx];
-            }
-            require(creditsUsed <= tbg.settings.voteCredits, "Quadratic: vote credits overrun");
-        }
-        return score;
-    }
-
-    //prevProposersRevealed MUST be submitted sorted according to proposals in ongoingProposals map
-    function calculateScoresQuadratic(
-        uint256 gameId,
-        uint256[][] memory votesRevealed,
-        uint256[] memory proposerIndicies
-    ) internal returns (uint256[] memory, uint256[] memory) {
-        address[] memory players = getPlayers(gameId);
-        uint256[] memory scores = new uint256[](players.length);
-        uint256[] memory roundScores = new uint256[](players.length);
-        for (uint256 playerIdx = 0; playerIdx < players.length; playerIdx++) {
-            //for each player
-
-            if (proposerIndicies[playerIdx] < players.length) {
-                //if proposal exists
-                roundScores[playerIdx] = getScoreQuadratic(gameId, votesRevealed, proposerIndicies[playerIdx]);
-                scores[playerIdx] = getScore(gameId, players[playerIdx]) + roundScores[playerIdx];
-                setScore(gameId, players[playerIdx], scores[playerIdx]);
-            } else {
-                //Player did not propose
-            }
-        }
-        return (scores, roundScores);
-    }
 }
