@@ -77,7 +77,7 @@ contract GameOwnersFacet {
         tbg.settings.minPlayersSize = newMinPlayersSize;
     }
 
-    function setBlocksToJoin(uint256 newTimeToJoin) external {
+    function setTimeToJoin(uint256 newTimeToJoin) external {
         LibDiamond.enforceIsContractOwner();
         if (newTimeToJoin == 0) {
              require(false, 'ZeroValue'); //revert ZeroValue();
