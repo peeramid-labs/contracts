@@ -110,6 +110,6 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   }
 };
 
-func.tags = ['gameofbest', 'gamediamond'];
-func.dependencies = ['ranktoken', 'rankify'];
+func.tags = ['rankify_game', 'rankify'];
+func.dependencies = ['rank_token', 'rankify_token'];
 export default func;
