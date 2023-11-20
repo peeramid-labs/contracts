@@ -11,6 +11,7 @@ import {
   SignerIdentity,
   ProposalParams,
   BOG_MAX_TURNS,
+  BOG_TIME_PER_TURN,
 } from './utils';
 import {
   setupAddresses,
@@ -22,6 +23,7 @@ import {
   getPlayers,
 } from './utils';
 import { expect } from 'chai';
+import { time } from '@nomicfoundation/hardhat-network-helpers';
 import {
   BestOfDiamond,
   IBestOf,
@@ -62,12 +64,13 @@ const runToTheEnd = async (
   players: [SignerIdentity, SignerIdentity, ...SignerIdentity[]],
   distribution?: 'ftw' | 'semiUniform' | 'equal',
 ) => {
-  // console.log("running to the end");
+  // console.log('running to the end');
   // const initialTurn = await env.bestOfGame.getTurn(gameId);
   let isGameOver = await env.bestOfGame.isGameOver(gameId);
   while (!isGameOver) {
     const isLastTurn = await env.bestOfGame.isLastTurn(gameId);
     const turn = await env.bestOfGame.getTurn(gameId).then(r => r.toNumber());
+    // console.log('running to the end', turn, isLastTurn, isGameOver);
     if (turn !== 1) {
       votes = await mockValidVotes(players, gameContract, gameId, gameMaster, true, distribution ?? 'ftw');
     }
@@ -218,6 +221,8 @@ const startGame = async (
   gameId: BigNumberish,
   // players: [SignerIdentity, SignerIdentity, ...SignerIdentity[]]
 ) => {
+  const currentT = await time.latest();
+  await time.setNextBlockTimestamp(currentT + Number(BOGSettings.BOG_TIME_TO_JOIN) + 1);
   await mineBlocks(BOGSettings.BOG_TIME_TO_JOIN + 1);
   await env.bestOfGame.connect(adr.gameMaster1.wallet).startGame(gameId);
   // proposalsStruct = await mockProposals({
@@ -781,10 +786,12 @@ describe(scriptName, () => {
                       proposalsStruct.map(p => p.proposal),
                       proposalsStruct.map((p, idx) => idx),
                     ),
-                  ).to.be.revertedWith('Some players still have time to propose');
+                  ).to.be.revertedWith('endTurn->canEndTurnEarly');
                 });
                 it('Can end turn if timeout reached', async () => {
-                  await mineBlocks(BOGSettings.BOG_TIME_PER_TURN + 1);
+                  // await mineBlocks(BOGSettings.BOG_TIME_PER_TURN + 1);
+                  const currentT = await time.latest();
+                  await time.setNextBlockTimestamp(currentT + Number(BOGSettings.BOG_TIME_PER_TURN) + 1);
                   expect(await env.bestOfGame.getTurn(1)).to.be.equal(2);
                   const players = getPlayers(adr, BOGSettings.BOG_MIN_PLAYERS);
                   const expectedScores: number[] = players.map(v => 0);
@@ -798,6 +805,18 @@ describe(scriptName, () => {
                       //somebody did not vote at all
                     }
                   }
+                  // console.log(
+                  //   'expectedScores',
+                  //   expectedScores,
+                  //   votes.map(vote => vote.vote),
+                  // );
+                  // const tx = await env.bestOfGame.connect(adr.gameMaster1.wallet).endTurn(
+                  //   1,
+                  //   votes.map(vote => vote.vote),
+                  //   [],
+                  //   votersAddresses.map((p, idx) => idx),
+                  // );
+                  // console.log((await tx.wait(1)).events?.find(e => e.event === 'TurnEnded').args);
                   await expect(
                     env.bestOfGame.connect(adr.gameMaster1.wallet).endTurn(
                       1,
@@ -818,7 +837,9 @@ describe(scriptName, () => {
                     );
                 });
                 it('Emits correct ProposalScore event values', async () => {
-                  await mineBlocks(BOGSettings.BOG_TIME_PER_TURN + 1);
+                  // await mineBlocks(BOGSettings.BOG_TIME_PER_TURN + 1);
+                  const currentT = await time.latest();
+                  await time.setNextBlockTimestamp(currentT + Number(BOGSettings.BOG_TIME_PER_TURN) + 1);
                   expect(await env.bestOfGame.getTurn(1)).to.be.equal(2);
                   const players = getPlayers(adr, BOGSettings.BOG_MIN_PLAYERS);
                   const expectedScores: number[] = players.map(v => 0);
@@ -1034,7 +1055,6 @@ describe(scriptName, () => {
       describe('When game is over', () => {
         beforeEach(async () => {
           await runToTheEnd(1, env.bestOfGame, adr.gameMaster1, getPlayers(adr, BOGSettings.BOG_MAX_PLAYERS));
-          const isover = await env.bestOfGame.isGameOver(1);
         });
         it('Throws on attempt to make another turn', async () => {
           const currentTurn = await env.bestOfGame.getTurn(1);
@@ -1105,10 +1125,7 @@ describe(scriptName, () => {
             await expect(env.bestOfGame.connect(adr.player1.wallet).joinGame(2))
               .to.emit(env.bestOfGame, 'PlayerJoined')
               .withArgs(2, adr.player1.wallet.address);
-            await expect(env.bestOfGame.connect(adr.player2.wallet).joinGame(2)).to.be.revertedWithCustomError(
-              env.rankToken,
-              'insufficient',
-            );
+            await expect(env.bestOfGame.connect(adr.player2.wallet).joinGame(2)).to.be.revertedWith('insufficient');
           });
         });
       });
@@ -1144,7 +1161,9 @@ describe(scriptName, () => {
       expect(await env.rankToken.balanceOf(adr.player3.wallet.address, 2)).to.be.equal(1);
       expect(await env.rankToken.balanceOf(adr.player4.wallet.address, 2)).to.be.equal(1);
       expect(await env.rankToken.balanceOf(adr.player5.wallet.address, 2)).to.be.equal(1);
-      expect(await env.rankToken.balanceOf(adr.player6.wallet.address, 2)).to.be.equal(0);
+      expect(await env.rankToken.balanceOf(adr.player6.wallet.address, 2)).to.be.equal(1);
+      expect(await env.rankToken.balanceOf(adr.player7.wallet.address, 2)).to.be.equal(0);
+      assert(BOGSettings.BOG_MAX_PLAYERS == 6);
     });
     describe('When game of next rank is created', () => {
       beforeEach(async () => {
@@ -1157,10 +1176,10 @@ describe(scriptName, () => {
           env.bestOfGame,
           'PlayerJoined',
         );
-        await env.rankToken.connect(adr.player6.wallet).setApprovalForAll(env.bestOfGame.address, true);
-        await expect(
-          env.bestOfGame.connect(adr.player6.wallet).joinGame(lastCreatedGameId),
-        ).to.be.revertedWithCustomError(env.rankToken, 'insufficient');
+        await env.rankToken.connect(adr.maliciousActor1.wallet).setApprovalForAll(env.bestOfGame.address, true);
+        await expect(env.bestOfGame.connect(adr.maliciousActor1.wallet).joinGame(lastCreatedGameId)).to.be.revertedWith(
+          'insufficient',
+        );
       });
       it('Locks rank tokens when player joins', async () => {
         const balance = await env.rankToken.balanceOf(adr.player1.wallet.address, 2);
