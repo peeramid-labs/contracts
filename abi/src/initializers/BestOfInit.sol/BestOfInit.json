@@ -3,17 +3,6 @@
     "inputs": [
       {
         "internalType": "string",
-        "name": "paramter",
-        "type": "string"
-      }
-    ],
-    "name": "invalidConfiguration",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "string",
         "name": "name",
         "type": "string"
       },

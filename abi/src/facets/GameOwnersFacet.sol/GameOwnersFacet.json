@@ -1,20 +1,5 @@
 [
   {
-    "inputs": [],
-    "name": "OutOfBounds",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "WrongAddress",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "ZeroValue",
-    "type": "error"
-  },
-  {
     "inputs": [
       {
         "internalType": "uint256",

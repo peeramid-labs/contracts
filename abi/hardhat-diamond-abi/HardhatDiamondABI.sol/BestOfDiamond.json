@@ -283,6 +283,28 @@
                 "internalType": "bool",
                 "name": "contractInitialized",
                 "type": "bool"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "uint256",
+                    "name": "voteCredits",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "maxQuadraticPoints",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "minQuadraticPositons",
+                    "type": "uint256"
+                  }
+                ],
+                "internalType": "struct LibQuadraticVoting.qVotingStruct",
+                "name": "voting",
+                "type": "tuple"
               }
             ],
             "internalType": "struct IBestOf.BOGSettings",
@@ -754,21 +776,6 @@
     ],
     "stateMutability": "view",
     "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "OutOfBounds",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "WrongAddress",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "ZeroValue",
-    "type": "error"
   },
   {
     "inputs": [
