@@ -781,19 +781,6 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "newTimeToJoin",
-        "type": "uint256"
-      }
-    ],
-    "name": "setBlocksToJoin",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
         "name": "newPrice",
         "type": "uint256"
       }
@@ -877,6 +864,19 @@
       }
     ],
     "name": "setTimePerTurn",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "newTimeToJoin",
+        "type": "uint256"
+      }
+    ],
+    "name": "setTimeToJoin",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
