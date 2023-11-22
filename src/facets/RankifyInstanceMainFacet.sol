@@ -101,7 +101,7 @@ contract RankifyInstanceMainFacet is IRankifyInstanceCommons, IERC1155Receiver, 
 
     function startGame(uint256 gameId) public {
         gameId.enforceGameExists();
-        gameId.startGame();
+        gameId.startGameEarly();
         emit GameStarted(gameId);
     }
 

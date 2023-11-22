@@ -175,6 +175,8 @@ library LibTBG {
 
     function canEndTurn(uint256 gameId) internal view returns (bool) {
         bool turnTimedOut = isTurnTimedOut(gameId);
+        GameInstance storage _game = _getGame(gameId);
+        if(!_game.hasStarted) return false;
         if (turnTimedOut) return true;
         return false;
     }
@@ -182,6 +184,7 @@ library LibTBG {
     function canEndTurnEarly(uint256 gameId) internal view returns (bool) {
         GameInstance storage _game = _getGame(gameId);
         bool everyoneMadeMove = (_game.numPlayersMadeMove) == _game.players.length() ? true : false;
+        if(!_game.hasStarted) return false;
         if (everyoneMadeMove || canEndTurn(gameId)) return true;
         return false;
     }
@@ -251,21 +254,34 @@ library LibTBG {
     function canStart(uint256 gameId) internal view returns (bool) {
         GameInstance storage _game = _getGame(gameId);
         TBGStorageStruct storage tbg = TBGStorage();
-        bool retval = canStartEarly(gameId);
-        if (_game.players.length() < tbg.settings.minPlayersSize) retval = false;
-        return retval;
+        if (_game.hasStarted) return false;
+        if (_game.registrationOpenAt == 0) return false;
+        if (gameId == 0) return false;
+        if (block.timestamp <= _game.registrationOpenAt + tbg.settings.timeToJoin) return false;
+        if (_game.players.length() < tbg.settings.minPlayersSize) return false;
+        return true;
     }
 
     function canStartEarly(uint256 gameId) internal view returns (bool) {
         GameInstance storage _game = _getGame(gameId);
         TBGStorageStruct storage tbg = TBGStorage();
-        bool retval = true;
-        if (_game.hasStarted != false) retval = false;
-        if (_game.registrationOpenAt == 0) retval = false;
-        if (block.timestamp <= _game.registrationOpenAt + tbg.settings.timeToJoin) retval = false;
-        if (gameId == 0) retval = false;
-        if (_game.players.length() + 1 == tbg.settings.maxPlayersSize) retval = false;
-        return retval;
+
+        if ((_game.players.length() == tbg.settings.maxPlayersSize) || canStart(gameId)) return true;
+        return false;
+    }
+
+        function startGameEarly(uint256 gameId) internal {
+        GameInstance storage _game = _getGame(gameId);
+        TBGStorageStruct storage tbg = TBGStorage();
+        require(_game.hasStarted == false, "startGame->already started");
+        require(_game.registrationOpenAt != 0, "startGame->Game registration was not yet open");
+        require(gameId != 0, "startGame->Game not found");
+        require((_game.players.length() == tbg.settings.maxPlayersSize) || (block.timestamp > _game.registrationOpenAt + tbg.settings.timeToJoin) , "startGame->Not enough players");
+        _game.hasStarted = true;
+        _game.hasEnded = false;
+        _game.currentTurn = 1;
+        _game.turnStartedAt = block.timestamp;
+        _resetPlayerStates(_game);
     }
 
     function startGame(uint256 gameId) internal {

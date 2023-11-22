@@ -293,7 +293,7 @@ export const setupTest = deployments.createFixture(async ({ deployments, getName
     to: owner,
     value: _eth.utils.parseEther('1'),
   });
-  await deployments.fixture(['ranktoken', 'gameofbest']);
+  await deployments.fixture(['rankify']);
   const MockERC20F = await _eth.getContractFactory('MockERC20', adr.contractDeployer.wallet);
   const mockERC20 = (await MockERC20F.deploy('Mock ERC20', 'MCK20', adr.contractDeployer.wallet.address)) as MockERC20;
   await mockERC20.deployed();
@@ -504,7 +504,6 @@ export interface ProposalSubmittion {
   params: ProposalParams;
   proposerSignerId: SignerIdentity;
 }
-
 
 interface VoteMessage {
   vote1: BigNumberish;
