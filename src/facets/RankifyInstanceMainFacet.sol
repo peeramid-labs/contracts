@@ -197,7 +197,7 @@ contract RankifyInstanceMainFacet is IRankifyInstanceCommons, IERC1155Receiver, 
     }
 
     function canStartGame(uint256 gameId) public view returns (bool) {
-        return gameId.canStart();
+        return gameId.canStartEarly();
     }
 
     function canEndTurn(uint256 gameId) public view returns (bool)
