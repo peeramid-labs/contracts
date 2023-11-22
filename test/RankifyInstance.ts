@@ -609,7 +609,7 @@ describe(scriptName, () => {
             'startGame->Not enough players',
           );
           const currentT = await time.latest();
-          await time.setNextBlockTimestamp(currentT + Number(RInstanceSettings.RInstance_TIME_PER_TURN) + 1);
+          await time.setNextBlockTimestamp(currentT + Number(RInstanceSettings.RInstance_TIME_TO_JOIN) + 1);
           await mineBlocks(1);
           await expect(env.rankifyInstance.connect(adr.gameMaster1.wallet).startGame(1)).to.be.emit(
             env.rankifyInstance,
