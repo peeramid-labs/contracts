@@ -510,13 +510,20 @@ describe(scriptName, () => {
           'PlayerJoined',
         );
       });
-      it('Game cannot be started until join blocktime has passed', async () => {
+      it('Game cannot be started until join blocktime has passed unless game is full', async () => {
         env.rankifyInstance.connect(adr.player1.wallet).joinGame(1);
-        env.rankifyInstance.connect(adr.player2.wallet).joinGame(1);
-        env.rankifyInstance.connect(adr.player3.wallet).joinGame(1);
 
         await expect(env.rankifyInstance.connect(adr.player1.wallet).startGame(1)).to.be.revertedWith(
-          'startGame->Still Can Join',
+          'startGame->Not enough players',
+        );
+        env.rankifyInstance.connect(adr.player2.wallet).joinGame(1);
+        env.rankifyInstance.connect(adr.player3.wallet).joinGame(1);
+        env.rankifyInstance.connect(adr.player4.wallet).joinGame(1);
+        env.rankifyInstance.connect(adr.player5.wallet).joinGame(1);
+        env.rankifyInstance.connect(adr.player6.wallet).joinGame(1);
+        await expect(env.rankifyInstance.connect(adr.player1.wallet).startGame(1)).to.be.emit(
+          env.rankifyInstance,
+          'GameStarted',
         );
       });
       it('No more than max players can join', async () => {
@@ -528,11 +535,11 @@ describe(scriptName, () => {
           'addPlayer->party full',
         );
       });
-      it('Game cannot start too early', async () => {
-        await expect(env.rankifyInstance.connect(adr.gameMaster1.wallet).startGame(1)).to.be.revertedWith(
-          'startGame->Still Can Join',
-        );
-      });
+      // it('Game cannot start too early', async () => {
+      //   await expect(env.rankifyInstance.connect(adr.gameMaster1.wallet).startGame(1)).to.be.revertedWith(
+      //     'startGame->Still Can Join',
+      //   );
+      // });
       it('Game methods beside join and start are inactive', async () => {
         await expect(
           env.rankifyInstance.connect(adr.gameMaster1.wallet).submitProposal({
@@ -597,11 +604,13 @@ describe(scriptName, () => {
         beforeEach(async () => {
           await fillParty(getPlayers(adr, RInstanceSettings.RInstance_MIN_PLAYERS), env.rankifyInstance, 1, false);
         });
-        it('Can start game only after joining period is over', async () => {
+        it('Can start game after joining period is over', async () => {
           await expect(env.rankifyInstance.connect(adr.gameMaster1.wallet).startGame(1)).to.be.revertedWith(
-            'startGame->Still Can Join',
+            'startGame->Not enough players',
           );
-          await mineBlocks(RInstanceSettings.RInstance_TIME_TO_JOIN + 1);
+          const currentT = await time.latest();
+          await time.setNextBlockTimestamp(currentT + Number(RInstanceSettings.RInstance_TIME_PER_TURN) + 1);
+          await mineBlocks(1);
           await expect(env.rankifyInstance.connect(adr.gameMaster1.wallet).startGame(1)).to.be.emit(
             env.rankifyInstance,
             'GameStarted',

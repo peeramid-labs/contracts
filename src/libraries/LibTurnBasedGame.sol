@@ -276,6 +276,7 @@ library LibTBG {
         require(_game.hasStarted == false, "startGame->already started");
         require(_game.registrationOpenAt != 0, "startGame->Game registration was not yet open");
         require(gameId != 0, "startGame->Game not found");
+        require(_game.players.length() >= tbg.settings.minPlayersSize, "startGame->Not enough players");
         require((_game.players.length() == tbg.settings.maxPlayersSize) || (block.timestamp > _game.registrationOpenAt + tbg.settings.timeToJoin) , "startGame->Not enough players");
         _game.hasStarted = true;
         _game.hasEnded = false;
