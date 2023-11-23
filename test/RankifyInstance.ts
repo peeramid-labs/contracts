@@ -260,7 +260,7 @@ const fillParty = async (
   players: [SignerIdentity, SignerIdentity, ...SignerIdentity[]],
   gameContract: RankifyDiamondInstance,
   gameId: BigNumberish,
-  mineJoinBlocks: boolean,
+  shiftTime: boolean,
   startGame?: boolean,
   gameMaster?: SignerIdentity,
 ) => {
@@ -270,7 +270,11 @@ const fillParty = async (
     await env.rankToken.connect(players[i].wallet).setApprovalForAll(env.rankifyInstance.address, true);
     await gameContract.connect(players[i].wallet).joinGame(gameId, { value: ethers.utils.parseEther('0.4') });
   }
-  if (mineJoinBlocks) await mineBlocks(RInstanceSettings.RInstance_TIME_TO_JOIN + 1);
+  if (shiftTime) {
+    const currentT = await time.latest();
+    await time.setNextBlockTimestamp(currentT + Number(RInstanceSettings.RInstance_TIME_TO_JOIN) + 1);
+    await mineBlocks(1);
+  }
   if (startGame && gameMaster) {
     await env.rankifyInstance.connect(gameMaster.wallet).startGame(gameId);
   }
@@ -1186,6 +1190,41 @@ describe(scriptName, () => {
             );
           });
         });
+      });
+    });
+    describe('When a game was played till end', () => {
+      beforeEach(async () => {
+        const gameCreate = await env.rankifyInstance
+          .connect(adr.gameCreator1.wallet)
+          ['createGame(address,uint256,uint256)'](adr.gameMaster1.wallet.address, 3, 1);
+        const openRegistration = await env.rankifyInstance.connect(adr.gameCreator1.wallet).openRegistration(3);
+        await fillParty(
+          getPlayers(adr, RInstanceSettings.RInstance_MAX_PLAYERS),
+          env.rankifyInstance,
+          3,
+          true,
+          true,
+          adr.gameMaster1,
+        );
+        await runToTheEnd(
+          3,
+          env.rankifyInstance,
+          adr.gameMaster1,
+          getPlayers(adr, RInstanceSettings.RInstance_MAX_PLAYERS),
+        );
+      });
+      it('Allows players to join another game of same rank if they have rank token', async () => {
+        const gameCreate = await env.rankifyInstance
+          .connect(adr.gameCreator1.wallet)
+          ['createGame(address,uint256,uint256)'](adr.gameMaster1.wallet.address, 10, 1);
+        const currentT = await time.latest();
+        await time.setNextBlockTimestamp(currentT + Number(RInstanceSettings.RInstance_TIME_TO_JOIN) + 1);
+        const openRegistration = await env.rankifyInstance.connect(adr.gameCreator1.wallet).openRegistration(10);
+        await env.rankToken.connect(adr.player1.wallet).setApprovalForAll(env.rankifyInstance.address, true);
+        await expect(env.rankifyInstance.connect(adr.player1.wallet).joinGame(10)).to.emit(
+          env.rankifyInstance,
+          'PlayerJoined',
+        );
       });
     });
   });

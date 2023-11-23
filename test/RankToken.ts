@@ -19,7 +19,7 @@ const setupTest = deployments.createFixture(async ({ deployments, getNamedAccoun
     to: deployer,
     value: _eth.utils.parseEther('1'),
   });
-  await deployments.fixture(['ranktoken']);
+  await deployments.fixture(['rank_token']);
 
   const deployment = await deployments.get('RankToken');
   env = (await ethers.getContractAt(deployment.abi, deployment.address)) as RankToken;
