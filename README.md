@@ -73,7 +73,7 @@ It is just an ERC20 token, it will be owned by governing organization and will b
 
 From a high level overview there is splitt of highly complex and sophisticated **RankifyInstance** from actual assets - **Rank tokens**, this is a primary reason why they are not encapsulated under one proxy. Diamond Proxy is needed for GameInstance because of planned upgrades for ZKP privacy and other improvements, and also because of size constraints on EVM bytecode.
 
-While all this, the DAO and Rankify contracts will be kept as simple as possible and isolated from depending on these contracts (at least until they are well established and battle tested) 
+While all this, the DAO and Rankify Token contracts will be kept as simple as possible and isolated from depending on these contracts (at least until they are well established and battle tested) 
 
 
 
