@@ -19,7 +19,7 @@
     "build": "pnpm hardhat compile",
     "lint:sol": "prettier --log-level warn --ignore-path .gitignore '{src,test}/**/*.sol' --check && solhint '{contracts,test}/**/*.sol'",
     "lint:sol:fix": "prettier --log-level warn --ignore-path .gitignore '{src,test}/**/*.sol' --write",
-    "version": "changeset version",
+    "version": "pnpm build && changeset version",
     "release": "pnpm build && changeset publish"
   },
   "keywords": [],
