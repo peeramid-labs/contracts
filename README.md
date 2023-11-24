@@ -1,0 +1,1 @@
+# Rankify smart contracts
