@@ -30,7 +30,7 @@ dependencies:
     specifier: ^0.3.11
     version: 0.3.11
   hardhat-gas-reporter:
-    specifier: ^1.0.8
+    specifier: ^1.0.9
     version: 1.0.9(hardhat@2.18.2)
   ts-node:
     specifier: ^10.9.1
