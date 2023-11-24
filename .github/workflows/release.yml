@@ -24,10 +24,12 @@ jobs:
           node-version: 18.x
       - name: install dependencies
         run: pnpm install
+      - name: generate docs
+        run: pnpm hardhat docgen
       - name: Create Release Pull Request or Publish to npm
         uses: changesets/action@v1
         with:
-          publish: pnpm run release
+          publish: pnpm hardhat typechain && pnpm run release
           version: pnpm run version
           commit: 'chore: new release'
           title: 'chore: new release candidate'
