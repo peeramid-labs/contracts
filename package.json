@@ -18,7 +18,9 @@
     "test:parallel": "export NODE_ENV=TEST && pnpm hardhat test --parallel",
     "build": "pnpm hardhat compile",
     "lint:sol": "prettier --log-level warn --ignore-path .gitignore '{src,test}/**/*.sol' --check && solhint '{contracts,test}/**/*.sol'",
-    "lint:sol:fix": "prettier --log-level warn --ignore-path .gitignore '{src,test}/**/*.sol' --write"
+    "lint:sol:fix": "prettier --log-level warn --ignore-path .gitignore '{src,test}/**/*.sol' --write",
+    "version": "changeset version",
+    "release": "changeset publish"
   },
   "keywords": [],
   "author": "Tim Pechersky (@Peersky)",
