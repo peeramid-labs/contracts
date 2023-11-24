@@ -6,6 +6,7 @@ import '@nomicfoundation/hardhat-toolbox';
 import 'hardhat-abi-exporter';
 import { toSignature, isIncluded } from './scripts/diamond';
 import { cutFacets, replaceFacet } from './scripts/libraries/diamond';
+import 'hardhat-gas-reporter';
 // import * as ipfsUtils from "./utils/ipfs";
 // import fs from "fs";
 import 'hardhat-contract-sizer';
@@ -66,12 +67,15 @@ export default {
   docgen: {
     outputDir: './docs/contracts',
     pages: 'files',
+    sourcesDir: './src',
     pageExtension: '.mdx',
-    exclude: ['mocks', 'initializers', 'vendor', 'modifiers', 'fixtures', 'abstracts', 'facets'],
+    exclude: ['mocks', 'initializers', 'vendor', 'modifiers', 'fixtures'],
   },
   gasReporter: {
     currency: 'EUR',
     gasPrice: 21,
+    token: 'MATIC',
+    gasPriceApi: 'https://api.polygonscan.com/api?module=proxy&action=eth_gasPrice',
     enabled: false,
     coinmarketcap: process.env.COINMARKETCAP_KEY,
   },
