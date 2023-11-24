@@ -269,5 +269,5 @@ package-lock.json
 
 artifacts/
 build/
-types/typechain
+types
 bin/
