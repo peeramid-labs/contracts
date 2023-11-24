@@ -66,14 +66,13 @@ const runToTheEnd = async (
   // const initialTurn = await env.rankifyInstance.getTurn(gameId);
   let isGameOver = await env.rankifyInstance.isGameOver(gameId);
   while (!isGameOver) {
-    const isLastTurn = await env.rankifyInstance.isLastTurn(gameId);
     const turn = await env.rankifyInstance.getTurn(gameId).then(r => r.toNumber());
     // console.log('running to the end', turn, isLastTurn, isGameOver);
     if (turn !== 1) {
       votes = await mockValidVotes(players, gameContract, gameId, gameMaster, true, distribution ?? 'ftw');
     }
 
-    const proposals = await mockValidProposals(players, gameContract, gameMaster, gameId, isLastTurn ? false : true);
+    const proposals = await mockValidProposals(players, gameContract, gameMaster, gameId, true);
     await gameContract.connect(gameMaster.wallet).endTurn(
       gameId,
       turn == 1 ? [] : votes?.map(vote => vote.vote),
@@ -819,7 +818,7 @@ describe(scriptName, () => {
                       proposalsStruct.map(p => p.proposal),
                       proposalsStruct.map((p, idx) => idx),
                     ),
-                  ).to.be.revertedWith('endTurn->canEndTurnEarly');
+                  ).to.be.revertedWith('nextTurn->CanEndEarly');
                 });
                 it('Can end turn if timeout reached', async () => {
                   // await mineBlocks(RInstanceSettings.RInstance_TIME_PER_TURN + 1);
@@ -1036,21 +1035,16 @@ describe(scriptName, () => {
           'equal',
         );
       });
-      it('reverts on submit proposals', async () => {
-        proposalsStruct = await mockProposals({
-          players: getPlayers(adr, RInstanceSettings.RInstance_MAX_PLAYERS),
-          gameId: 1,
-          turn: RInstanceSettings.RInstance_MAX_TURNS,
-          verifierAddress: env.rankifyInstance.address,
-          gm: adr.gameMaster1,
-        });
-        await expect(
-          env.rankifyInstance.connect(adr.gameMaster1.wallet).submitProposal(proposalsStruct[0].params),
-        ).to.be.revertedWith('Cannot propose in last turn');
-      });
       it('Next turn without winner brings Game is in overtime conditions', async () => {
         let isGameOver = await env.rankifyInstance.isGameOver(1);
         expect(isGameOver).to.be.false;
+        await mockValidProposals(
+          getPlayers(adr, RInstanceSettings.RInstance_MAX_PLAYERS),
+          env.rankifyInstance,
+          adr.gameMaster1,
+          1,
+          true,
+        );
         await mockValidVotes(
           getPlayers(adr, RInstanceSettings.RInstance_MAX_PLAYERS),
           env.rankifyInstance,
@@ -1073,6 +1067,13 @@ describe(scriptName, () => {
             true,
             'equal',
           );
+          await mockValidProposals(
+            getPlayers(adr, RInstanceSettings.RInstance_MAX_PLAYERS),
+            env.rankifyInstance,
+            adr.gameMaster1,
+            1,
+            true,
+          );
           await endTurn(1, env.rankifyInstance);
         });
         it('emits game Over when submited votes result unique leaders', async () => {
@@ -1091,7 +1092,6 @@ describe(scriptName, () => {
             1,
             true,
           );
-          const currentTurn = await env.rankifyInstance.getTurn(1);
           expect(
             await env.rankifyInstance.connect(adr.gameMaster1.wallet).endTurn(
               1,
@@ -1100,6 +1100,25 @@ describe(scriptName, () => {
               proposalsStruct.map((p, idx) => idx),
             ),
           ).to.emit(env.rankifyInstance, 'GameOver');
+        });
+        it("Keeps game in overtime when submited votes don't result unique leaders", async () => {
+          await mockValidVotes(
+            getPlayers(adr, RInstanceSettings.RInstance_MAX_PLAYERS),
+            env.rankifyInstance,
+            1,
+            adr.gameMaster1,
+            true,
+            'equal',
+          );
+          const proposals = await mockValidProposals(
+            getPlayers(adr, RInstanceSettings.RInstance_MAX_PLAYERS),
+            env.rankifyInstance,
+            adr.gameMaster1,
+            1,
+            true,
+          );
+          expect(await env.rankifyInstance.connect(adr.gameMaster1.wallet).isOvertime(1)).to.be.true;
+          expect(await env.rankifyInstance.connect(adr.gameMaster1.wallet).isGameOver(1)).to.be.false;
         });
       });
 

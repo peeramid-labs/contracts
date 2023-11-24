@@ -21,7 +21,13 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
     using LibTBG for LibTBG.GameInstance;
     event OverTime(uint256 indexed gameId);
     event LastTurn(uint256 indexed gameId);
-    event ProposalScore(uint256 indexed gameId, uint256 indexed turn, string indexed proposalHash, string proposal, uint256  score);
+    event ProposalScore(
+        uint256 indexed gameId,
+        uint256 indexed turn,
+        string indexed proposalHash,
+        string proposal,
+        uint256 score
+    );
     event TurnEnded(
         uint256 indexed gameId,
         uint256 indexed turn,
@@ -50,8 +56,6 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
     ) private view returns (bool) {
         return checkSignature(message, signature, account);
     }
-
-    function releaseAndReward(uint256 gameId, address player, address[] memory leaderboard) private {}
 
     function onPlayersGameEnd(uint256 gameId, address player) private {
         IRankifyInstanceCommons.RInstance storage game = gameId.getGameStorage();
@@ -96,7 +100,7 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
 
         IRankifyInstanceCommons.RInstance storage game = proposalData.gameId.getGameStorage();
         require(LibTBG.getPlayersGame(proposalData.proposer) == proposalData.gameId, "not a player");
-        require(!proposalData.gameId.isLastTurn(), "Cannot propose in last turn");
+        // require(!proposalData.gameId.isLastTurn(), "Cannot propose in last turn");
         require(bytes(proposalData.encryptedProposal).length != 0, "Cannot propose empty");
         require(game.proposalCommitmentHashes[proposalData.proposer] == "", "Already proposed!");
         uint256 turn = proposalData.gameId.getTurn();
@@ -112,25 +116,6 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
         );
     }
 
-
-    // Clean up game instance for upcoming round
-    function _beforeNextTurn(uint256 gameId) internal {
-        address[] memory players = gameId.getPlayers();
-        IRankifyInstanceCommons.RInstance storage game = gameId.getGameStorage();
-        game.numCommitments = 0;
-        for (uint256 i = 0; i < players.length; i++) {
-            game.proposalCommitmentHashes[players[i]] = bytes32(0);
-            game.ongoingProposals[i] = "";
-            game.playerVoted[players[i]] = false;
-            game.votesHidden[players[i]].hash = bytes32(0);
-        }
-        // This data is to needed to correctly detetermine "PlayerMove" conditions during next turn
-         game.numVotesPrevTurn = game.numVotesThisTurn;
-         game.numVotesThisTurn = 0;
-         game.numPrevProposals = game.numOngoingProposals;
-         game.numOngoingProposals = 0;
-    }
-
     // Move new proposals in to ongoing proposals
     function _afterNextTurn(uint256 gameId, string[] memory newProposals) private {
         IRankifyInstanceCommons.RInstance storage game = gameId.getGameStorage();
@@ -138,13 +123,10 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
             game.ongoingProposals[i] = newProposals[i];
             game.numOngoingProposals += 1;
         }
-
     }
 
     function _nextTurn(uint256 gameId, string[] memory newProposals) private {
-        _beforeNextTurn(gameId);
-        (bool _isLastTurn, bool _isOvertime, bool _isGameOver, ) = gameId.nextTurn();
-
+        (bool _isLastTurn, bool _isOvertime, bool _isGameOver) = gameId.nextTurn();
         if (_isLastTurn && _isOvertime) {
             emit OverTime(gameId);
         }
@@ -168,30 +150,37 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
         uint256[] memory proposerIndicies //REFERRING TO game.players index in PREVIOUS VOTING ROUND
     ) public {
         gameId.enforceIsGM(msg.sender);
-        IRankifyInstanceCommons.RInstance storage game = gameId.getGameStorage();
-        require(!gameId.isGameOver(), "Game over");
         gameId.enforceHasStarted();
+        gameId.enforceIsNotOver();
+        IRankifyInstanceCommons.RInstance storage game = gameId.getGameStorage();
         uint256 turn = gameId.getTurn();
-        if(turn != 1) {
-            require(gameId.canEndTurnEarly() == true, "endTurn->canEndTurnEarly");
-        }
-        if (!gameId.isLastTurn()) {
-            require(
-                (game.numCommitments == gameId.getPlayers().length) || gameId.isTurnTimedOut(),
-                "Some players still have time to propose"
-            );
-        }
+
         address[] memory players = gameId.getPlayers();
         if (turn != 1) {
-            (,uint256[] memory roundScores) = gameId.calculateScoresQuadratic(votes, proposerIndicies);
-            for(uint256  i = 0; i<players.length; i++)
-            {
+            (, uint256[] memory roundScores) = gameId.calculateScoresQuadratic(votes, proposerIndicies);
+            for (uint256 i = 0; i < players.length; i++) {
                 string memory proposal = game.ongoingProposals[proposerIndicies[i]];
-                emit ProposalScore(gameId,turn,proposal,proposal,roundScores[i]);
+                emit ProposalScore(gameId, turn, proposal, proposal, roundScores[i]);
             }
         }
         (, uint256[] memory scores) = gameId.getScores();
-         emit TurnEnded(gameId, gameId.getTurn(), players, scores, newProposals,proposerIndicies,votes);
+        emit TurnEnded(gameId, gameId.getTurn(), players, scores, newProposals, proposerIndicies, votes);
+
+        // Clean up game instance for upcoming round
+
+        game.numCommitments = 0;
+        for (uint256 i = 0; i < players.length; i++) {
+            game.proposalCommitmentHashes[players[i]] = bytes32(0);
+            game.ongoingProposals[i] = "";
+            game.playerVoted[players[i]] = false;
+            game.votesHidden[players[i]].hash = bytes32(0);
+        }
+        // This data is to needed to correctly detetermine "PlayerMove" conditions during next turn
+        game.numVotesPrevTurn = game.numVotesThisTurn;
+        game.numVotesThisTurn = 0;
+        game.numPrevProposals = game.numOngoingProposals;
+        game.numOngoingProposals = 0;
+
         _nextTurn(gameId, newProposals);
     }
 }

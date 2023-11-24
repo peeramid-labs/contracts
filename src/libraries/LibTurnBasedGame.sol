@@ -71,8 +71,7 @@ library LibTBG {
         if (settings.maxPlayersSize == 0) require(false, "settings.maxPlayersSize"); // revert invalidConfiguration('maxPlayersSize');
         if (settings.minPlayersSize < 2) require(false, "settings.minPlayersSize"); //revert invalidConfiguration('minPlayersSize');
         if (settings.maxTurns == 0) require(false, "settings.maxTurns"); //revert invalidConfiguration('maxTurns');
-        if (settings.numWinners == 0 || settings.numWinners >= settings.minPlayersSize)
-            require(false, "numWinners"); //revert invalidConfiguration('numWinners');
+        if (settings.numWinners == 0 || settings.numWinners >= settings.minPlayersSize) require(false, "numWinners"); //revert invalidConfiguration('numWinners');
         if (settings.timeToJoin == 0) require(false, "timeToJoin"); // revert invalidConfiguration('timeToJoin');
         if (settings.maxPlayersSize < settings.minPlayersSize) require(false, "maxPlayersSize"); //revert invalidConfiguration('maxPlayersSize');
         if (bytes(settings.subject).length == 0) require(false, "subject length"); //revert invalidConfiguration('subject length');
@@ -176,7 +175,7 @@ library LibTBG {
     function canEndTurn(uint256 gameId) internal view returns (bool) {
         bool turnTimedOut = isTurnTimedOut(gameId);
         GameInstance storage _game = _getGame(gameId);
-        if(!_game.hasStarted) return false;
+        if (!_game.hasStarted || isGameOver(gameId)) return false;
         if (turnTimedOut) return true;
         return false;
     }
@@ -184,7 +183,7 @@ library LibTBG {
     function canEndTurnEarly(uint256 gameId) internal view returns (bool) {
         GameInstance storage _game = _getGame(gameId);
         bool everyoneMadeMove = (_game.numPlayersMadeMove) == _game.players.length() ? true : false;
-        if(!_game.hasStarted) return false;
+        if (!_game.hasStarted || isGameOver(gameId)) return false;
         if (everyoneMadeMove || canEndTurn(gameId)) return true;
         return false;
     }
@@ -270,14 +269,18 @@ library LibTBG {
         return false;
     }
 
-        function startGameEarly(uint256 gameId) internal {
+    function startGameEarly(uint256 gameId) internal {
         GameInstance storage _game = _getGame(gameId);
         TBGStorageStruct storage tbg = TBGStorage();
         require(_game.hasStarted == false, "startGame->already started");
         require(_game.registrationOpenAt != 0, "startGame->Game registration was not yet open");
         require(gameId != 0, "startGame->Game not found");
         require(_game.players.length() >= tbg.settings.minPlayersSize, "startGame->Not enough players");
-        require((_game.players.length() == tbg.settings.maxPlayersSize) || (block.timestamp > _game.registrationOpenAt + tbg.settings.timeToJoin) , "startGame->Not enough players");
+        require(
+            (_game.players.length() == tbg.settings.maxPlayersSize) ||
+                (block.timestamp > _game.registrationOpenAt + tbg.settings.timeToJoin),
+            "startGame->Not enough players"
+        );
         _game.hasStarted = true;
         _game.hasEnded = false;
         _game.currentTurn = 1;
@@ -339,8 +342,7 @@ library LibTBG {
         _game.numPlayersMadeMove += 1;
     }
 
-    function enforceIsPlayingGame(uint256 gameId, address player) internal view
-    {
+    function enforceIsPlayingGame(uint256 gameId, address player) internal view {
         TBGStorageStruct storage tbg = TBGStorage();
         require(gameId == tbg.playerInGame[player], "is not in the game");
     }
@@ -355,24 +357,21 @@ library LibTBG {
         return _game.leaderboard;
     }
 
-    function nextTurn(uint256 gameId) internal returns (bool, bool, bool, address[] memory) {
+    function nextTurn(uint256 gameId) internal returns (bool, bool, bool) {
+        require(canEndTurnEarly(gameId), "nextTurn->CanEndEarly");
         GameInstance storage _game = _getGame(gameId);
-        enforceHasStarted(gameId);
-        enforceIsNotOver(gameId);
         _clearCurrentMoves(_game);
         _game.currentTurn += 1;
         _game.turnStartedAt = block.timestamp;
         bool _isLastTurn = isLastTurn(gameId);
-        bool _isOvertime = _game.isOvertime;
-        address[] memory sortedLeaders = new address[](getPlayers(gameId).length);
-        if (_isLastTurn || _game.isOvertime || isGameOver(gameId)) {
-            (_isOvertime, sortedLeaders) = isSortedLeadersEqual(gameId);
-            _game.isOvertime = _isOvertime;
+        if (_isLastTurn || _game.isOvertime) {
+            bool _isTie = isTie(gameId);
+            _game.isOvertime = _isTie;
         }
-        _game.leaderboard = sortedLeaders;
         _game.hasEnded = isGameOver(gameId);
 
-        return (_isLastTurn, _isOvertime, _game.hasEnded, sortedLeaders);
+        (_game.leaderboard, ) = sortByScore(gameId);
+        return (_isLastTurn, _game.isOvertime, _game.hasEnded);
     }
 
     function getDataStorage() internal pure returns (bytes32 pointer) {
@@ -419,7 +418,7 @@ library LibTBG {
         _game.isOvertime = false;
     }
 
-    function isSortedLeadersEqual(uint256 gameId) internal view returns (bool, address[] memory) {
+    function isTie(uint256 gameId) internal view returns (bool) {
         TBGStorageStruct storage tbg = TBGStorage();
         (address[] memory players, uint256[] memory scores) = getScores(gameId);
 
@@ -427,13 +426,13 @@ library LibTBG {
         for (uint256 i = 0; i < players.length - 1; i++) {
             if ((i <= tbg.settings.numWinners - 1)) {
                 if (scores[i] == scores[i + 1]) {
-                    return (true, players);
+                    return (true);
                 }
             } else {
                 break;
             }
         }
-        return (false, players);
+        return (false);
     }
 
     function getPlayersGame(address player) internal view returns (uint256) {
@@ -442,4 +441,28 @@ library LibTBG {
         return tbg.playerInGame[player];
     }
 
+    function _quickSort(address[] memory players, uint256[] memory scores, int256 left, int256 right) private view {
+        int256 i = left;
+        int256 j = right;
+        if (i == j) return;
+        uint256 pivot = scores[uint256(left + (right - left) / 2)];
+        while (i <= j) {
+            while (scores[uint256(i)] > pivot) i++;
+            while (pivot > scores[uint256(j)]) j--;
+            if (i <= j) {
+                (scores[uint256(i)], scores[uint256(j)]) = (scores[uint256(j)], scores[uint256(i)]);
+                (players[uint256(i)], players[uint256(j)]) = (players[uint256(j)], players[uint256(i)]);
+                i++;
+                j--;
+            }
+        }
+        if (left < j) _quickSort(players, scores, left, j);
+        if (i < right) _quickSort(players, scores, i, right);
+    }
+
+    function sortByScore(uint256 gameId) internal view returns (address[] memory, uint256[] memory) {
+        (address[] memory players, uint256[] memory scores) = getScores(gameId);
+        _quickSort(players, scores, 0, int256(scores.length - 1));
+        return (players, scores);
+    }
 }
