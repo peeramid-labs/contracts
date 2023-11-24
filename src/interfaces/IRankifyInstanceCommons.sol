@@ -26,7 +26,6 @@ interface IRankifyInstanceCommons {
         LibTBG.GameSettings TBGSEttings;
     }
 
-
     struct VoteHidden {
         bytes32 hash;
         bytes proof;

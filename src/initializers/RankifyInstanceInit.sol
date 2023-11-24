@@ -18,7 +18,7 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {IRankifyInstanceCommons} from "../interfaces/IRankifyInstanceCommons.sol";
 import {IRankToken} from "../interfaces/IRankToken.sol";
 import {LibTBG} from "../libraries/LibTurnBasedGame.sol";
-import { LibQuadraticVoting} from "../libraries/LibQuadraticVoting.sol";
+import {LibQuadraticVoting} from "../libraries/LibQuadraticVoting.sol";
 // import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "hardhat/console.sol";
 
