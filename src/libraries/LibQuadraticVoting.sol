@@ -4,6 +4,10 @@ pragma solidity ^0.8.20;
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 error quadraticVotingError(string paramter, uint256 arg, uint256 arg2);
 
+/**
+ * @title LibQuadraticVoting
+ * @dev A library for quadratic voting calculations.
+ */
 library LibQuadraticVoting {
     struct qVotingStruct {
         uint256 voteCredits;
@@ -11,6 +15,13 @@ library LibQuadraticVoting {
         uint256 minQuadraticPositons;
     }
 
+    /**
+     * @dev Precomputes the values for quadratic voting. `voteCredits` is the total number of vote credits. `minExpectedVoteItems` is the minimum expected number of vote items.
+     *
+     * Returns:
+     *
+     * - A `qVotingStruct` containing the precomputed values.
+     */
     function precomputeValues(
         uint256 voteCredits,
         uint256 minExpectedVoteItems
@@ -27,55 +38,26 @@ library LibQuadraticVoting {
             accumulator += iterator ** 2;
         } while (accumulator < voteCredits);
         // This enforces requirement that all vote credits can indeed be spended (no leftovers)
-        if (accumulator != voteCredits)
-             require(false, 'quadraticVotingError'); //revert quadraticVotingError("voteCredits bust be i^2 series", accumulator, voteCredits);
+        if (accumulator != voteCredits) require(false, "quadraticVotingError"); //revert quadraticVotingError("voteCredits bust be i^2 series", accumulator, voteCredits);
         q.minQuadraticPositons = iterator;
         // In order to spend all vote credits there must be at least minQuadraticPositons+1 (becuase proposer is also a player and cannot vote for himself)
-        if (minExpectedVoteItems <= q.minQuadraticPositons)  require(false, 'quadraticVotingError');
-            // revert quadraticVotingError(
-            //     "Minimum Voting positions above min players",
-            //     q.minQuadraticPositons,
-            //     minExpectedVoteItems
-            // );
+        if (minExpectedVoteItems <= q.minQuadraticPositons) require(false, "quadraticVotingError");
+        // revert quadraticVotingError(
+        //     "Minimum Voting positions above min players",
+        //     q.minQuadraticPositons,
+        //     minExpectedVoteItems
+        // );
         q.voteCredits = voteCredits;
         return q;
     }
 
-    // function computeScoreByVPIndex(
-    //     qVotingStruct memory q,
-    //     uint256[][] memory VotersVotes,
-    //     bool[] memory voterVoted,
-    //     uint256 notVotedGivesEveyone,
-    //     uint256 proposerIdx
-    // ) internal pure returns (uint256) {
-    //     uint256 score = 0;
-    //     for (uint256 i = 0; i < VotersVotes.length; i++) {
-    //         // For each potential voter
-    //         if (i != proposerIdx) {
-    //             // Calculate scores only for cases when voter is not proposer
-    //             uint256 creditsUsed = 0;
-    //             uint256[] memory voterVotes = VotersVotes[i];
-
-    //             if (!voterVoted[i]) {
-    //                 // Check if voter wasn't voting
-    //                 score += notVotedGivesEveyone; // Gives benefits to everyone but himself
-    //                 creditsUsed = q.voteCredits;
-    //             } else {
-    //                 for (uint256 vi = 0; vi < voterVotes.length; vi++) {
-    //                     if (voterVotes[vi] != 0)
-    //                         revert quadraticVotingError("Voting for yourself not allowed", i, voterVotes[y]);
-    //                     score += voterVotes[proposerIdx];
-    //                     creditsUsed += voterVotes[proposerIdx] ** 2;
-    //                 }
-    //             }
-
-    //             if (creditsUsed > q.voteCredits)
-    //                 revert quadraticVotingError("Quadratic: vote credits overrun", q.voteCredits, creditsUsed);
-    //         }
-    //     }
-    //     return score;
-    // }
-
+    /**
+     * @dev Computes the scores for each proposal by voter preference index. `q` is the precomputed quadratic voting values. `VotersVotes` is a 2D array of votes, where each row corresponds to a voter and each column corresponds to a proposal. `voterVoted` is an array indicating whether each voter has voted. `notVotedGivesEveyone` is the number of points to distribute to each proposal for each voter that did not vote. `proposalsLength` is the number of proposals.
+     *
+     * Returns:
+     *
+     * - An array of scores for each proposal.
+     */
     function computeScoresByVPIndex(
         qVotingStruct memory q,
         uint256[][] memory VotersVotes,
@@ -100,8 +82,7 @@ library LibQuadraticVoting {
                     //If voter voted
                     scores[proposalIdx] += voterVotes[proposalIdx];
                     creditsUsed[vi] += voterVotes[proposalIdx] ** 2;
-                    if (creditsUsed[vi] > q.voteCredits)
-                        require(false, 'quadraticVotingError'); // revert quadraticVotingError("Quadratic: vote credits overrun", q.voteCredits, creditsUsed[vi]);
+                    if (creditsUsed[vi] > q.voteCredits) require(false, "quadraticVotingError"); // revert quadraticVotingError("Quadratic: vote credits overrun", q.voteCredits, creditsUsed[vi]);
                 }
             }
         }

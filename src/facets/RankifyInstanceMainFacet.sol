@@ -17,24 +17,17 @@ import "../abstracts/draft-EIP712Diamond.sol";
 
 import "hardhat/console.sol";
 
-contract RankifyInstanceMainFacet is IRankifyInstanceCommons, IERC1155Receiver, DiamondReentrancyGuard, IERC721Receiver, EIP712 {
+contract RankifyInstanceMainFacet is
+    IRankifyInstanceCommons,
+    IERC1155Receiver,
+    DiamondReentrancyGuard,
+    IERC721Receiver,
+    EIP712
+{
     using LibTBG for LibTBG.GameInstance;
     using LibTBG for uint256;
     using LibTBG for LibTBG.GameSettings;
     using LibRankify for uint256;
-
-    function checkSignature(bytes memory message, bytes memory signature, address account) private view returns (bool) {
-        bytes32 typedHash = _hashTypedDataV4(keccak256(message));
-        return SignatureChecker.isValidSignatureNow(account, typedHash, signature);
-    }
-
-    function _isValidSignature(
-        bytes memory message,
-        bytes memory signature,
-        address account
-    ) private view returns (bool) {
-        return checkSignature(message, signature, account);
-    }
 
     function RInstanceStorage() internal pure returns (RInstanceSettings storage bog) {
         bytes32 position = LibTBG.getDataStorage();
@@ -43,6 +36,20 @@ contract RankifyInstanceMainFacet is IRankifyInstanceCommons, IERC1155Receiver, 
         }
     }
 
+    /**
+     * @dev Creates a new game with the provided game master, game ID, and game rank. Optionally, additional ranks can be provided. `gameMaster` is the address of the game master. `gameId` is the ID of the new game. `gameRank` is the rank of the new game. `additionalRanks` is the array of additional ranks.
+     *
+     * Emits a {GameCreated} event.
+     *
+     * Requirements:
+     *  There are some game price requirments that must be met under gameId.newGame function that are set during the contract initialization and refer to the contract maintainer benefits.
+     *
+     * Modifies:
+     *
+     * - Calls the `newGame` function with `gameMaster`, `gameRank`, and `msg.sender`.
+     * - Configures the coin vending with `gameId` and an empty configuration.
+     * - If `additionalRanks` is not empty, mints rank tokens for each additional rank and sets the additional ranks of the game with `gameId` to `additionalRanks`.
+     */
     function createGame(address gameMaster, uint256 gameId, uint256 gameRank) public nonReentrant {
         gameId.newGame(gameMaster, gameRank, msg.sender);
         LibCoinVending.ConfigPosition memory emptyConfig;
@@ -71,21 +78,70 @@ contract RankifyInstanceMainFacet is IRankifyInstanceCommons, IERC1155Receiver, 
         createGame(gameMaster, settings.numGames + 1, gameRank);
     }
 
+    /**
+     * @dev Handles a player quitting a game with the provided game ID. `gameId` is the ID of the game. `player` is the address of the player.
+     *
+     * Emits a {PlayerLeft} event.
+     *
+     * Modifies:
+     *
+     * - Refunds the coins for `player` in the game with `gameId`.
+     */
     function onPlayerQuit(uint256 gameId, address player) private {
         LibCoinVending.refund(bytes32(gameId), player);
         emit PlayerLeft(gameId, player);
     }
 
+    /**
+     * @dev Cancels a game with the provided game ID. `gameId` is the ID of the game.
+     *
+     * Modifies:
+     *
+     * - Calls the `enforceIsGameCreator` function with `msg.sender`.
+     *
+     * Requirements:
+     *
+     * - The caller must be the game creator of the game with `gameId`.
+     * - Game must not be started.
+     */
     function cancelGame(uint256 gameId) public nonReentrant {
         gameId.enforceIsGameCreator(msg.sender);
         gameId.cancelGame(onPlayerQuit, LibDiamond.contractOwner());
         emit GameClosed(gameId);
     }
 
+    /**
+     * @dev Allows a player to leave a game with the provided game ID. `gameId` is the ID of the game.
+     *
+     * Modifies:
+     *
+     * - Calls the `quitGame` function with `msg.sender`, `true`, and `onPlayerQuit`.
+     *
+     * Requirements:
+     *
+     * - The caller must be a player in the game with `gameId`.
+     * - Game must not be started.
+     */
     function leaveGame(uint256 gameId) public nonReentrant {
         gameId.quitGame(msg.sender, true, onPlayerQuit);
     }
 
+    /**
+     * @dev Opens registration for a game with the provided game ID. `gameId` is the ID of the game.
+     *
+     * Emits a {RegistrationOpen} event.
+     *
+     * Modifies:
+     *
+     * - Calls the `enforceIsGameCreator` function with `msg.sender`.
+     * - Calls the `enforceIsPreRegistrationStage` function.
+     * - Calls the `openRegistration` function.
+     *
+     * Requirements:
+     *
+     * - The caller must be the game creator of the game with `gameId`.
+     * - The game with `gameId` must be in the pre-registration stage.
+     */
     function openRegistration(uint256 gameId) public {
         gameId.enforceIsGameCreator(msg.sender);
         gameId.enforceIsPreRegistrationStage();
@@ -93,12 +149,42 @@ contract RankifyInstanceMainFacet is IRankifyInstanceCommons, IERC1155Receiver, 
         emit RegistrationOpen(gameId);
     }
 
+    /**
+     * @dev Allows a player to join a game with the provided game ID. `gameId` is the ID of the game.
+     *
+     * Emits a {PlayerJoined} event.
+     *
+     * Modifies:
+     *
+     * - Calls the `joinGame` function with `msg.sender`.
+     * - Calls the `fund` function with `bytes32(gameId)`.
+     *
+     * Requirements:
+     *
+     * - The caller must not be a player in the game with `gameId`.
+     * - Game phase must be registration.
+     * - Caller must be able to fulfill funding requirements.
+     */
     function joinGame(uint256 gameId) public payable nonReentrant {
         gameId.joinGame(msg.sender);
         LibCoinVending.fund(bytes32(gameId));
         emit PlayerJoined(gameId, msg.sender);
     }
 
+    /**
+     * @dev Starts a game with the provided game ID early. `gameId` is the ID of the game.
+     *
+     * Emits a {GameStarted} event.
+     *
+     * Modifies:
+     *
+     * - Calls the `enforceGameExists` function.
+     * - Calls the `startGameEarly` function.
+     *
+     * Requirements:
+     *
+     * - The game with `gameId` must exist.
+     */
     function startGame(uint256 gameId) public {
         gameId.enforceGameExists();
         gameId.startGameEarly();
@@ -200,9 +286,7 @@ contract RankifyInstanceMainFacet is IRankifyInstanceCommons, IERC1155Receiver, 
         return gameId.canStartEarly();
     }
 
-    function canEndTurn(uint256 gameId) public view returns (bool)
-    {
+    function canEndTurn(uint256 gameId) public view returns (bool) {
         return gameId.canEndTurnEarly();
     }
-
 }

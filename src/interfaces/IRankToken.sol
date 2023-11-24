@@ -8,21 +8,55 @@ interface IRankToken is ILockableERC1155 {
 
     event LevelUp(address indexed account, uint256 id);
 
+    /**
+     * @dev Mints a specified amount of tokens to an account. `to` is the address of the account to mint the tokens to. `amount` is the amount of tokens to mint. `poolId` is the ID of the pool. `data` is the additional data.
+     */
     function mint(address to, uint256 amount, uint256 poolId, bytes memory data) external;
 
+    /**
+     * @dev Mints specified amounts of tokens to an account. `to` is the address of the account to mint the tokens to. `ids` is the array of IDs of the tokens to mint. `amounts` is the array of amounts of tokens to mint. `data` is the additional data.
+     */
     function batchMint(address to, uint256[] memory ids, uint256[] memory amounts, bytes memory data) external;
 
+    /**
+     * @dev Levels up an account. `to` is the address of the account to level up. `id` is the ID of the token. `data` is the additional data.
+     *
+     * Emits a {LevelUp} event.
+     */
     function levelUp(address to, uint256 id, bytes memory data) external;
 
     /**
-     * @dev Updates the address of the ranking instance contract.
-     * @param newRankingInstance The new address of the ranking instance contract.
+     * @dev Updates the ranking instance. `newRankingInstance` is the address of the new ranking instance.
+     *
+     * Emits a {RankingInstanceUpdated} event.
      */
     function updateRankingInstance(address newRankingInstance) external;
 
+    /**
+     * @dev Gets the ranking instance which can emit new rank updates and mint rank tokens.
+     *
+     * Returns:
+     *
+     * - The address of the ranking instance.
+     */
     function getRankingInstance() external view returns (address);
 
+    /**
+     * @dev Finds the new rank of an account. `account` is the address of the account. `oldRank` is the old rank of the account.
+     * It checks the balance of the account and returns the new rank that can be upgraded to.
+     *
+     * Returns:
+     *
+     * - The new rank of the account.
+     */
     function findNewRank(address account, uint256 oldRank) external view returns (uint256);
 
+    /**
+     * @dev Gets the rank of an account. `account` is the address of the account.
+     *
+     * Returns:
+     *
+     * - The rank of the account.
+     */
     function getAccountRank(address account) external view returns (uint256);
 }

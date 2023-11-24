@@ -40,28 +40,6 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
 
     event GameOver(uint256 indexed gameId, address[] indexed players, uint256[] indexed scores);
 
-    function checkSignature(bytes memory message, bytes memory signature, address account) public view returns (bool) {
-        bytes32 typedHash = _hashTypedDataV4(keccak256(message));
-        return SignatureChecker.isValidSignatureNow(account, typedHash, signature);
-    }
-
-    function playerSalt(address player, bytes32 turnSalt) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(player, turnSalt));
-    }
-
-    function _isValidSignature(
-        bytes memory message,
-        bytes memory signature,
-        address account
-    ) private view returns (bool) {
-        return checkSignature(message, signature, account);
-    }
-
-    function onPlayersGameEnd(uint256 gameId, address player) private {
-        IRankifyInstanceCommons.RInstance storage game = gameId.getGameStorage();
-        LibCoinVending.release(bytes32(gameId), game.createdBy, gameId.getLeaderBoard()[0], player);
-    }
-
     event ProposalSubmitted(
         uint256 indexed gameId,
         uint256 indexed turn,
@@ -78,6 +56,32 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
 
     event VoteSubmitted(uint256 indexed gameId, uint256 indexed turn, address indexed player, string votesHidden);
 
+    /**
+     * @dev Handles the end of the game for a player. `gameId` is the ID of the game. `player` is the address of the player.
+     *
+     * Modifies:
+     *
+     * - Releases the coins for the game with `gameId`, the game creator, the top player, and `player`.
+     */
+    function onPlayersGameEnd(uint256 gameId, address player) private {
+        IRankifyInstanceCommons.RInstance storage game = gameId.getGameStorage();
+        LibCoinVending.release(bytes32(gameId), game.createdBy, gameId.getLeaderBoard()[0], player);
+    }
+
+    /**
+     * @dev Submits a vote for a game. `gameId` is the ID of the game. `encryptedVotes` is the encrypted votes. `voter` is the address of the voter.
+     *
+     * Emits a {VoteSubmitted} event.
+     *
+     * Requirements:
+     *
+     * - The caller must be a game master of the game with `gameId`.
+     * - The game with `gameId` must exist.
+     * - The game with `gameId` must have started.
+     * - The game with `gameId` must not be over.
+     * - `voter` must be in the game with `gameId`.
+     * - The current turn of the game with `gameId` must be greater than 1.
+     */
     function submitVote(uint256 gameId, string memory encryptedVotes, address voter) public {
         LibRankify.enforceIsGM(gameId, msg.sender);
         gameId.enforceGameExists();
@@ -92,6 +96,14 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
         emit VoteSubmitted(gameId, gameId.getTurn(), voter, encryptedVotes);
     }
 
+    /**
+     * @dev Submits a proposal for a game. `proposalData` is the proposal data.
+     *
+     * Requirements:
+     *
+     * - The game with `proposalData.gameId` must exist.
+     * - The caller must be a game master of the game with `proposalData.gameId`.
+     */
     function submitProposal(ProposalParams memory proposalData) public {
         proposalData.gameId.enforceGameExists();
         proposalData.gameId.enforceIsGM(msg.sender);
@@ -116,7 +128,14 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
         );
     }
 
-    // Move new proposals in to ongoing proposals
+    /**
+     * @dev Handles the actions after the next turn of a game with the provided game ID. `gameId` is the ID of the game. `newProposals` is the array of new proposals.
+     *
+     * Modifies:
+     *
+     * - Sets the ongoing proposals of the game with `gameId` to `newProposals`.
+     * - Increments the number of ongoing proposals of the game with `gameId` by the number of `newProposals`.
+     */
     function _afterNextTurn(uint256 gameId, string[] memory newProposals) private {
         IRankifyInstanceCommons.RInstance storage game = gameId.getGameStorage();
         for (uint256 i = 0; i < newProposals.length; i++) {
@@ -125,6 +144,17 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
         }
     }
 
+    /**
+     * @dev Handles the next turn of a game with the provided game ID. `gameId` is the ID of the game. `newProposals` is the array of new proposals.
+     *
+     * Emits an {OverTime} event if the game is in the last turn and overtime.
+     * Emits a {LastTurn} event if the game is in the last turn.
+     * Emits a {GameOver} event if the game is over.
+     *
+     * Modifies:
+     *
+     * - Calls the `_afterNextTurn` function with `gameId` and `newProposals`.
+     */
     function _nextTurn(uint256 gameId, string[] memory newProposals) private {
         (bool _isLastTurn, bool _isOvertime, bool _isGameOver) = gameId.nextTurn();
         if (_isLastTurn && _isOvertime) {
@@ -141,8 +171,26 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
         _afterNextTurn(gameId, newProposals);
     }
 
-    // newProposals array MUST be sorted randomly
-    // votes and proposerIndicies MUST correspond to players array from game.getPlayers()
+    /**
+     * @dev Ends the current turn of a game with the provided game ID. `gameId` is the ID of the game. `votes` is the array of votes. `newProposals` is the array of new proposals for the upcoming voting round. `proposerIndicies` is the array of indices of the proposers in the previous voting round.
+     *
+     * Emits a {ProposalScore} event for each player if the turn is not the first.
+     * Emits a {TurnEnded} event.
+     *
+     * Modifies:
+     *
+     * - Calls the `_nextTurn` function with `gameId` and `newProposals`.
+     * - Resets the number of commitments of the game with `gameId` to 0.
+     * - Resets the proposal commitment hash and ongoing proposal of each player in the game with `gameId`.
+     *
+     * Requirements:
+     *
+     * - The caller must be a game master of the game with `gameId`.
+     * - The game with `gameId` must have started.
+     * - The game with `gameId` must not be over.
+     * -  newProposals array MUST be sorted randomly to ensure privacy
+     * votes and proposerIndicies MUST correspond to players array from game.getPlayers()
+     */
     function endTurn(
         uint256 gameId,
         uint256[][] memory votes,

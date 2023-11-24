@@ -26,10 +26,6 @@ interface IRankifyInstanceCommons {
         LibTBG.GameSettings TBGSEttings;
     }
 
-    // struct HiddenProposal {
-    //     string cipherText; //encrypted with game masters key
-    //     bytes32 hash; //plain proposal string hashed with current turn salt
-    // }
 
     struct VoteHidden {
         bytes32 hash;

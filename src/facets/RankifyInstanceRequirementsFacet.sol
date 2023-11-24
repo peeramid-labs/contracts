@@ -11,6 +11,14 @@ contract RankifyInstanceRequirementsFacet {
     using LibTBG for LibTBG.GameInstance;
     event RequirementsConfigured(uint256 indexed gameId, LibCoinVending.ConfigPosition config);
 
+    /**
+     * @dev Sets the join requirements for a specific game.
+     * Only the game creator can call this function.
+     * The game must be in the pre-registration stage.
+     *
+     * @param gameId The ID of the game.
+     * @param config The configuration position for the join requirements.
+     */
     function setJoinRequirements(uint256 gameId, LibCoinVending.ConfigPosition memory config) public {
         gameId.enforceIsGameCreator(msg.sender);
         gameId.enforceIsPreRegistrationStage();
@@ -18,10 +26,23 @@ contract RankifyInstanceRequirementsFacet {
         emit RequirementsConfigured(gameId, config);
     }
 
+    /**
+     * @dev Retrieves the join requirements for a specific game.
+     * @param gameId The ID of the game.
+     * @return The join requirements as a `LibCoinVending.ConditionReturn` struct.
+     */
     function getJoinRequirements(uint256 gameId) public view returns (LibCoinVending.ConditionReturn memory) {
         return LibCoinVending.getPosition(bytes32(gameId));
     }
 
+    /**
+     * @dev Retrieves the join requirements for a specific token in a game.
+     * @param gameId The ID of the game.
+     * @param contractAddress The address of the contract.
+     * @param contractId The ID of the contract.
+     * @param contractType The type of the contract.
+     * @return The join requirements for the specified token.
+     */
     function getJoinRequirementsByToken(
         uint256 gameId,
         address contractAddress,
