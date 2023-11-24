@@ -22,12 +22,12 @@ jobs:
         with:
           node-version: 18.x
       - name: install dependencies
-        run: npm ci
+        run: pnpm install
       - name: Create Release Pull Request or Publish to npm
         uses: changesets/action@v1
         with:
-          publish: npm run release
-          version: npm run version
+          publish: pnpm run release
+          version: pnpm run version
           commit: 'chore: new release'
           title: 'chore: new release candidate'
         env:
