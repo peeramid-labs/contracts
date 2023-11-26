@@ -1,5 +1,11 @@
 # rankify-contracts
 
+## 0.3.1
+
+### Patch Changes
+
+- [`5113431`](https://github.com/rankify-it/contracts/commit/51134318d9b91bb73e33e3465d93807a886f2542) Thanks [@peersky](https://github.com/peersky)! - changed docgen format
+
 ## 0.3.0
 
 ### Minor Changes
