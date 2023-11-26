@@ -1,5 +1,11 @@
 # rankify-contracts
 
+## 0.3.2
+
+### Patch Changes
+
+- [`9f35eac`](https://github.com/rankify-it/contracts/commit/9f35eac5160332855dd87d9134c5ff6998326a7d) Thanks [@peersky](https://github.com/peersky)! - use absolute readme links
+
 ## 0.3.1
 
 ### Patch Changes
