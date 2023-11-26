@@ -61,9 +61,9 @@ event VoteSubmitted(uint256 gameId, uint256 turn, address player, string votesHi
 function submitVote(uint256 gameId, string encryptedVotes, address voter) public
 ```
 
-_Submits a vote for a game. `gameId` is the ID of the game. `encryptedVotes` is the encrypted votes. `voter` is the address of the voter.
+\_Submits a vote for a game. `gameId` is the ID of the game. `encryptedVotes` is the encrypted votes. `voter` is the address of the voter.
 
-Emits a {VoteSubmitted} event.
+Emits a {VoteSubmitted\_ event.
 
 Requirements:
 
@@ -72,7 +72,7 @@ Requirements:
 - The game with `gameId` must have started.
 - The game with `gameId` must not be over.
 - `voter` must be in the game with `gameId`.
-- The current turn of the game with `gameId` must be greater than 1._
+- The current turn of the game with `gameId` must be greater than 1.\_
 
 ### submitProposal
 
@@ -80,12 +80,12 @@ Requirements:
 function submitProposal(struct RankifyInstanceGameMastersFacet.ProposalParams proposalData) public
 ```
 
-_Submits a proposal for a game. `proposalData` is the proposal data.
+\_Submits a proposal for a game. `proposalData` is the proposal data.
 
 Requirements:
 
 - The game with `proposalData.gameId` must exist.
-- The caller must be a game master of the game with `proposalData.gameId`._
+- The caller must be a game master of the game with `proposalData.gameId`.\_
 
 ### endTurn
 
@@ -93,10 +93,10 @@ Requirements:
 function endTurn(uint256 gameId, uint256[][] votes, string[] newProposals, uint256[] proposerIndicies) public
 ```
 
-_Ends the current turn of a game with the provided game ID. `gameId` is the ID of the game. `votes` is the array of votes. `newProposals` is the array of new proposals for the upcoming voting round. `proposerIndicies` is the array of indices of the proposers in the previous voting round.
+\_Ends the current turn of a game with the provided game ID. `gameId` is the ID of the game. `votes` is the array of votes. `newProposals` is the array of new proposals for the upcoming voting round. `proposerIndicies` is the array of indices of the proposers in the previous voting round.
 
-Emits a {ProposalScore} event for each player if the turn is not the first.
-Emits a {TurnEnded} event.
+Emits a {ProposalScore* event for each player if the turn is not the first.
+Emits a {TurnEnded* event.
 
 Modifies:
 
@@ -109,6 +109,5 @@ Requirements:
 - The caller must be a game master of the game with `gameId`.
 - The game with `gameId` must have started.
 - The game with `gameId` must not be over.
--  newProposals array MUST be sorted randomly to ensure privacy
-votes and proposerIndicies MUST correspond to players array from game.getPlayers()_
-
+- newProposals array MUST be sorted randomly to ensure privacy
+  votes and proposerIndicies MUST correspond to players array from game.getPlayers()\_

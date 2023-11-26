@@ -39,7 +39,7 @@ contract RankifyInstanceMainFacet is
     /**
      * @dev Creates a new game with the provided game master, game ID, and game rank. Optionally, additional ranks can be provided. `gameMaster` is the address of the game master. `gameId` is the ID of the new game. `gameRank` is the rank of the new game. `additionalRanks` is the array of additional ranks.
      *
-     * Emits a {GameCreated} event.
+     * emits a _GameCreated_ event.
      *
      * Requirements:
      *  There are some game price requirments that must be met under gameId.newGame function that are set during the contract initialization and refer to the contract maintainer benefits.
@@ -81,7 +81,7 @@ contract RankifyInstanceMainFacet is
     /**
      * @dev Handles a player quitting a game with the provided game ID. `gameId` is the ID of the game. `player` is the address of the player.
      *
-     * Emits a {PlayerLeft} event.
+     * emits a _PlayerLeft_ event.
      *
      * Modifies:
      *
@@ -129,7 +129,7 @@ contract RankifyInstanceMainFacet is
     /**
      * @dev Opens registration for a game with the provided game ID. `gameId` is the ID of the game.
      *
-     * Emits a {RegistrationOpen} event.
+     * emits a _RegistrationOpen_ event.
      *
      * Modifies:
      *
@@ -152,7 +152,7 @@ contract RankifyInstanceMainFacet is
     /**
      * @dev Allows a player to join a game with the provided game ID. `gameId` is the ID of the game.
      *
-     * Emits a {PlayerJoined} event.
+     * emits a _PlayerJoined_ event.
      *
      * Modifies:
      *
@@ -174,7 +174,7 @@ contract RankifyInstanceMainFacet is
     /**
      * @dev Starts a game with the provided game ID early. `gameId` is the ID of the game.
      *
-     * Emits a {GameStarted} event.
+     * emits a _GameStarted_ event.
      *
      * Modifies:
      *

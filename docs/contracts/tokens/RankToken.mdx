@@ -14,7 +14,7 @@ mapping(address => uint256) rank
 uint256 topRank
 ```
 
-### _levelUpThreshold
+### \_levelUpThreshold
 
 ```solidity
 uint256 _levelUpThreshold
@@ -38,11 +38,11 @@ constructor(string uri_, address owner_, string cURI, uint256 levelUpThreshold, 
 function getRankingInstance() public view returns (address)
 ```
 
-_Gets the ranking instance which can emit new rank updates and mint rank tokens.
+\_Gets the ranking instance which can emit new rank updates and mint rank tokens.
 
 Returns:
 
-- The address of the ranking instance._
+- The address of the ranking instance.\_
 
 ### contractURI
 
@@ -80,9 +80,9 @@ function mint(address to, uint256 amount, uint256 level, bytes data) public
 function updateRankingInstance(address newRankingInstance) public
 ```
 
-_Updates the ranking instance. `newRankingInstance` is the address of the new ranking instance.
+\_Updates the ranking instance. `newRankingInstance` is the address of the new ranking instance.
 
-Emits a {RankingInstanceUpdated} event._
+Emits a {RankingInstanceUpdated* event.*
 
 ### lock
 
@@ -116,12 +116,12 @@ function levelUp(address to, uint256 level, bytes data) public
 function findNewRank(address account, uint256 oldRank) public view returns (uint256)
 ```
 
-_Finds the new rank of an account. `account` is the address of the account. `oldRank` is the old rank of the account.
+\_Finds the new rank of an account. `account` is the address of the account. `oldRank` is the old rank of the account.
 It checks the balance of the account and returns the new rank that can be upgraded to.
 
 Returns:
 
-- The new rank of the account._
+- The new rank of the account.\_
 
 ### RankUpdated
 
@@ -129,13 +129,13 @@ Returns:
 event RankUpdated(address account, uint256 rank)
 ```
 
-### _afterTokenTransfer
+### \_afterTokenTransfer
 
 ```solidity
 function _afterTokenTransfer(address operator, address from, address to, uint256[] ids, uint256[] amounts, bytes data) internal
 ```
 
-_Hook that is called after any token transfer. This includes minting
+\_Hook that is called after any token transfer. This includes minting
 and burning, as well as batched variants.
 
 The same hook is called on both single and batched variants. For single
@@ -143,16 +143,16 @@ transfers, the length of the `id` and `amount` arrays will be 1.
 
 Calling conditions (for each `id` and `amount` pair):
 
-- When `from` and `to` are both non-zero, `amount` of ``from``'s tokens
-of token type `id` will be  transferred to `to`.
+- When `from` and `to` are both non-zero, `amount` of `from`'s tokens
+  of token type `id` will be transferred to `to`.
 - When `from` is zero, `amount` tokens of token type `id` will be minted
-for `to`.
-- when `to` is zero, `amount` of ``from``'s tokens of token type `id`
-will be burned.
+  for `to`.
+- when `to` is zero, `amount` of `from`'s tokens of token type `id`
+  will be burned.
 - `from` and `to` are never both zero.
 - `ids` and `amounts` have the same, non-zero length.
 
-To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks]._
+To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].\_
 
 ### getAccountRank
 
@@ -160,15 +160,14 @@ To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hook
 function getAccountRank(address account) external view returns (uint256)
 ```
 
-_Gets the rank of an account. `account` is the address of the account.
+\_Gets the rank of an account. `account` is the address of the account.
 
 Returns:
 
-- The rank of the account._
+- The rank of the account.\_
 
 ### supportsInterface
 
 ```solidity
 function supportsInterface(bytes4 interfaceId) public view virtual returns (bool)
 ```
-

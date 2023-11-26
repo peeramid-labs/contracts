@@ -21,14 +21,14 @@ interface IRankToken is ILockableERC1155 {
     /**
      * @dev Levels up an account. `to` is the address of the account to level up. `id` is the ID of the token. `data` is the additional data.
      *
-     * Emits a {LevelUp} event.
+     * emits a _LevelUp_ event.
      */
     function levelUp(address to, uint256 id, bytes memory data) external;
 
     /**
      * @dev Updates the ranking instance. `newRankingInstance` is the address of the new ranking instance.
      *
-     * Emits a {RankingInstanceUpdated} event.
+     * emits a _RankingInstanceUpdated_ event.
      */
     function updateRankingInstance(address newRankingInstance) external;
 

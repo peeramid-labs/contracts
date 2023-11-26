@@ -71,7 +71,7 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
     /**
      * @dev Submits a vote for a game. `gameId` is the ID of the game. `encryptedVotes` is the encrypted votes. `voter` is the address of the voter.
      *
-     * Emits a {VoteSubmitted} event.
+     * Emits a _VoteSubmitted_ event.
      *
      * Requirements:
      *
@@ -147,9 +147,9 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
     /**
      * @dev Handles the next turn of a game with the provided game ID. `gameId` is the ID of the game. `newProposals` is the array of new proposals.
      *
-     * Emits an {OverTime} event if the game is in the last turn and overtime.
-     * Emits a {LastTurn} event if the game is in the last turn.
-     * Emits a {GameOver} event if the game is over.
+     * Emits an {OverTime_ event if the game is in the last turn and overtime.
+     * emits a _LastTurn_ event if the game is in the last turn.
+     * emits a _GameOver_ event if the game is over.
      *
      * Modifies:
      *
@@ -174,8 +174,8 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
     /**
      * @dev Ends the current turn of a game with the provided game ID. `gameId` is the ID of the game. `votes` is the array of votes. `newProposals` is the array of new proposals for the upcoming voting round. `proposerIndicies` is the array of indices of the proposers in the previous voting round.
      *
-     * Emits a {ProposalScore} event for each player if the turn is not the first.
-     * Emits a {TurnEnded} event.
+     * emits a _ProposalScore_ event for each player if the turn is not the first.
+     * emits a _TurnEnded_ event.
      *
      * Modifies:
      *
