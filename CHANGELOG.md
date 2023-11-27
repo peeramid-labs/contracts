@@ -1,5 +1,11 @@
 # rankify-contracts
 
+## 0.4.0
+
+### Minor Changes
+
+- [`fe91476`](https://github.com/rankify-it/contracts/commit/fe91476f6e4f6b39819422d23085a0b823e53728) Thanks [@peersky](https://github.com/peersky)! - docs only as single file
+
 ## 0.3.2
 
 ### Patch Changes
