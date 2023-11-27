@@ -68,7 +68,7 @@ export default {
     outputDir: './docs/contracts',
     pages: 'single',
     sourcesDir: './src',
-    pageExtension: '.mdx',
+    pageExtension: '.md',
     exclude: ['mocks', 'initializers', 'vendor', 'modifiers', 'fixtures'],
   },
   gasReporter: {
