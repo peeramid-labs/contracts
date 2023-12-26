@@ -313,8 +313,6 @@ library LibTBG {
      * - `gameId` must not be zero.
      * - The game with `gameId` must have started.
      *
-     * ***WARNING*** This function is unused in the current implementation of the library.
-     *
      */
     function canEndTurn(uint256 gameId) internal view returns (bool) {
         bool turnTimedOut = isTurnTimedOut(gameId);
