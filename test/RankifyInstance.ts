@@ -744,6 +744,27 @@ describe(scriptName, () => {
                   proposalsStruct.map((p, idx) => idx),
                 );
               });
+              it('throws if player votes twice', async () => {
+                await mockValidVotes(
+                  getPlayers(adr, RInstanceSettings.RInstance_MIN_PLAYERS),
+                  env.rankifyInstance,
+                  1,
+                  adr.gameMaster1,
+                  true,
+                );
+                await mockValidProposals(
+                  getPlayers(adr, RInstanceSettings.RInstance_MIN_PLAYERS),
+                  env.rankifyInstance,
+                  adr.gameMaster1,
+                  1,
+                  true,
+                );
+                await expect(
+                  env.rankifyInstance
+                    .connect(adr.gameMaster1.wallet)
+                    .submitVote(1, votes[0].voteHidden, adr.player1.wallet.address),
+                ).to.be.revertedWith('Already voted');
+              });
               // it("throws if player voting himself", async () => {
               //   proposalsStruct = await mockValidProposals(
               //     getPlayers(adr, RInstanceSettings.RInstance_MIN_PLAYERS),
