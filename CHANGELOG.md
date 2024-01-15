@@ -1,5 +1,11 @@
 # rankify-contracts
 
+## 0.5.0
+
+### Minor Changes
+
+- [`5d85c92`](https://github.com/rankify-it/contracts/commit/5d85c92b647c2fbcb2c2ce9fa3fb5b853329f1c3) Thanks [@peersky](https://github.com/peersky)! - Re-deploy contracts and update token metadata to correspond to music challenge of first game
+
 ## 0.4.1
 
 ### Patch Changes
