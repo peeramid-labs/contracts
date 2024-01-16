@@ -1,5 +1,11 @@
 # rankify-contracts
 
+## 0.6.0
+
+### Minor Changes
+
+- [`230b856`](https://github.com/rankify-it/contracts/commit/230b856f9b5246a73daad34c3c1eff4bdd8dd3e3) Thanks [@peersky](https://github.com/peersky)! - Minor contracts upgrade
+
 ## 0.5.0
 
 ### Minor Changes
