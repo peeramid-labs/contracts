@@ -78,6 +78,8 @@ export type { MockERC721 } from "./src/mocks/MockERC721";
 export { MockERC721__factory } from "./factories/src/mocks/MockERC721__factory";
 export type { MockVendingMachine } from "./src/mocks/MockVendingMachine";
 export { MockVendingMachine__factory } from "./factories/src/mocks/MockVendingMachine__factory";
+export type { RankifyInstanceEventMock } from "./src/mocks/RankifyInstanceEventMock";
+export { RankifyInstanceEventMock__factory } from "./factories/src/mocks/RankifyInstanceEventMock__factory";
 export type { Rankify } from "./src/tokens/Rankify";
 export { Rankify__factory } from "./factories/src/tokens/Rankify__factory";
 export type { RankToken } from "./src/tokens/RankToken";
