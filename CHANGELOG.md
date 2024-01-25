@@ -1,5 +1,11 @@
 # rankify-contracts
 
+## 0.7.2
+
+### Patch Changes
+
+- [`835c821`](https://github.com/rankify-it/contracts/commit/835c82142d441b8f66e788ed754a361878029cbe) Thanks [@peersky](https://github.com/peersky)! - Use local multipass library to avoid circular deps
+
 ## 0.7.1
 
 ### Patch Changes
