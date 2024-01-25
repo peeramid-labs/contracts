@@ -1,5 +1,11 @@
 # rankify-contracts
 
+## 0.7.1
+
+### Patch Changes
+
+- [`fbcf1ce`](https://github.com/rankify-it/contracts/commit/fbcf1ce9c517c2280bd1c398102c35d054334163) Thanks [@peersky](https://github.com/peersky)! - named import for multipass from sdk
+
 ## 0.7.0
 
 ### Minor Changes
