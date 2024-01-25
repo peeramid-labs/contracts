@@ -20,7 +20,7 @@ import { BigNumber, BigNumberish, BytesLike, Wallet } from 'ethers';
 import { assert } from 'console';
 import { Deployment } from 'hardhat-deploy/types';
 import { HardhatEthersHelpers } from '@nomiclabs/hardhat-ethers/types';
-import { MultipassJs } from '../../sdk/src/multipass';
+import { MultipassJs } from '../utils/multipass';
 import { LibMultipass } from '../types/src/facets/DNSFacet';
 
 export const MULTIPASS_CONTRACT_NAME = 'MultipassDNS';
