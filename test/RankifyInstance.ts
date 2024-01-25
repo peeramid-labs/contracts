@@ -13,15 +13,7 @@ import {
   RInstance_MAX_TURNS,
   RInstance_TIME_PER_TURN,
 } from './utils';
-import {
-  setupAddresses,
-  setupEnvironment,
-  RInstanceSettings,
-  mineBlocks,
-  mockProposals,
-  mockVotes,
-  getPlayers,
-} from './utils';
+import { RInstanceSettings, mineBlocks, mockProposals, mockVotes, getPlayers } from './utils';
 import { expect } from 'chai';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
 import { RankifyDiamondInstance } from '../types/';
