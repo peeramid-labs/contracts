@@ -1,5 +1,11 @@
 # rankify-contracts
 
+## 0.8.0
+
+### Minor Changes
+
+- [`1011382`](https://github.com/rankify-it/contracts/commit/1011382c54a5530a6149d4f78102839edac5e2bd) Thanks [@peersky](https://github.com/peersky)! - Deployed multipass on anvil
+
 ## 0.7.2
 
 ### Patch Changes
