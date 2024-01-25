@@ -1,5 +1,11 @@
 # rankify-contracts
 
+## 0.7.0
+
+### Minor Changes
+
+- [#11](https://github.com/rankify-it/contracts/pull/11) [`c9eb6b5`](https://github.com/rankify-it/contracts/commit/c9eb6b540a6f2fe780984eb4e979753f56a6bf88) Thanks [@peersky](https://github.com/peersky)! - Adding multipass contracts
+
 ## 0.6.0
 
 ### Minor Changes
