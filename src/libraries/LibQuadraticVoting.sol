@@ -16,11 +16,10 @@ library LibQuadraticVoting {
     }
 
     /**
-     * @dev Precomputes the values for quadratic voting. `voteCredits` is the total number of vote credits. `minExpectedVoteItems` is the minimum expected number of vote items.
-     *
-     * Returns:
-     *
-     * - A `qVotingStruct` containing the precomputed values.
+     * @dev Precomputes the values for quadratic voting.
+     * @param `voteCredits` is the total number of vote credits.
+     * @param `minExpectedVoteItems` is the minimum expected number of vote items.
+     * @return  A `qVotingStruct` containing the precomputed values.
      */
     function precomputeValues(
         uint256 voteCredits,
@@ -52,11 +51,11 @@ library LibQuadraticVoting {
     }
 
     /**
-     * @dev Computes the scores for each proposal by voter preference index. `q` is the precomputed quadratic voting values. `VotersVotes` is a 2D array of votes, where each row corresponds to a voter and each column corresponds to a proposal. `voterVoted` is an array indicating whether each voter has voted. `notVotedGivesEveyone` is the number of points to distribute to each proposal for each voter that did not vote. `proposalsLength` is the number of proposals.
-     *
-     * Returns:
-     *
-     * - An array of scores for each proposal.
+     * @dev Computes the scores for each proposal by voter preference index.
+     * @param `q` is the precomputed quadratic voting values. `VotersVotes` is a 2D array of votes, where each row corresponds to a voter and each column corresponds to a proposal.
+     * @param `voterVoted` is an array indicating whether each voter has voted. `notVotedGivesEveyone` is the number of points to distribute to each proposal for each voter that did not vote.
+     * @param `proposalsLength` is the number of proposals.
+     * @return An array of scores for each proposal.
      */
     function computeScoresByVPIndex(
         qVotingStruct memory q,
