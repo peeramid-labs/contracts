@@ -212,7 +212,7 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
             for (uint256 i = 0; i < players.length; i++) {
                 votesSorted[i] = new uint256[](players.length);
                 for (uint256 j = 0; j < players.length; j++) {
-                    votesSorted[i][j] = votes[i][proposerIndicies[j]];
+                    votesSorted[i][proposerIndicies[j]] = votes[i][j];
                 }
             }
 
