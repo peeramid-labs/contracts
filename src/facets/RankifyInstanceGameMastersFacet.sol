@@ -173,7 +173,9 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
     }
 
     /**
-     * @dev Ends the current turn of a game with the provided game ID. `gameId` is the ID of the game. `votes` is the array of votes. `newProposals` is the array of new proposals for the upcoming voting round. `proposerIndicies` is the array of indices of the proposers in the previous voting round.
+     * @dev Ends the current turn of a game with the provided game ID. `gameId` is the ID of the game. `votes` is the array of votes.
+     *  `newProposals` is the array of new proposals for the upcoming voting round.
+     *  `proposerIndicies` is the array of indices of the proposers in the previous voting round.
      *
      * emits a _ProposalScore_ event for each player if the turn is not the first.
      * emits a _TurnEnded_ event.
@@ -206,7 +208,15 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
 
         address[] memory players = gameId.getPlayers();
         if (turn != 1) {
-            (, uint256[] memory roundScores) = gameId.calculateScoresQuadratic(votes, proposerIndicies);
+            uint256[][] memory votesSorted = new uint256[][](players.length);
+            for (uint256 i = 0; i < players.length; i++) {
+                votesSorted[i] = new uint256[](players.length);
+                for (uint256 j = 0; j < players.length; j++) {
+                    votesSorted[i][proposerIndicies[j]] = votes[i][j];
+                }
+            }
+
+            (, uint256[] memory roundScores) = gameId.calculateScoresQuadratic(votesSorted, proposerIndicies);
             for (uint256 i = 0; i < players.length; i++) {
                 string memory proposal = game.ongoingProposals[proposerIndicies[i]];
                 emit ProposalScore(gameId, turn, proposal, proposal, roundScores[i]);

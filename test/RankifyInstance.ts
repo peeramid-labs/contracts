@@ -881,6 +881,48 @@ describe(scriptName, () => {
                       [],
                     );
                 });
+                it('Returns correct scores in getScores if votes are shuffled', async () => {
+                  const currentT = await time.latest();
+                  await time.setNextBlockTimestamp(currentT + Number(RInstanceSettings.RInstance_TIME_PER_TURN) + 1);
+                  expect(await env.rankifyInstance.getTurn(1)).to.be.equal(2);
+                  const players = getPlayers(adr, RInstanceSettings.RInstance_MIN_PLAYERS);
+                  const expectedScores: number[] = players.map(v => 0);
+                  for (let i = 0; i < players.length; i++) {
+                    // expectedScores[i] = 0;
+                    if (votes.length > i) {
+                      votes[i].vote.forEach((vote, idx) => {
+                        expectedScores[idx] += Number(vote);
+                      });
+                    } else {
+                      //somebody did not vote at all
+                    }
+                  }
+                  const shuffle = <T>(array: T[]): T[] => {
+                    let currentIndex = array.length,
+                      randomIndex;
+
+                    // While there remain elements to shuffle.
+                    while (currentIndex > 0) {
+                      // Pick a remaining element.
+                      randomIndex = Math.floor(Math.random() * currentIndex);
+                      currentIndex--;
+
+                      // And swap it with the current element.
+                      [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+                    }
+
+                    return array;
+                  };
+                  const proposerIndex = shuffle(votersAddresses.map((p, idx) => idx));
+                  await env.rankifyInstance.connect(adr.gameMaster1.wallet).endTurn(
+                    1,
+                    votes.map(v => proposerIndex.map(i => v.vote[i])),
+                    [],
+                    proposerIndex,
+                  );
+                  const scores = await env.rankifyInstance.getScores(1).then(v => v[1].map(i => i.toNumber()));
+                  expect(expectedScores).to.be.eql(scores);
+                });
                 it('Emits correct ProposalScore event values', async () => {
                   // await mineBlocks(RInstanceSettings.RInstance_TIME_PER_TURN + 1);
                   const currentT = await time.latest();
