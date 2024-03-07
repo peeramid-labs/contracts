@@ -1,4 +1,4 @@
-# Factory Assets Manager
+# Managed Asset Factory
 
 ## Abstract
 
