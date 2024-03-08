@@ -1717,6 +1717,91 @@
   {
     "inputs": [
       {
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "version",
+        "type": "string"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "timePerTurn",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "maxPlayersSize",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "minPlayersSize",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "rankTokenAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "timeToJoin",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "gamePrice",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "joinGamePrice",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "maxTurns",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "numWinners",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "voteCredits",
+            "type": "uint256"
+          },
+          {
+            "internalType": "string",
+            "name": "subject",
+            "type": "string"
+          },
+          {
+            "internalType": "address",
+            "name": "rankifyToken",
+            "type": "address"
+          }
+        ],
+        "internalType": "struct RankifyInstanceInit.contractInitializer",
+        "name": "initializer",
+        "type": "tuple"
+      }
+    ],
+    "name": "init",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "bytes4",
         "name": "_functionSelector",
         "type": "bytes4"
