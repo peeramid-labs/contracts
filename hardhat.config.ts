@@ -166,6 +166,7 @@ export default {
         'RankifyInstanceRequirementsFacet',
         'RankifyInstanceGameMastersFacet',
         'RankifyInstanceGameOwnersFacet',
+        'RankifyInstanceInit',
       ],
       strict: true,
       filter(abiElement: unknown, index: number, abi: unknown[], fullyQualifiedName: string) {

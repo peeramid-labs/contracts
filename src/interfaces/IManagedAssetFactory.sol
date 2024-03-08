@@ -2,9 +2,17 @@
 pragma solidity ^0.8.20;
 
 interface IManagedAssetFactory {
-    function deployAsset(bytes32 assetUri, bytes32 assetType, bytes calldata instantiationPayload) external;
+    function deployAsset(
+        bytes32 assetUri,
+        bytes32 assetType,
+        bytes[] calldata instantiationPayload
+    ) external payable returns (address);
 
-    function deployAssetManager(address sAddr, bytes32 strategyId, bytes calldata instantiationPayload) external;
+    function deployAssetManager(
+        address sAddr,
+        bytes32 strategyId,
+        bytes[] calldata instantiationPayload
+    ) external payable returns (address);
 
     function isAssetManager(address maybeManager) external view returns (bool);
 
