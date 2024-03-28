@@ -1,5 +1,11 @@
 # rankify-contracts
 
+## 0.9.0
+
+### Minor Changes
+
+- [#36](https://github.com/rankify-it/contracts/pull/36) [`bd177c8`](https://github.com/rankify-it/contracts/commit/bd177c89edd630be5f6b1b8954ebfba65d36799a) Thanks [@peersky](https://github.com/peersky)! - beta network contracts deployment
+
 ## 0.8.0
 
 ### Minor Changes
