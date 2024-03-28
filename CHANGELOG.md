@@ -1,5 +1,11 @@
 # rankify-contracts
 
+## 0.9.1
+
+### Patch Changes
+
+- [#38](https://github.com/rankify-it/contracts/pull/38) [`b634091`](https://github.com/rankify-it/contracts/commit/b634091eea5feaec4043234b891b4f8fd8374ed9) Thanks [@peersky](https://github.com/peersky)! - added multipass deployments
+
 ## 0.9.0
 
 ### Minor Changes
