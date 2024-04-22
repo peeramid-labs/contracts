@@ -91,13 +91,14 @@ contract AppFactoryOwnable is IAppFactory, Ownable {
         require(templateStruct.src != address(0), "AF: template not found");
         address instance = Clones.clone(templateStruct.src);
         bytes[] memory initializationResults = new bytes[](instantiationPayload.length);
-        if (templateStruct.initializer != address(0)) {
-            for (uint256 i = 0; i < instantiationPayload.length; i++) {
-                initializationResults[i] = instance.functionCall(
-                    abi.encodeWithSelector(templateStruct.initializationSelectors[i], instantiationPayload[i])
-                );
-            }
+        address initializer = templateStruct.initializer == address(0) ? instance : templateStruct.initializer;
+
+        for (uint256 i = 0; i < instantiationPayload.length; i++) {
+            initializationResults[i] = initializer.functionCall(
+                abi.encodeWithSelector(templateStruct.initializationSelectors[i], instantiationPayload[i])
+            );
         }
+
         instances[instance] = IAppFactory.RegistryRecord({templateURI: templateURI, templateVersion: version});
         emit AppInstantiated(templateURI, versionString, msg.sender, initializationResults);
         return instance;
