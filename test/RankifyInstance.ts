@@ -757,6 +757,27 @@ describe(scriptName, () => {
                     .submitVote(1, votes[0].voteHidden, adr.player1.wallet.address),
                 ).to.be.revertedWith('Already voted');
               });
+              it('shows no players made a turn', async () => {
+                expect(await env.rankifyInstance.getPlayersMoved(1)).to.deep.equal([
+                  getPlayers(adr, RInstanceSettings.RInstance_MIN_PLAYERS).map(() => false),
+                  ethers.BigNumber.from('0'),
+                ]);
+              });
+              it('shows no players made a turn even after player send proposal', async () => {
+                const proposals = await mockValidProposals(
+                  getPlayers(adr, RInstanceSettings.RInstance_MIN_PLAYERS),
+                  env.rankifyInstance,
+                  adr.gameMaster1,
+                  1,
+                  false,
+                );
+                await env.rankifyInstance.connect(adr.gameMaster1.wallet).submitProposal(proposals[0].params);
+                await env.rankifyInstance.connect(adr.gameMaster1.wallet).submitProposal(proposals[1].params),
+                  expect(await env.rankifyInstance.getPlayersMoved(1)).to.deep.equal([
+                    getPlayers(adr, RInstanceSettings.RInstance_MIN_PLAYERS).map(() => false),
+                    ethers.BigNumber.from('0'),
+                  ]);
+              });
               // it("throws if player voting himself", async () => {
               //   proposalsStruct = await mockValidProposals(
               //     getPlayers(adr, RInstanceSettings.RInstance_MIN_PLAYERS),
