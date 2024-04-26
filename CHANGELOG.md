@@ -1,5 +1,11 @@
 # rankify-contracts
 
+## 0.9.2
+
+### Patch Changes
+
+- [`4239be3`](https://github.com/rankify-it/contracts/commit/4239be32c8d8960b76bdae46ca3fd7f03533be39) Thanks [@peersky](https://github.com/peersky)! - added view method for player moves and player did voted
+
 ## 0.9.1
 
 ### Patch Changes
