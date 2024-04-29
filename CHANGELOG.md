@@ -1,5 +1,15 @@
 # rankify-contracts
 
+## 0.9.3
+
+### Patch Changes
+
+- [`8e5af9b`](https://github.com/rankify-it/contracts/commit/8e5af9b8b2ccb3c21473b6b57b094d0824003628) Thanks [@peersky](https://github.com/peersky)! - bug fix preventing compilation
+
+- [`7f18108`](https://github.com/rankify-it/contracts/commit/7f18108cf74f62053c7ef62722d53f55af5f81b3) Thanks [@peersky](https://github.com/peersky)! - add more test cases
+
+- [`8e5af9b`](https://github.com/rankify-it/contracts/commit/8e5af9b8b2ccb3c21473b6b57b094d0824003628) Thanks [@peersky](https://github.com/peersky)! - update deployment artifacts
+
 ## 0.9.2
 
 ### Patch Changes
