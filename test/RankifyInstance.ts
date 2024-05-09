@@ -727,6 +727,30 @@ describe(scriptName, () => {
                 ),
               ).to.be.emit(env.rankifyInstance, 'TurnEnded');
             });
+            describe('When turn is over and there is one proposal missing', async () => {
+              beforeEach(async () => {
+                await env.rankifyInstance.connect(adr.gameMaster1.wallet).endTurn(
+                  1,
+                  [],
+                  proposalsStruct.map(p => p.proposal).slice(0, -1),
+                  proposalsStruct.map((p, idx) => idx),
+                );
+              });
+              it('Can end next turn ', async () => {
+                // ToDo: add "with correct scores" to the end of the test
+                const players = getPlayers(adr, RInstanceSettings.RInstance_MIN_PLAYERS);
+                await mockValidVotes(players, env.rankifyInstance, 1, adr.gameMaster1, true, 'ftw');
+                await mockValidProposals(players, env.rankifyInstance, adr.gameMaster1, 1, true);
+                await expect(
+                  env.rankifyInstance.connect(adr.gameMaster1.wallet).endTurn(
+                    1,
+                    votes.map(vote => vote.vote),
+                    proposalsStruct.map(p => p.proposal),
+                    proposalsStruct.map((p, idx) => (idx === players.length - 1 ? players.length : idx)),
+                  ),
+                ).to.be.emit(env.rankifyInstance, 'TurnEnded');
+              });
+            });
             describe('When first turn was made', () => {
               beforeEach(async () => {
                 await env.rankifyInstance.connect(adr.gameMaster1.wallet).endTurn(
@@ -935,12 +959,16 @@ describe(scriptName, () => {
                     return array;
                   };
                   const proposerIndex = shuffle(votersAddresses.map((p, idx) => idx));
-                  await env.rankifyInstance.connect(adr.gameMaster1.wallet).endTurn(
-                    1,
-                    votes.map(v => proposerIndex.map(i => v.vote[i])),
-                    [],
-                    proposerIndex,
-                  );
+                  const votesShuffled: BigNumberish[][] = [];
+                  votes.forEach(({ vote }, i) => {
+                    votesShuffled.push(Array(votersAddresses.length).fill(0));
+                    vote.forEach((points, votedForIdx) => {
+                      votesShuffled[i][proposerIndex[votedForIdx]] = points;
+                    });
+                  });
+                  await env.rankifyInstance
+                    .connect(adr.gameMaster1.wallet)
+                    .endTurn(1, votesShuffled, [], proposerIndex);
                   const scores = await env.rankifyInstance.getScores(1).then(v => v[1].map(i => i.toNumber()));
                   expect(expectedScores).to.be.eql(scores);
                 });

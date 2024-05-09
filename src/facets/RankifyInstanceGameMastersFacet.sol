@@ -208,10 +208,16 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
         address[] memory players = gameId.getPlayers();
         if (turn != 1) {
             uint256[][] memory votesSorted = new uint256[][](players.length);
-            for (uint256 i = 0; i < players.length; i++) {
-                votesSorted[i] = new uint256[](players.length);
-                for (uint256 j = 0; j < players.length; j++) {
-                    votesSorted[i][proposerIndicies[j]] = votes[i][j];
+            for (uint256 player = 0; player < players.length; player++) {
+                votesSorted[player] = new uint256[](players.length);
+            }
+            for (uint256 votee = 0; votee < players.length; votee++) {
+                uint256 voteesColumn = proposerIndicies[votee];
+                if (voteesColumn < players.length) {
+                    // if index is above length of players array, it means the player did not propose
+                    for (uint256 voter = 0; voter < players.length; voter++) {
+                        votesSorted[voter][votee] = votes[voter][voteesColumn];
+                    }
                 }
             }
 
