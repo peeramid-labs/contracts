@@ -1,5 +1,11 @@
 # rankify-contracts
 
+## 0.9.4
+
+### Patch Changes
+
+- [`e79d0bf`](https://github.com/rankify-it/contracts/commit/e79d0bf398556e0fa0adf78063c46efa840c85d8) Thanks [@peersky](https://github.com/peersky)! - code cleanup, libquadratic improvements, bug fixes
+
 ## 0.9.3
 
 ### Patch Changes
