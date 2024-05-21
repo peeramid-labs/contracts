@@ -289,4 +289,28 @@ contract RankifyInstanceMainFacet is
     function canEndTurn(uint256 gameId) public view returns (bool) {
         return gameId.canEndTurnEarly();
     }
+
+    function isPlayerTurnComplete(uint256 gameId, address player) public view returns (bool) {
+        return gameId.isPlayerTurnComplete(player);
+    }
+
+    function getPlayerVotedArray(uint256 gameId) public view returns (bool[] memory) {
+        IRankifyInstanceCommons.RInstance storage game = gameId.getGameStorage();
+        address[] memory players = gameId.getPlayers();
+        bool[] memory playerVoted = new bool[](players.length);
+        for (uint256 i = 0; i < players.length; i++) {
+            playerVoted[i] = game.playerVoted[players[i]];
+        }
+        return playerVoted;
+    }
+
+    function getPlayersMoved(uint256 gameId) public view returns (bool[] memory, uint256) {
+        LibTBG.GameInstance storage game = gameId._getGame();
+        address[] memory players = gameId.getPlayers();
+        bool[] memory playersMoved = new bool[](players.length);
+        for (uint256 i = 0; i < players.length; i++) {
+            playersMoved[i] = game.madeMove[players[i]];
+        }
+        return (playersMoved, game.numPlayersMadeMove);
+    }
 }

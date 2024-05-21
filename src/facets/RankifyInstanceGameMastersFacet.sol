@@ -141,7 +141,6 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
         IRankifyInstanceCommons.RInstance storage game = gameId.getGameStorage();
         for (uint256 i = 0; i < newProposals.length; i++) {
             game.ongoingProposals[i] = newProposals[i];
-            game.numOngoingProposals += 1;
         }
     }
 
@@ -209,10 +208,16 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
         address[] memory players = gameId.getPlayers();
         if (turn != 1) {
             uint256[][] memory votesSorted = new uint256[][](players.length);
-            for (uint256 i = 0; i < players.length; i++) {
-                votesSorted[i] = new uint256[](players.length);
-                for (uint256 j = 0; j < players.length; j++) {
-                    votesSorted[i][proposerIndicies[j]] = votes[i][j];
+            for (uint256 player = 0; player < players.length; player++) {
+                votesSorted[player] = new uint256[](players.length);
+            }
+            for (uint256 votee = 0; votee < players.length; votee++) {
+                uint256 voteesColumn = proposerIndicies[votee];
+                if (voteesColumn < players.length) {
+                    // if index is above length of players array, it means the player did not propose
+                    for (uint256 voter = 0; voter < players.length; voter++) {
+                        votesSorted[voter][votee] = votes[voter][voteesColumn];
+                    }
                 }
             }
 
@@ -227,7 +232,6 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
 
         // Clean up game instance for upcoming round
 
-        game.numCommitments = 0;
         for (uint256 i = 0; i < players.length; i++) {
             game.proposalCommitmentHashes[players[i]] = bytes32(0);
             game.ongoingProposals[i] = "";
@@ -237,8 +241,8 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
         // This data is to needed to correctly detetermine "PlayerMove" conditions during next turn
         game.numVotesPrevTurn = game.numVotesThisTurn;
         game.numVotesThisTurn = 0;
-        game.numPrevProposals = game.numOngoingProposals;
-        game.numOngoingProposals = 0;
+        game.numPrevProposals = game.numCommitments;
+        game.numCommitments = 0;
 
         _nextTurn(gameId, newProposals);
     }
