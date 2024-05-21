@@ -12,6 +12,8 @@ import 'hardhat-gas-reporter';
 import 'hardhat-contract-sizer';
 import 'hardhat-deploy';
 import 'solidity-docgen';
+import './playbook/initializeDomain';
+
 task('accounts', 'Prints the list of accounts', async (taskArgs, hre) => {
   const accounts = await hre.ethers.getSigners();
 
@@ -83,10 +85,10 @@ export default {
     deployer: {
       hardhat: '0xF52E5dF676f51E410c456CC34360cA6F27959420',
       anvil: '0x6Cf8d74C7875de8C2FfB09228F4bf2A21b25e583',
-      default: '0xF52E5dF676f51E410c456CC34360cA6F27959420', //TODO this must be set for networks
+      default: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266', //TODO this must be set for networks
     },
     owner: {
-      default: '0x520E00225C4a43B6c55474Db44a4a44199b4c3eE',
+      default: '0x70997970C51812dc3A010C7d01b50e0d17dc79C8',
       anvil: '0x507c2d32185667156de5B4C440FEEf3800078bDb',
     },
   },
@@ -94,7 +96,7 @@ export default {
   networks: {
     hardhat: {
       accounts: {
-        mnemonic: 'casual vacant letter raw trend tool vacant opera buzz jaguar bridge myself',
+        mnemonic: 'test test test test test test test test test test test junk',
       }, // ONLY LOCAL
     },
     mumbai: {
@@ -116,7 +118,7 @@ export default {
     localhost: {
       url: 'http://127.0.0.1:8545',
       accounts: {
-        mnemonic: 'casual vacant letter raw trend tool vacant opera buzz jaguar bridge myself',
+        mnemonic: 'test test test test test test test test test test test junk',
       }, // ONLY LOCAL
     },
     anvil: {

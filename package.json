@@ -20,7 +20,8 @@
     "lint:sol": "prettier --log-level warn --ignore-path .gitignore '{src,test}/**/*.sol' --check && solhint '{contracts,test}/**/*.sol'",
     "lint:sol:fix": "prettier --log-level warn --ignore-path .gitignore '{src,test}/**/*.sol' --write",
     "version": "pnpm build && changeset version",
-    "release": "pnpm build && changeset publish"
+    "release": "pnpm build && changeset publish",
+    "anvil:local": "chmod u+x playbook/utils/start-anvil-and-deploy.sh && ./playbook/utils/start-anvil-and-deploy.sh"
   },
   "keywords": [],
   "author": "Tim Pechersky (@Peersky)",
