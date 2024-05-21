@@ -653,6 +653,11 @@ library LibTBG {
         _game.numPlayersMadeMove += 1;
     }
 
+    function isPlayerTurnComplete(uint256 gameId, address player) internal view returns (bool) {
+        GameInstance storage _game = _getGame(gameId);
+        return _game.madeMove[player];
+    }
+
     /**
      * @dev Enforces that a player is in a game with the provided game ID. `gameId` is the ID of the game. `player` is the address of the player.
      *
