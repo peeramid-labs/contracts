@@ -91,6 +91,9 @@ export default {
       default: '0x70997970C51812dc3A010C7d01b50e0d17dc79C8',
       anvil: '0x507c2d32185667156de5B4C440FEEf3800078bDb',
     },
+    registrar: {
+      localhost: '0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc',
+    }
   },
   defaultNetwork: 'hardhat',
   networks: {
