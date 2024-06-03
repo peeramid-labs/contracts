@@ -14,4 +14,9 @@ interface IVRegistry is IRepository, IVTag {
     /// @param source The address of the contract to register.
     /// @param version The version of the contract.
     function invalidate(address source, Version calldata version) external;
+
+    /// @dev Checks if a given address is registered in the IVRegistry.
+    /// @param source The address to check.
+    /// @return A boolean indicating whether the address is registered or not.
+    function entries(address source) external view returns (bool);
 }
