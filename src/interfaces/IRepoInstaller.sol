@@ -79,6 +79,22 @@ interface IRepositoryInstaller {
     );
 
     /**
+     * @dev Event emitted when an instance is upgraded to a new version of a repository.
+     * @param instance The address of the instance.
+     * @param repository The address of the repository.
+     * @param upgrader The address of the account that upgraded the instance.
+     * @param version The version of the repository used for the upgrade.
+     * @param metadata The metadata associated with the upgrade.
+     */
+    event Upgraded(
+        address indexed instance,
+        IRepository indexed repository,
+        address indexed upgrader,
+        Tag version,
+        bytes metadata
+    );
+
+    /**
      * @dev Adds a repository to the installer with the specified version requirement.
      * @param repository The address of the repository.
      * @param baseVersion The version requirement for the repository.
@@ -95,23 +111,41 @@ interface IRepositoryInstaller {
      * @dev Instantiates a new instance from a repository with the specified version.
      * @param repository The address of the repository.
      * @param version The version of the repository to use for instantiation.
+     * @param data The call data passed to initialize the instance.
      * @return The address of the newly instantiated instance.
      */
-    function instantiate(address repository, Tag memory version) external returns (address);
+    function instantiate(address repository, Tag memory version, bytes calldata data) external returns (address);
 
     /**
      * @dev Instantiates a new instance from the latest version of a repository.
      * @param repository The address of the repository.
+     * @param data The call data passed to initialize the instance.
      * @return The address of the newly instantiated instance.
      */
-    function instantiateLatest(address repository) external returns (address);
+    function instantiateLatest(address repository, bytes calldata data) external returns (address);
+
+    /**
+     * @dev Upgrades an instance to the specified version of a repository.
+     * @param instance The address of the instance.
+     * @param data The call data passed to initialize the instance.
+     * @param version The version of the repository to upgrade to.
+     */
+    function upgrade(address instance, Tag memory version, bytes calldata data) external;
+
+    /**
+     * @dev Upgrades an instance to the latest version of a repository.
+     * @param instance The address of the instance.
+     * @param data The call data passed to initialize the instance.
+     */
+    function upgradeToLatest(address instance, bytes calldata data) external;
 
     /**
      * @dev Gets all instances that have been instantiated from a repository.
      * @param repository The address of the repository.
+     * @param data The call data passed to initialize the instance.
      * @return An array of addresses representing the instances.
      */
-    function getInstances(address repository) external view returns (address[] memory);
+    function getInstances(address repository, bytes calldata data) external view returns (address[] memory);
 
     /**
      * @dev Gets all repositories added to the installer.
