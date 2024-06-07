@@ -2,21 +2,20 @@
 /// @notice This is a modified source from Aragon X, where interfaces were generalized to be more generic and reusable.
 pragma solidity ^0.8.0;
 import {IRepository} from "./IRepository.sol";
-import {IVTag} from "./IVTag.sol";
+import {Tag, Version} from "./IVTag.sol";
 
-interface IVRegistry is IRepository, IVTag {
+interface IVRegistry is IRepository {
     /// @notice Registers a contract with a specific version.
     /// @param source The address of the contract to register.
     /// @param version The version of the contract.
     function register(address source, Version calldata version) external;
 
-    /// @notice Registers a contract with a specific version.
+    /// @notice Sets the contract address of specific version to zero.
     /// @param source The address of the contract to register.
     /// @param version The version of the contract.
-    function invalidate(address source, Version calldata version) external;
+    function invalidate(address source, bool invalidateMinors, Version calldata version) external;
 
     /// @dev Checks if a given address is registered in the IVRegistry.
-    /// @param source The address to check.
-    /// @return A boolean indicating whether the address is registered or not.
-    function entries(address source) external view returns (bool);
+    /// @param version The version of the contract.
+    function getVersion(Version memory version) external view returns (address);
 }
