@@ -2,10 +2,14 @@
 import {Tag, Version} from "./IVTag.sol";
 pragma solidity ^0.8.8;
 
-/// @title IRepo
+/// @title IRepository
 /// @author Peersky
 /// @notice The interface required for a repository.
-/// @notice This is a modified source from Aragon X, where interface names have been changed by generalising "" in to source code address".
+/// @notice This is a modified source from Aragon X, where interface names have been changed by generalising "plugin" in to source code address".
+/// @notice Implication of this is that this contract will not be aware of any setup code as opposed in original Aragon implementation which relied on having IPluginSetup requirements
+/// @notice This means that it is thought to be consumed by a factory contract, that will act as "Installer" and use reposiories for solo purpose of code lookup.
+/// @notice I think this is a good change as it makes the interface more generic and reusable for any kind of contract code, not just OSx specific.
+/// @notice TBD - I think that major release versions should include migration contract and call signatures, but this would breaking interfaces reliant on "Tag" structure.
 
 interface IRepository {
     /// @notice Thrown if a version does not exist.
