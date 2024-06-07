@@ -9,7 +9,7 @@ pragma solidity ^0.8.20;
 import {IRepository} from "./IRepository.sol";
 import {Tag, Version} from "./IVTag.sol";
 
-interface IRepositoryInstaller {
+interface IVInstaller {
     /**
      * @dev Error thrown when a repository is not added to the installer.
      */
