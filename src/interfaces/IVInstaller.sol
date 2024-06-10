@@ -9,52 +9,83 @@ pragma solidity ^0.8.20;
 import {IRepository} from "./IRepository.sol";
 import {Tag, Version} from "./IVTag.sol";
 
+/**
+ * @dev Enum defining the types of version requirements for repositories.
+ * - All: Matches any version.
+ * - MajorVersion: Matches any version with the same major version number.
+ * - ExactVersion: Matches the exact version specified.
+ */
+enum VersionRequirementTypes {
+    All, // *
+    MajorVersion, // ^1.0
+    ExactVersion // =1.0
+}
+
+enum InstallationTypes {
+    Cloneable,
+    Constructable
+}
+
+/**
+ * @dev Struct defining a version requirement for a repository.
+ * @param requirementType The type of version requirement.
+ * @param baseVersion The base version to match against.
+ * @param VersionRequirementTypes type of requirement counted from baseVersion Tag
+ */
+struct VersionControl {
+    address source;
+    Tag baseVersion;
+    VersionRequirementTypes requirementType;
+}
+
+/**
+ * @dev Struct defining the installation plan for a repository.
+ * @param requiredSource The source of the repository required for installation.
+ * @param initializerFnSelectors The function selectors for the initializers to call after installation.
+ */
+struct InstallationPlan {
+    VersionControl requiredSource;
+    bytes4[] initializerFnSelectors;
+    InstallationTypes installationType;
+}
+
+struct Envelope {
+    address destination;
+    bytes[] data;
+}
+
 interface IVInstaller {
     /**
      * @dev Error thrown when a repository is not added to the installer.
      */
-    error RepositoryIsNotAdded(address repository);
+    error RepositoryIsNotAdded(IRepository repository);
 
     /**
      * @dev Error thrown when the version does not match the requirement for a repository.
      */
-    error VersionDoesNotMatchRequirement(Tag version, VersionRequirement requirement);
-
-    /**
-     * @dev Enum defining the types of version requirements for repositories.
-     * - All: Matches any version.
-     * - MajorVersion: Matches any version with the same major version number.
-     * - ExactVersion: Matches the exact version specified.
-     */
-    enum VersionRequirementTypes {
-        All, // *
-        MajorVersion, // ^1.0
-        ExactVersion // =1.0
-    }
-
-    /**
-     * @dev Struct defining a version requirement for a repository.
-     * @param requirementType The type of version requirement.
-     * @param baseVersion The base version to match against.
-     */
-    struct VersionRequirement {
-        VersionRequirementTypes requirementType;
-        Tag baseVersion;
-    }
+    error VersionDoesNotMatchRequirement(address repository, Tag version, Tag requiredTag);
 
     /**
      * @dev Event emitted when the version requirement for a repository is updated.
      * @param repository The address of the repository.
-     * @param newRequirement The new version requirement for the repository.
+     * @param oldTag The old version requirement for the repository.
+     * @param newTag The new version requirement for the repository.
      */
-    event RepositoryRequirementUpdated(IRepository indexed repository, VersionRequirement newRequirement);
+    event RepositoryRequirementUpdated(IRepository indexed repository, Tag oldTag, Tag newTag);
 
     /**
      * @dev Event emitted when a repository is added to the installer.
      * @param repository The address of the repository.
+     * @param adder The address of the account that added the repository.
      * @param requirement The version requirement for the repository.
+     * @param metadata The metadata associated with the repository.
      */
-    event RepositoryAdded(IRepository indexed repository, VersionRequirement requirement);
+    event RepositoryAdded(
+        IRepository indexed repository,
+        address indexed adder,
+        VersionControl requirement,
+        bytes32 metadata
+    );
 
     /**
      * @dev Event emitted when a repository is removed from the installer.
@@ -79,73 +110,93 @@ interface IVInstaller {
     );
 
     /**
-     * @dev Event emitted when an instance is upgraded to a new version of a repository.
-     * @param instance The address of the instance.
+     * @dev Event emitted when source repository is upgraded to a new minor version.
      * @param repository The address of the repository.
-     * @param upgrader The address of the account that upgraded the instance.
-     * @param version The version of the repository used for the upgrade.
+     * @param oldMinor The old minor version.
+     * @param newMinor The new minor version.
+     * @param build The build number.
      * @param metadata The metadata associated with the upgrade.
      */
-    event Upgraded(
-        address indexed instance,
+    event UpgradedMinor(
         IRepository indexed repository,
-        address indexed upgrader,
-        Tag version,
+        uint16 indexed oldMinor,
+        uint16 indexed newMinor,
+        uint8 build,
         bytes metadata
     );
 
     /**
-     * @dev Adds a repository to the installer with the specified version requirement.
+     * @dev Event emitted when source repository is upgraded to a new major version.
      * @param repository The address of the repository.
-     * @param baseVersion The version requirement for the repository.
+     * @param oldMajor The old major version.
+     * @param newMajor The new major version.
+     * @param build The build number.
+     * @param metadata The metadata associated with the upgrade.
      */
-    function addRepository(address repository, VersionRequirement memory baseVersion) external;
+    event UpgradedMajor(
+        IRepository indexed repository,
+        uint8 indexed oldMajor,
+        uint8 indexed newMajor,
+        uint16 build,
+        bytes metadata
+    );
+
+    /**
+     * @dev Adds new source repository to the installer.
+     * @param versionedSource The version of the source repository.
+     * @param config The configuration for the source repository.
+     * @param metadata The metadata associated with the source repository.
+     */
+    function addSource(
+        VersionControl memory versionedSource,
+        InstallationPlan memory config,
+        bytes32 metadata
+    ) external;
 
     /**
      * @dev Removes a repository from the installer.
      * @param repository The address of the repository.
      */
-    function removeRepository(address repository) external;
+    function removeSource(IRepository repository) external;
 
     /**
-     * @dev Instantiates a new instance from a repository with the specified version.
+     * @dev Installs a new instance from the latest version of a repository.
+     * @param installationData The payload for the installation.
+     * @param version The version of the repository to install.
+     */
+    function installNewExact(Envelope memory installationData, Tag memory version) external returns (address);
+
+    /**
+     * @dev Installs a new instance from the latest version of a repository.
+     * @param installationData The payload for the installation.
+     */
+    function installNewLatest(Envelope memory installationData) external returns (address);
+
+    /**
+     * @dev Upgrades versioned source new requirements.
+     * @param newConfig The new configuration for the source repository.
+     * @param migrationContract The address of the migration contract.
+     * @param migrationData The data for the migration contract.
+     */
+    function upgradeSource(
+        InstallationPlan memory newConfig,
+        address migrationContract,
+        bytes calldata migrationData
+    ) external returns (address[] memory instances);
+
+    /**
+     * @dev Gets all instances created by installer for a specific repository source
      * @param repository The address of the repository.
-     * @param version The version of the repository to use for instantiation.
-     * @param data The call data passed to initialize the instance.
-     * @return The address of the newly instantiated instance.
-     */
-    function instantiate(address repository, Tag memory version, bytes calldata data) external returns (address);
-
-    /**
-     * @dev Instantiates a new instance from the latest version of a repository.
-     * @param repository The address of the repository.
-     * @param data The call data passed to initialize the instance.
-     * @return The address of the newly instantiated instance.
-     */
-    function instantiateLatest(address repository, bytes calldata data) external returns (address);
-
-    /**
-     * @dev Upgrades an instance to the specified version of a repository.
-     * @param instance The address of the instance.
-     * @param data The call data passed to initialize the instance.
-     * @param version The version of the repository to upgrade to.
-     */
-    function upgrade(address instance, Tag memory version, bytes calldata data) external;
-
-    /**
-     * @dev Upgrades an instance to the latest version of a repository.
-     * @param instance The address of the instance.
-     * @param data The call data passed to initialize the instance.
-     */
-    function upgradeToLatest(address instance, bytes calldata data) external;
-
-    /**
-     * @dev Gets all instances that have been instantiated from a repository.
-     * @param repository The address of the repository.
-     * @param data The call data passed to initialize the instance.
      * @return An array of addresses representing the instances.
      */
-    function getInstances(address repository, bytes calldata data) external view returns (address[] memory);
+    function getInstances(IRepository repository) external view returns (address[] memory);
+
+    /**
+     * @dev Gets all instances created by installer for a specific repository source
+     * @param sources The version control for the repository.
+     * @return An array of addresses representing the instances.
+     */
+    function getInstancesByVersion(VersionControl memory sources) external view returns (address[] memory);
 
     /**
      * @dev Gets all repositories added to the installer.
@@ -158,7 +209,7 @@ interface IVInstaller {
      * @param instance The address of the instance.
      * @return The address of the repository.
      */
-    function getRepository(address instance) external view returns (address);
+    function getRepository(IRepository instance) external view returns (address);
 
     /**
      * @dev Gets the version of a specific instance.
@@ -172,5 +223,12 @@ interface IVInstaller {
      * @param instance The address of the instance.
      * @return The version requirement for the instance.
      */
-    function getVersionRequirement(address instance) external view returns (VersionRequirement memory);
+    function getVersionControl(address instance) external view returns (VersionControl memory);
+
+    /**
+     * @dev Gets the installation plan for a specific repository.
+     * @param repository The address of the repository.
+     * @return The installation plan for the repository.
+     */
+    function getInstallationPlan(IRepository repository) external view returns (InstallationPlan memory);
 }
