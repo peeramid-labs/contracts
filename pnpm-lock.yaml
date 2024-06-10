@@ -14,6 +14,9 @@ importers:
       '@ethersproject/abi':
         specifier: ^5.7.0
         version: 5.7.0
+      '@ethersproject/providers':
+        specifier: ^5.7.2
+        version: 5.7.2(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       '@openzeppelin/contracts':
         specifier: ^4.7.0
         version: 4.9.3
@@ -133,8 +136,8 @@ importers:
         specifier: ^2.6.1
         version: 2.10.0(hardhat@2.18.2(bufferutil@4.0.8)(ts-node@10.9.1(@types/node@17.0.45)(typescript@5.2.2))(typescript@5.2.2)(utf-8-validate@5.0.10))
       hardhat-deploy:
-        specifier: ^0.11.24
-        version: 0.11.43(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+        specifier: ^0.12.2
+        version: 0.12.4(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       hardhat-diamond-abi:
         specifier: ^3.0.0
         version: 3.0.1(bufferutil@4.0.8)(hardhat@2.18.2(bufferutil@4.0.8)(ts-node@10.9.1(@types/node@17.0.45)(typescript@5.2.2))(typescript@5.2.2)(utf-8-validate@5.0.10))(utf-8-validate@5.0.10)
@@ -3025,8 +3028,8 @@ packages:
     peerDependencies:
       hardhat: ^2.0.0
 
-  hardhat-deploy@0.11.43:
-    resolution: {integrity: sha512-D760CjDtinwjOCpKOvdyRtIJYLQIYXmhfgkFe+AkxlYM9bPZ/T4tZ/xIB2tR89ZT+z0hF1YuZFBXIL3/G/9T5g==}
+  hardhat-deploy@0.12.4:
+    resolution: {integrity: sha512-bYO8DIyeGxZWlhnMoCBon9HNZb6ji0jQn7ngP1t5UmGhC8rQYhji7B73qETMOFhzt5ECZPr+U52duj3nubsqdQ==}
 
   hardhat-diamond-abi@3.0.1:
     resolution: {integrity: sha512-t+skBGX8lK3qH/YQB8L/QJVIINyuji/2r4q9JcZQ0rX9oEZzgfJMka2ttZ4gyuNcYRT95KyfDSuCCwSQX1cVDA==}
@@ -5868,10 +5871,11 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
 
-  zksync-web3@0.14.3:
-    resolution: {integrity: sha512-hT72th4AnqyLW1d5Jlv8N2B/qhEnl2NePK2A3org7tAa24niem/UAaHMkEvmWI3SF9waYUPtqAtjpf+yvQ9zvQ==}
+  zksync-ethers@5.8.0:
+    resolution: {integrity: sha512-/4qI5UElh0lspu0ew2IXBCO+O9kXEzZOM7JqvlfRWWGIUKZ+EDXnjIPgkH0y5/MnMT3FDq9koAAUCyZVWqHUJg==}
+    engines: {node: '>=16.0.0'}
     peerDependencies:
-      ethers: ^5.7.0
+      ethers: ~5.7.0
 
 snapshots:
 
@@ -10017,7 +10021,7 @@ snapshots:
       hardhat: 2.18.2(bufferutil@4.0.8)(ts-node@10.9.1(@types/node@17.0.45)(typescript@5.2.2))(typescript@5.2.2)(utf-8-validate@5.0.10)
       strip-ansi: 6.0.1
 
-  hardhat-deploy@0.11.43(bufferutil@4.0.8)(utf-8-validate@5.0.10):
+  hardhat-deploy@0.12.4(bufferutil@4.0.8)(utf-8-validate@5.0.10):
     dependencies:
       '@ethersproject/abi': 5.7.0
       '@ethersproject/abstract-signer': 5.7.0
@@ -10042,7 +10046,7 @@ snapshots:
       match-all: 1.2.6
       murmur-128: 0.2.1
       qs: 6.11.2
-      zksync-web3: 0.14.3(ethers@5.7.2(bufferutil@4.0.8)(utf-8-validate@5.0.10))
+      zksync-ethers: 5.8.0(ethers@5.7.2(bufferutil@4.0.8)(utf-8-validate@5.0.10))
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -13442,6 +13446,6 @@ snapshots:
 
   yocto-queue@0.1.0: {}
 
-  zksync-web3@0.14.3(ethers@5.7.2(bufferutil@4.0.8)(utf-8-validate@5.0.10)):
+  zksync-ethers@5.8.0(ethers@5.7.2(bufferutil@4.0.8)(utf-8-validate@5.0.10)):
     dependencies:
       ethers: 5.7.2(bufferutil@4.0.8)(utf-8-validate@5.0.10)

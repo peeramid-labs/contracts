@@ -11,14 +11,17 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     log: true,
     from: owner,
     owner: owner,
-
+    execute: {
+      methodName: 'init',
+      args: [],
+    },
     facets: [
-      'RankifyInstanceMainFacet',
-      'RankifyInstanceGameMastersFacet',
-      'RankifyInstanceRequirementsFacet',
       'EIP712InspectorFacet',
-      'RankifyInstanceInit',
+      'RankifyInstanceMainFacet',
+      'RankifyInstanceRequirementsFacet',
+      'RankifyInstanceGameMastersFacet',
       'RankifyInstanceGameOwnersFacet',
+      'RankifyInstanceMigration',
     ],
   });
 };

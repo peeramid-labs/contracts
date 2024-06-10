@@ -1,5 +1,39 @@
 # rankify-contracts
 
+## 0.9.4
+
+### Patch Changes
+
+- [`e79d0bf`](https://github.com/rankify-it/contracts/commit/e79d0bf398556e0fa0adf78063c46efa840c85d8) Thanks [@peersky](https://github.com/peersky)! - code cleanup, libquadratic improvements, bug fixes
+
+## 0.9.3
+
+### Patch Changes
+
+- [`8e5af9b`](https://github.com/rankify-it/contracts/commit/8e5af9b8b2ccb3c21473b6b57b094d0824003628) Thanks [@peersky](https://github.com/peersky)! - bug fix preventing compilation
+
+- [`7f18108`](https://github.com/rankify-it/contracts/commit/7f18108cf74f62053c7ef62722d53f55af5f81b3) Thanks [@peersky](https://github.com/peersky)! - add more test cases
+
+- [`8e5af9b`](https://github.com/rankify-it/contracts/commit/8e5af9b8b2ccb3c21473b6b57b094d0824003628) Thanks [@peersky](https://github.com/peersky)! - update deployment artifacts
+
+## 0.9.2
+
+### Patch Changes
+
+- [`4239be3`](https://github.com/rankify-it/contracts/commit/4239be32c8d8960b76bdae46ca3fd7f03533be39) Thanks [@peersky](https://github.com/peersky)! - added view method for player moves and player did voted
+
+## 0.9.1
+
+### Patch Changes
+
+- [#38](https://github.com/rankify-it/contracts/pull/38) [`b634091`](https://github.com/rankify-it/contracts/commit/b634091eea5feaec4043234b891b4f8fd8374ed9) Thanks [@peersky](https://github.com/peersky)! - added multipass deployments
+
+## 0.9.0
+
+### Minor Changes
+
+- [#36](https://github.com/rankify-it/contracts/pull/36) [`bd177c8`](https://github.com/rankify-it/contracts/commit/bd177c89edd630be5f6b1b8954ebfba65d36799a) Thanks [@peersky](https://github.com/peersky)! - beta network contracts deployment
+
 ## 0.8.0
 
 ### Minor Changes
