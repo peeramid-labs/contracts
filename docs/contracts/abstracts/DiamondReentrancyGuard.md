@@ -1,10 +1,14 @@
-# Solidity API
 
-## DiamondReentrancyGuard
+# 
+## Description
 
-### nonReentrant
+## Implementation
+
+### internal modifier nonReentrant
 
 ```solidity
-modifier nonReentrant()
+modifier nonReentrant() 
 ```
+
+<!--CONTRACT_END-->
 

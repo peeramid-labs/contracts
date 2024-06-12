@@ -1,20 +1,22 @@
-# Solidity API
 
-## DNSFacet
+# 
+## Description
 
-### _isValidSignature
+## Implementation
 
-```solidity
-function _isValidSignature(bytes message, bytes signature, address account) internal view returns (bool)
-```
-
-### initializeDomain
+### internal function _isValidSignature
 
 ```solidity
-function initializeDomain(address registrar, uint256 freeRegistrationsNumber, uint256 fee, bytes32 domainName, uint256 referrerReward, uint256 referralDiscount) public
+function _isValidSignature(bytes message, bytes signature, address account) internal view returns (bool) 
 ```
 
-_Initializes new LibMultipass.Domain and configures it's parameters
+### public function initializeDomain
+
+```solidity
+function initializeDomain(address registrar, uint256 freeRegistrationsNumber, uint256 fee, bytes32 domainName, uint256 referrerReward, uint256 referralDiscount) public 
+```
+
+*Initializes new LibMultipass.Domain and configures it's parameters
 
 Requirements:
  registrar is not zero
@@ -30,191 +32,170 @@ Requirements:
  @param referrerReward referral fee share in base currency of network
  @param referralDiscount referral discount in base currency of network
 
- Emits an {InitializedDomain} event._
-
-### activateDomain
+ Emits an {InitializedDomain} event.*
+### public function activateDomain
 
 ```solidity
-function activateDomain(bytes32 domainName) public
+function activateDomain(bytes32 domainName) public 
 ```
 
-_Activates LibMultipass.Domain name
+*Activates LibMultipass.Domain name
 
 Requirements:
  msg.sender is Owner
 
- Emits an {DomainActivated} event._
-
-### deactivateDomain
+ Emits an {DomainActivated} event.*
+### public function deactivateDomain
 
 ```solidity
-function deactivateDomain(bytes32 domainName) public
+function deactivateDomain(bytes32 domainName) public 
 ```
 
-_Deactivates LibMultipass.Domain name
+*Deactivates LibMultipass.Domain name
 
 Deactivated LibMultipass.Domain cannot mutate names and will return zeros
 
 Requirements:
  msg.sender is Owner OR registrar
 
- Emits an {DomainDeactivated} event._
-
-### changeFee
+ Emits an {DomainDeactivated} event.*
+### public function changeFee
 
 ```solidity
-function changeFee(bytes32 domainName, uint256 fee) public
+function changeFee(bytes32 domainName, uint256 fee) public 
 ```
 
-_Changes registrar address
+*Changes registrar address
 
 Requirements:
  msg.sender is Owner
 
- Emits an {DomainFeeChanged} event._
-
-### changeRegistrar
+ Emits an {DomainFeeChanged} event.*
+### public function changeRegistrar
 
 ```solidity
-function changeRegistrar(bytes32 domainName, address newRegistrar) public
+function changeRegistrar(bytes32 domainName, address newRegistrar) public 
 ```
 
-_Changes registrar address
+*Changes registrar address
 
 Requirements:
  msg.sender is Owner
 
- Emits an {RegistrarChangeRequested} event._
-
-### deleteName
+ Emits an {RegistrarChangeRequested} event.*
+### public function deleteName
 
 ```solidity
-function deleteName(struct LibMultipass.NameQuery query) public
+function deleteName(struct LibMultipass.NameQuery query) public 
 ```
 
-_deletes name
+*deletes name
 
 Requirements:
  msg.sender is Owner
 
- Emits an {DomainTTLChangeRequested} event._
-
-### changeReferralProgram
-
-```solidity
-function changeReferralProgram(uint256 referrerReward, uint256 freeRegistrations, uint256 referralDiscount, bytes32 domainName) public
-```
-
-### resolveRecord
+ Emits an {DomainTTLChangeRequested} event.*
+### public function changeReferralProgram
 
 ```solidity
-function resolveRecord(struct LibMultipass.NameQuery query) public view returns (bool, struct LibMultipass.Record)
+function changeReferralProgram(uint256 referrerReward, uint256 freeRegistrations, uint256 referralDiscount, bytes32 domainName) public 
 ```
 
-_resolves LibMultipass.Record of name query in to status and identity_
-
-### register
+### public function resolveRecord
 
 ```solidity
-function register(struct LibMultipass.Record newRecord, bytes32 domainName, bytes registrarSignature, uint256 signatureDeadline, struct LibMultipass.NameQuery referrer, bytes referralCode) public payable
+function resolveRecord(struct LibMultipass.NameQuery query) public view returns (bool, struct LibMultipass.Record) 
 ```
 
-_registers new name under LibMultipass.Domain
+*resolves LibMultipass.Record of name query in to status and identity*
+### public function register
+
+```solidity
+function register(struct LibMultipass.Record newRecord, bytes32 domainName, bytes registrarSignature, uint256 signatureDeadline, struct LibMultipass.NameQuery referrer, bytes referralCode) public payable 
+```
+
+*registers new name under LibMultipass.Domain
 
 Requirements:
  all arguments must be set
  domainName must be active
 resolveRecord for given arguments should return no LibMultipass.Record
 
- Emits an {registered} event._
-
-### getModifyPrice
-
-```solidity
-function getModifyPrice(struct LibMultipass.NameQuery query) public view returns (uint256)
-```
-
-### modifyUserName
+ Emits an {registered} event.*
+### public function getModifyPrice
 
 ```solidity
-function modifyUserName(bytes32 domainName, struct LibMultipass.NameQuery query, bytes32 newName, bytes registrarSignature, uint256 signatureDeadline) public payable
+function getModifyPrice(struct LibMultipass.NameQuery query) public view returns (uint256) 
 ```
 
-_modifies exsisting LibMultipass.Record
+### public function modifyUserName
+
+```solidity
+function modifyUserName(bytes32 domainName, struct LibMultipass.NameQuery query, bytes32 newName, bytes registrarSignature, uint256 signatureDeadline) public payable 
+```
+
+| Input | Type | Description |
+|:----- | ---- | ----------- |
+| `domainName` | `bytes32` | LibMultipass.Domain |
+| `query` | `struct LibMultipass.NameQuery` |  |
+| `newName` | `bytes32` | new name  Emits an {Modified} event. |
+| `registrarSignature` | `bytes` |  |
+| `signatureDeadline` | `uint256` |  |
+
+*modifies exsisting LibMultipass.Record
 
 Requirements:
 resolveRecord for given arguments should return valid LibMultipass.Record
 LibMultipass.Domain must be active
-newAddress and newName should be set and be unique in current LibMultipass.Domain_
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| domainName | bytes32 | LibMultipass.Domain |
-| query | struct LibMultipass.NameQuery |  |
-| newName | bytes32 | new name  Emits an {Modified} event. |
-| registrarSignature | bytes |  |
-| signatureDeadline | uint256 |  |
-
-### getBalance
+newAddress and newName should be set and be unique in current LibMultipass.Domain*
+### external function getBalance
 
 ```solidity
-function getBalance() external view returns (uint256)
+function getBalance() external view returns (uint256) 
 ```
 
-_returns balance of this contract_
-
-### getDomainState
+*returns balance of this contract*
+### external function getDomainState
 
 ```solidity
-function getDomainState(bytes32 domainName) external view returns (struct LibMultipass.Domain)
+function getDomainState(bytes32 domainName) external view returns (struct LibMultipass.Domain) 
 ```
 
-_returns LibMultipass.Domain state variables_
+| Input | Type | Description |
+|:----- | ---- | ----------- |
+| `domainName` | `bytes32` | name of the LibMultipass.Domain |
+| **Output** | |
+|  `0`  | `struct LibMultipass.Domain` | (name,       fee,       freeRegistrationsNumber,        referrerReward,        referralDiscount,        isActive,        registrar,        ttl,         registerSize) |
 
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| domainName | bytes32 | name of the LibMultipass.Domain |
-
-#### Return Values
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| [0] | struct LibMultipass.Domain | (name,       fee,       freeRegistrationsNumber,        referrerReward,        referralDiscount,        isActive,        registrar,        ttl,         registerSize) |
-
-### getDomainStateByIdx
+*returns LibMultipass.Domain state variables*
+### external function getDomainStateByIdx
 
 ```solidity
-function getDomainStateByIdx(uint256 index) external view returns (struct LibMultipass.Domain)
+function getDomainStateByIdx(uint256 index) external view returns (struct LibMultipass.Domain) 
 ```
 
-### getContractState
+### external function getContractState
 
 ```solidity
-function getContractState() external view returns (uint256)
+function getContractState() external view returns (uint256) 
 ```
 
-_returns contract state variables_
+| Output | Type | Description |
+| ------ | ---- | ----------- |
+|  `0`  | `uint256` | (s_numDomains) |
 
-#### Return Values
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| [0] | uint256 | (s_numDomains) |
-
-### withrawFunds
+*returns contract state variables*
+### public function withrawFunds
 
 ```solidity
-function withrawFunds(address to) public
+function withrawFunds(address to) public 
 ```
 
-_Withraws funds stored in smart contract
+*Withraws funds stored in smart contract
 
 Requirements:
  onlyOwner
 
- Emits an {fundsWithdawn} event._
+ Emits an {fundsWithdawn} event.*
+<!--CONTRACT_END-->
 

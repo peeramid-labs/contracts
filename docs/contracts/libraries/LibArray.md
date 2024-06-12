@@ -1,14 +1,16 @@
-# Solidity API
 
-## LibArray
+# 
+## Description
 
-### quickSort
+## Implementation
+
+### internal function quickSort
 
 ```solidity
-function quickSort(uint256[] arr, int256 left, int256 right) internal view
+function quickSort(uint256[] arr, int256 left, int256 right) internal view 
 ```
 
-_Sorts the elements of the array in ascending order using the quicksort algorithm.
+*Sorts the elements of the array in ascending order using the quicksort algorithm.
 
 Requirements:
 
@@ -21,5 +23,6 @@ Modifies:
 
 Note:
 
-- This function uses the in-place quicksort algorithm, which has an average-case complexity of O(n log n) and a worst-case complexity of O(n^2)._
+- This function uses the in-place quicksort algorithm, which has an average-case complexity of O(n log n) and a worst-case complexity of O(n^2).*
+<!--CONTRACT_END-->
 

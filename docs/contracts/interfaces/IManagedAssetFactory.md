@@ -1,58 +1,62 @@
-# Solidity API
 
-## IManagedAssetFactory
+# 
+## Description
 
-### deployAsset
+## Implementation
 
-```solidity
-function deployAsset(bytes32 assetUri, bytes32 assetType, bytes instantiationPayload) external payable returns (address)
-```
-
-### deployAssetManager
+### external function deployAsset
 
 ```solidity
-function deployAssetManager(address sAddr, bytes32 strategyId, bytes instantiationPayload) external payable returns (address)
+function deployAsset(bytes32 assetUri, bytes32 assetType, bytes instantiationPayload) external payable returns (address) 
 ```
 
-### isAssetManager
+### external function deployAssetManager
 
 ```solidity
-function isAssetManager(address maybeManager) external view returns (bool)
+function deployAssetManager(address sAddr, bytes32 strategyId, bytes instantiationPayload) external payable returns (address) 
 ```
 
-### isManagedAsset
+### external function isAssetManager
 
 ```solidity
-function isManagedAsset(address maybeAsset) external view returns (bool)
+function isAssetManager(address maybeManager) external view returns (bool) 
 ```
 
-### getAsset
+### external function isManagedAsset
 
 ```solidity
-function getAsset(address manager) external view returns (address)
+function isManagedAsset(address maybeAsset) external view returns (bool) 
 ```
 
-### getAssetType
+### external function getAsset
 
 ```solidity
-function getAssetType(address asset) external view returns (bytes32)
+function getAsset(address manager) external view returns (address) 
 ```
 
-### getAssetUri
+### external function getAssetType
 
 ```solidity
-function getAssetUri(address asset) external view returns (bytes32)
+function getAssetType(address asset) external view returns (bytes32) 
 ```
 
-### AssetDeployed
+### external function getAssetUri
 
 ```solidity
-event AssetDeployed(address asset, bytes32 assetUri, bytes32 assetType)
+function getAssetUri(address asset) external view returns (bytes32) 
 ```
 
-### AssetManagerDeployed
+###  event AssetDeployed
 
 ```solidity
-event AssetManagerDeployed(address asset, address manager, bytes32 strategyId)
+event AssetDeployed(address asset, bytes32 assetUri, bytes32 assetType) 
 ```
+
+###  event AssetManagerDeployed
+
+```solidity
+event AssetManagerDeployed(address asset, address manager, bytes32 strategyId) 
+```
+
+<!--CONTRACT_END-->
 

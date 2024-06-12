@@ -1,141 +1,139 @@
-# Solidity API
 
-## RankToken
+# 
+## Description
 
-### rank
+## Implementation
 
-```solidity
-mapping(address => uint256) rank
-```
-
-### topRank
+### public variable rank
 
 ```solidity
-uint256 topRank
+mapping(address => uint256) rank 
 ```
 
-### _levelUpThreshold
+### public variable topRank
 
 ```solidity
-uint256 _levelUpThreshold
+uint256 topRank 
 ```
 
-### onlyRankingInstance
+### internal variable _levelUpThreshold
 
 ```solidity
-modifier onlyRankingInstance()
+uint256 _levelUpThreshold 
 ```
 
-### constructor
+### internal modifier onlyRankingInstance
 
 ```solidity
-constructor(string uri_, address owner_, string cURI, uint256 levelUpThreshold, address[] components, uint256[] componentWeights) public
+modifier onlyRankingInstance() 
 ```
 
-### getRankingInstance
+### public function constructor
 
 ```solidity
-function getRankingInstance() public view returns (address)
+constructor(string uri_, address owner_, string cURI, uint256 levelUpThreshold, address[] components, uint256[] componentWeights) public 
 ```
 
-_Gets the ranking instance which can emit new rank updates and mint rank tokens.
+### public function getRankingInstance
+
+```solidity
+function getRankingInstance() public view returns (address) 
+```
+
+*Gets the ranking instance which can emit new rank updates and mint rank tokens.
 
 Returns:
 
-- The address of the ranking instance._
-
-### contractURI
-
-```solidity
-function contractURI() public view returns (string)
-```
-
-### setURI
+- The address of the ranking instance.*
+### public function contractURI
 
 ```solidity
-function setURI(string uri_) public
+function contractURI() public view returns (string) 
 ```
 
-### setContractURI
+### public function setURI
 
 ```solidity
-function setContractURI(string uri_) public
+function setURI(string uri_) public 
 ```
 
-### Leader
+### public function setContractURI
 
 ```solidity
-event Leader(address account, uint256 rank)
+function setContractURI(string uri_) public 
 ```
 
-### mint
+###  event Leader
 
 ```solidity
-function mint(address to, uint256 amount, uint256 level, bytes data) public
+event Leader(address account, uint256 rank) 
 ```
 
-### updateRankingInstance
+### public function mint
 
 ```solidity
-function updateRankingInstance(address newRankingInstance) public
+function mint(address to, uint256 amount, uint256 level, bytes data) public 
 ```
 
-_Updates the ranking instance. `newRankingInstance` is the address of the new ranking instance.
-
-emits a _RankingInstanceUpdated_ event._
-
-### lock
+### public function updateRankingInstance
 
 ```solidity
-function lock(address account, uint256 id, uint256 amount) public
+function updateRankingInstance(address newRankingInstance) public 
 ```
 
-### unlock
+*Updates the ranking instance. `newRankingInstance` is the address of the new ranking instance.
+
+emits a _RankingInstanceUpdated_ event.*
+### public function lock
 
 ```solidity
-function unlock(address account, uint256 id, uint256 amount) public
+function lock(address account, uint256 id, uint256 amount) public 
 ```
 
-### batchMint
+### public function unlock
 
 ```solidity
-function batchMint(address to, uint256[] ids, uint256[] amounts, bytes data) public
+function unlock(address account, uint256 id, uint256 amount) public 
 ```
 
-_Mints specified amounts of tokens to an account. `to` is the address of the account to mint the tokens to. `ids` is the array of IDs of the tokens to mint. `amounts` is the array of amounts of tokens to mint. `data` is the additional data._
-
-### levelUp
+### public function batchMint
 
 ```solidity
-function levelUp(address to, uint256 level, bytes data) public
+function batchMint(address to, uint256[] ids, uint256[] amounts, bytes data) public 
 ```
 
-### findNewRank
+*Mints specified amounts of tokens to an account. `to` is the address of the account to mint the tokens to. `ids` is the array of IDs of the tokens to mint. `amounts` is the array of amounts of tokens to mint. `data` is the additional data.*
+### public function levelUp
 
 ```solidity
-function findNewRank(address account, uint256 oldRank) public view returns (uint256)
+function levelUp(address to, uint256 level, bytes data) public 
 ```
 
-_Finds the new rank of an account. `account` is the address of the account. `oldRank` is the old rank of the account.
+### public function findNewRank
+
+```solidity
+function findNewRank(address account, uint256 oldRank) public view returns (uint256) 
+```
+
+*Finds the new rank of an account. `account` is the address of the account. `oldRank` is the old rank of the account.
 It checks the balance of the account and returns the new rank that can be upgraded to.
 
 Returns:
 
-- The new rank of the account._
-
-### RankUpdated
-
-```solidity
-event RankUpdated(address account, uint256 rank)
-```
-
-### _afterTokenTransfer
+- The new rank of the account.*
+###  event RankUpdated
 
 ```solidity
-function _afterTokenTransfer(address operator, address from, address to, uint256[] ids, uint256[] amounts, bytes data) internal
+event RankUpdated(address account, uint256 rank) 
 ```
 
-_Hook that is called after any token transfer. This includes minting
+### internal function _afterTokenTransfer
+
+```solidity
+function _afterTokenTransfer(address operator, address from, address to, uint256[] ids, uint256[] amounts, bytes data) internal 
+```
+
+*Hook that is called after any token transfer. This includes minting
 and burning, as well as batched variants.
 
 The same hook is called on both single and batched variants. For single
@@ -152,23 +150,23 @@ will be burned.
 - `from` and `to` are never both zero.
 - `ids` and `amounts` have the same, non-zero length.
 
-To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks]._
-
-### getAccountRank
+To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].*
+### external function getAccountRank
 
 ```solidity
-function getAccountRank(address account) external view returns (uint256)
+function getAccountRank(address account) external view returns (uint256) 
 ```
 
-_Gets the rank of an account. `account` is the address of the account.
+*Gets the rank of an account. `account` is the address of the account.
 
 Returns:
 
-- The rank of the account._
-
-### supportsInterface
+- The rank of the account.*
+### public function supportsInterface
 
 ```solidity
-function supportsInterface(bytes4 interfaceId) public view virtual returns (bool)
+function supportsInterface(bytes4 interfaceId) public view virtual returns (bool) 
 ```
+
+<!--CONTRACT_END-->
 

@@ -1,38 +1,43 @@
-# Solidity API
 
-## ZeroValue
-
-```solidity
-error ZeroValue()
-```
-
-## WrongAddress
+# 
+###  error ZeroValue
 
 ```solidity
-error WrongAddress()
+error ZeroValue() 
 ```
 
-## OutOfBounds
+# 
+###  error WrongAddress
 
 ```solidity
-error OutOfBounds()
+error WrongAddress() 
 ```
 
-## RankifyInstanceGameOwnersFacet
-
-### RInstanceStorage
+# 
+###  error OutOfBounds
 
 ```solidity
-function RInstanceStorage() internal pure returns (struct IRankifyInstanceCommons.RInstanceSettings bog)
+error OutOfBounds() 
 ```
 
-### setGamePrice
+# 
+## Description
+
+## Implementation
+
+### internal function RInstanceStorage
 
 ```solidity
-function setGamePrice(uint256 newPrice) external
+function RInstanceStorage() internal pure returns (struct IRankifyInstanceCommons.RInstanceSettings bog) 
 ```
 
-_Sets the game price. `newPrice` is the new game price.
+### external function setGamePrice
+
+```solidity
+function setGamePrice(uint256 newPrice) external 
+```
+
+*Sets the game price. `newPrice` is the new game price.
 
 Modifies:
 
@@ -40,15 +45,14 @@ Modifies:
 
 Requirements:
 
-- The caller must be the contract owner._
-
-### setJoinGamePrice
+- The caller must be the contract owner.*
+### external function setJoinGamePrice
 
 ```solidity
-function setJoinGamePrice(uint256 newPrice) external
+function setJoinGamePrice(uint256 newPrice) external 
 ```
 
-_Sets the join game price. `newPrice` is the new join game price.
+*Sets the join game price. `newPrice` is the new join game price.
 
 Modifies:
 
@@ -56,15 +60,14 @@ Modifies:
 
 Requirements:
 
-- The caller must be the contract owner._
-
-### setRankTokenAddress
+- The caller must be the contract owner.*
+### external function setRankTokenAddress
 
 ```solidity
-function setRankTokenAddress(address newRankToken) external
+function setRankTokenAddress(address newRankToken) external 
 ```
 
-_Sets the rank token address. `newRankToken` is the new rank token address.
+*Sets the rank token address. `newRankToken` is the new rank token address.
 
 Modifies:
 
@@ -74,15 +77,14 @@ Requirements:
 
 - The caller must be the contract owner.
 - `newRankToken` must not be the zero address.
-- `newRankToken` must support the ERC1155 interface._
-
-### setTimePerTurn
+- `newRankToken` must support the ERC1155 interface.*
+### external function setTimePerTurn
 
 ```solidity
-function setTimePerTurn(uint256 newTimePerTurn) external
+function setTimePerTurn(uint256 newTimePerTurn) external 
 ```
 
-_Sets the time per turn. `newTimePerTurn` is the new time per turn.
+*Sets the time per turn. `newTimePerTurn` is the new time per turn.
 
 Modifies:
 
@@ -90,15 +92,14 @@ Modifies:
 
 Requirements:
 
-- The caller must be the contract owner._
-
-### setMaxPlayersSize
+- The caller must be the contract owner.*
+### external function setMaxPlayersSize
 
 ```solidity
-function setMaxPlayersSize(uint256 newMaxPlayersSize) external
+function setMaxPlayersSize(uint256 newMaxPlayersSize) external 
 ```
 
-_Sets the maximum number of players in a game. `newMaxPlayersSize` is the new maximum number of players.
+*Sets the maximum number of players in a game. `newMaxPlayersSize` is the new maximum number of players.
 
 Modifies:
 
@@ -107,15 +108,14 @@ Modifies:
 Requirements:
 
 - The caller must be the contract owner.
-- `newMaxPlayersSize` must be greater than or equal to the minimum number of players._
-
-### setMinPlayersSize
+- `newMaxPlayersSize` must be greater than or equal to the minimum number of players.*
+### external function setMinPlayersSize
 
 ```solidity
-function setMinPlayersSize(uint256 newMinPlayersSize) external
+function setMinPlayersSize(uint256 newMinPlayersSize) external 
 ```
 
-_Sets the minimum number of players in a game. `newMinPlayersSize` is the new minimum number of players.
+*Sets the minimum number of players in a game. `newMinPlayersSize` is the new minimum number of players.
 
 Modifies:
 
@@ -124,15 +124,14 @@ Modifies:
 Requirements:
 
 - The caller must be the contract owner.
-- `newMinPlayersSize` must be less than or equal to the maximum number of players._
-
-### setTimeToJoin
+- `newMinPlayersSize` must be less than or equal to the maximum number of players.*
+### external function setTimeToJoin
 
 ```solidity
-function setTimeToJoin(uint256 newTimeToJoin) external
+function setTimeToJoin(uint256 newTimeToJoin) external 
 ```
 
-_Sets the time to join a game. `newTimeToJoin` is the new time to join.
+*Sets the time to join a game. `newTimeToJoin` is the new time to join.
 
 Modifies:
 
@@ -141,15 +140,14 @@ Modifies:
 Requirements:
 
 - The caller must be the contract owner.
-- `newTimeToJoin` must not be zero._
-
-### setMaxTurns
+- `newTimeToJoin` must not be zero.*
+### external function setMaxTurns
 
 ```solidity
-function setMaxTurns(uint256 newMaxTurns) external
+function setMaxTurns(uint256 newMaxTurns) external 
 ```
 
-_Sets the maximum number of turns in a game. `newMaxTurns` is the new maximum number of turns.
+*Sets the maximum number of turns in a game. `newMaxTurns` is the new maximum number of turns.
 
 Modifies:
 
@@ -158,5 +156,6 @@ Modifies:
 Requirements:
 
 - The caller must be the contract owner.
-- `newMaxTurns` must not be zero._
+- `newMaxTurns` must not be zero.*
+<!--CONTRACT_END-->
 

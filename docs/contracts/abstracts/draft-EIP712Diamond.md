@@ -1,8 +1,8 @@
-# Solidity API
 
-## EIP712
+# 
+## Description
 
-_https://eips.ethereum.org/EIPS/eip-712[EIP 712] is a standard for hashing and signing of typed structured data.
+https://eips.ethereum.org/EIPS/eip-712[EIP 712] is a standard for hashing and signing of typed structured data.
 
 The encoding specified in the EIP is very generic, and such a generic implementation in Solidity is not feasible,
 thus this contract does not implement the encoding itself. Protocols need to implement the type-specific encoding
@@ -18,15 +18,17 @@ the chain id to protect against replay attacks on an eventual fork of the chain.
 NOTE: This contract implements the version of the encoding known as "v4", as implemented by the JSON RPC method
 https://docs.metamask.io/guide/signing-data.html[`eth_signTypedDataV4` in MetaMask].
 
-_Available since v3.4.__
+_Available since v3.4._
 
-### constructor
+## Implementation
+
+### internal function constructor
 
 ```solidity
-constructor() internal
+constructor() internal 
 ```
 
-_Initializes the domain separator and parameter caches.
+*Initializes the domain separator and parameter caches.
 
 The meaning of `name` and `version` is specified in
 https://eips.ethereum.org/EIPS/eip-712#definition-of-domainseparator[EIP 712]:
@@ -35,23 +37,21 @@ https://eips.ethereum.org/EIPS/eip-712#definition-of-domainseparator[EIP 712]:
 - `version`: the current major version of the signing domain.
 
 NOTE: These parameters cannot be changed except through a xref:learn::upgrading-smart-contracts.adoc[smart
-contract upgrade]._
-
-### _domainSeparatorV4
-
-```solidity
-function _domainSeparatorV4() internal view returns (bytes32)
-```
-
-_Returns the domain separator for the current chain._
-
-### _hashTypedDataV4
+contract upgrade].*
+### internal function _domainSeparatorV4
 
 ```solidity
-function _hashTypedDataV4(bytes32 structHash) internal view virtual returns (bytes32)
+function _domainSeparatorV4() internal view returns (bytes32) 
 ```
 
-_Given an already https://eips.ethereum.org/EIPS/eip-712#definition-of-hashstruct[hashed struct], this
+*Returns the domain separator for the current chain.*
+### internal function _hashTypedDataV4
+
+```solidity
+function _hashTypedDataV4(bytes32 structHash) internal view virtual returns (bytes32) 
+```
+
+*Given an already https://eips.ethereum.org/EIPS/eip-712#definition-of-hashstruct[hashed struct], this
 function returns the hash of the fully encoded EIP712 message for this domain.
 
 This hash can be used together with {ECDSA-recover} to obtain the signer of a message. For example:
@@ -63,5 +63,6 @@ bytes32 digest = _hashTypedDataV4(keccak256(abi.encode(
     keccak256(bytes(mailContents))
 )));
 address signer = ECDSA.recover(digest, signature);
-```_
+```*
+<!--CONTRACT_END-->
 

@@ -1,14 +1,16 @@
-# Solidity API
 
-## LibEIP712WithStorage
+# 
+## Description
 
-### EIP712_STORAGE_POSITION
+## Implementation
+
+### internal variable EIP712_STORAGE_POSITION
 
 ```solidity
-bytes32 EIP712_STORAGE_POSITION
+bytes32 EIP712_STORAGE_POSITION 
 ```
 
-### LibEIP712WithStorageStorage
+### public struct LibEIP712WithStorageStorage
 
 ```solidity
 struct LibEIP712WithStorageStorage {
@@ -20,10 +22,11 @@ struct LibEIP712WithStorageStorage {
   bytes32 _TYPE_HASH;
 }
 ```
-
-### EIP712WithStorage
+### internal function EIP712WithStorage
 
 ```solidity
-function EIP712WithStorage() internal pure returns (struct LibEIP712WithStorage.LibEIP712WithStorageStorage ds)
+function EIP712WithStorage() internal pure returns (struct LibEIP712WithStorage.LibEIP712WithStorageStorage ds) 
 ```
+
+<!--CONTRACT_END-->
 

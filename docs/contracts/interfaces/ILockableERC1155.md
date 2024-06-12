@@ -1,50 +1,51 @@
-# Solidity API
 
-## ILockableERC1155
+# ILockableERC1155
+## Description
 
-_Interface for a lockable ERC1155 token contract._
+Interface for a lockable ERC1155 token contract.
 
-### TokensLocked
+## Implementation
 
-```solidity
-event TokensLocked(address account, uint256 id, uint256 value)
-```
-
-### TokensUnlocked
+###  event TokensLocked
 
 ```solidity
-event TokensUnlocked(address account, uint256 id, uint256 value)
+event TokensLocked(address account, uint256 id, uint256 value) 
 ```
 
-### lock
+###  event TokensUnlocked
 
 ```solidity
-function lock(address account, uint256 id, uint256 amount) external
+event TokensUnlocked(address account, uint256 id, uint256 value) 
 ```
 
-_Locks a specified amount of tokens for a given account and token ID. `account` is the address of the account to lock the tokens for. `id` is the ID of the token to lock. `amount` is the amount of tokens to lock.
-
-emits a _TokensLocked_ event._
-
-### unlock
+### external function lock
 
 ```solidity
-function unlock(address account, uint256 id, uint256 amount) external
+function lock(address account, uint256 id, uint256 amount) external 
 ```
 
-_Unlocks a specified amount of tokens for a given account and token ID. `account` is the address of the account to unlock the tokens for. `id` is the ID of the token to unlock. `amount` is the amount of tokens to unlock.
+*Locks a specified amount of tokens for a given account and token ID. `account` is the address of the account to lock the tokens for. `id` is the ID of the token to lock. `amount` is the amount of tokens to lock.
 
-emits a _TokensUnlocked_ event._
-
-### unlockedBalanceOf
+emits a _TokensLocked_ event.*
+### external function unlock
 
 ```solidity
-function unlockedBalanceOf(address account, uint256 id) external view returns (uint256)
+function unlock(address account, uint256 id, uint256 amount) external 
 ```
 
-_Returns the unlocked balance of tokens for a given account and token ID. `account` is the address of the account to check the unlocked balance for. `id` is the ID of the token to check the unlocked balance for.
+*Unlocks a specified amount of tokens for a given account and token ID. `account` is the address of the account to unlock the tokens for. `id` is the ID of the token to unlock. `amount` is the amount of tokens to unlock.
+
+emits a _TokensUnlocked_ event.*
+### external function unlockedBalanceOf
+
+```solidity
+function unlockedBalanceOf(address account, uint256 id) external view returns (uint256) 
+```
+
+*Returns the unlocked balance of tokens for a given account and token ID. `account` is the address of the account to check the unlocked balance for. `id` is the ID of the token to check the unlocked balance for.
 
 Returns:
 
-- The unlocked balance of tokens._
+- The unlocked balance of tokens.*
+<!--CONTRACT_END-->
 

@@ -1,8 +1,8 @@
-# Solidity API
 
-## LibTBG
+# LibTBG
+## Description
 
-_Library for managing turn-based games.
+Library for managing turn-based games.
 It is designed to be used as a base library for games, and provides the following functionality:
 - setting game settings such as time per turn, max players, min players, etc as well as perform score and leaderboard tracking
 
@@ -12,9 +12,11 @@ Limitations:
 
 ***WARNING*** Some limitations:
 - This library is still under development and its interfaces may change.
-- getting game data (which has own storage assigement and can be encapsulated from library) however there is no storage slot collision checks in place_
+- getting game data (which has own storage assigement and can be encapsulated from library) however there is no storage slot collision checks in place
 
-### GameSettings
+## Implementation
+
+### public struct GameSettings
 
 ```solidity
 struct GameSettings {
@@ -28,8 +30,7 @@ struct GameSettings {
   string subject;
 }
 ```
-
-### GameInstance
+### public struct GameInstance
 
 ```solidity
 struct GameInstance {
@@ -48,8 +49,7 @@ struct GameInstance {
   address[] leaderboard;
 }
 ```
-
-### TBGStorageStruct
+### public struct TBGStorageStruct
 
 ```solidity
 struct TBGStorageStruct {
@@ -59,38 +59,37 @@ struct TBGStorageStruct {
   uint256 totalGamesCreated;
 }
 ```
-
-### TBG_STORAGE_POSITION
-
-```solidity
-bytes32 TBG_STORAGE_POSITION
-```
-
-### IMPLEMENTATION_STORAGE_POSITION
+### internal variable TBG_STORAGE_POSITION
 
 ```solidity
-bytes32 IMPLEMENTATION_STORAGE_POSITION
+bytes32 TBG_STORAGE_POSITION 
 ```
 
-### TBGStorage
+### internal variable IMPLEMENTATION_STORAGE_POSITION
 
 ```solidity
-function TBGStorage() internal pure returns (struct LibTBG.TBGStorageStruct es)
+bytes32 IMPLEMENTATION_STORAGE_POSITION 
 ```
 
-### _getGame
+### internal function TBGStorage
 
 ```solidity
-function _getGame(uint256 gameId) internal view returns (struct LibTBG.GameInstance)
+function TBGStorage() internal pure returns (struct LibTBG.TBGStorageStruct es) 
 ```
 
-### init
+### internal function _getGame
 
 ```solidity
-function init(struct LibTBG.GameSettings settings) internal
+function _getGame(uint256 gameId) internal view returns (struct LibTBG.GameInstance) 
 ```
 
-_Initializes the game with the provided settings. `settings` is the settings for the game.
+### internal function init
+
+```solidity
+function init(struct LibTBG.GameSettings settings) internal 
+```
+
+*Initializes the game with the provided settings. `settings` is the settings for the game.
 
 Requirements:
 
@@ -105,15 +104,14 @@ Requirements:
 
 Modifies:
 
-- Sets the settings of the game to `settings`._
-
-### createGame
+- Sets the settings of the game to `settings`.*
+### internal function createGame
 
 ```solidity
-function createGame(uint256 gameId, address gm) internal
+function createGame(uint256 gameId, address gm) internal 
 ```
 
-_Creates a new game with the provided game ID and game master. `gameId` is the ID of the game. `gm` is the address of the game master.
+*Creates a new game with the provided game ID and game master. `gameId` is the ID of the game. `gm` is the address of the game master.
 
 Requirements:
 
@@ -125,15 +123,14 @@ Requirements:
 Modifies:
 
 - Sets the game master of the game with `gameId` to `gm`.
-- Increments the total number of games created._
-
-### deleteGame
+- Increments the total number of games created.*
+### internal function deleteGame
 
 ```solidity
-function deleteGame(uint256 gameId) internal
+function deleteGame(uint256 gameId) internal 
 ```
 
-_Deletes a game with the provided game ID. `gameId` is the ID of the game.
+*Deletes a game with the provided game ID. `gameId` is the ID of the game.
 
 Requirements:
 
@@ -146,27 +143,25 @@ Modifies:
   players, registrationOpenAt, and turnStartedAt of the game with `gameId`
   to their initial values.
 - Sets the score and madeMove of each player in the game with `gameId`
-  to their initial values._
-
-### canBeJoined
+  to their initial values.*
+### internal function canBeJoined
 
 ```solidity
-function canBeJoined(uint256 gameId) internal view returns (bool)
+function canBeJoined(uint256 gameId) internal view returns (bool) 
 ```
 
-_Checks if a game with the provided game ID can be joined. `gameId` is the ID of the game.
+*Checks if a game with the provided game ID can be joined. `gameId` is the ID of the game.
 
 Returns:
 
-- A boolean indicating whether the game can be joined._
-
-### addPlayer
+- A boolean indicating whether the game can be joined.*
+### internal function addPlayer
 
 ```solidity
-function addPlayer(uint256 gameId, address participant) internal
+function addPlayer(uint256 gameId, address participant) internal 
 ```
 
-_Adds a player to a game with the provided game ID. `gameId` is the ID of the game. `participant` is the address of the player.
+*Adds a player to a game with the provided game ID. `gameId` is the ID of the game. `participant` is the address of the player.
 
 Requirements:
 
@@ -179,27 +174,25 @@ Modifies:
 
 - Adds `participant` to the players of the game with `gameId`.
 - Sets the madeMove of `participant` in the game with `gameId` to false.
-- Sets the game of `participant` to `gameId`._
-
-### isPlayerInGame
+- Sets the game of `participant` to `gameId`.*
+### internal function isPlayerInGame
 
 ```solidity
-function isPlayerInGame(uint256 gameId, address player) internal view returns (bool)
+function isPlayerInGame(uint256 gameId, address player) internal view returns (bool) 
 ```
 
-_Checks if a player is in a game with the provided game ID. `gameId` is the ID of the game. `player` is the address of the player.
+*Checks if a player is in a game with the provided game ID. `gameId` is the ID of the game. `player` is the address of the player.
 
 Returns:
 
-- A boolean indicating whether the player is in the game._
-
-### removePlayer
+- A boolean indicating whether the player is in the game.*
+### internal function removePlayer
 
 ```solidity
-function removePlayer(uint256 gameId, address participant) internal
+function removePlayer(uint256 gameId, address participant) internal 
 ```
 
-_Removes a player from a game with the provided game ID. `gameId` is the ID of the game. `participant` is the address of the player.
+*Removes a player from a game with the provided game ID. `gameId` is the ID of the game. `participant` is the address of the player.
 
 Requirements:
 
@@ -210,15 +203,14 @@ Requirements:
 Modifies:
 
 - Sets the game of `participant` to 0.
-- Removes `participant` from the players of the game with `gameId`._
-
-### isTurnTimedOut
+- Removes `participant` from the players of the game with `gameId`.*
+### internal function isTurnTimedOut
 
 ```solidity
-function isTurnTimedOut(uint256 gameId) internal view returns (bool)
+function isTurnTimedOut(uint256 gameId) internal view returns (bool) 
 ```
 
-_Checks if the current turn in a game with the provided game ID has timed out. `gameId` is the ID of the game.
+*Checks if the current turn in a game with the provided game ID has timed out. `gameId` is the ID of the game.
 
 Requirements:
 
@@ -227,107 +219,99 @@ Requirements:
 
 Returns:
 
-- A boolean indicating whether the current turn has timed out._
-
-### gameExists
+- A boolean indicating whether the current turn has timed out.*
+### internal function gameExists
 
 ```solidity
-function gameExists(uint256 gameId) internal view returns (bool)
+function gameExists(uint256 gameId) internal view returns (bool) 
 ```
 
-_Checks if a game with the provided game ID exists. `gameId` is the ID of the game.
+*Checks if a game with the provided game ID exists. `gameId` is the ID of the game.
 
 Returns:
 
-- A boolean indicating whether the game exists._
-
-### enforceHasStarted
+- A boolean indicating whether the game exists.*
+### internal function enforceHasStarted
 
 ```solidity
-function enforceHasStarted(uint256 gameId) internal view
+function enforceHasStarted(uint256 gameId) internal view 
 ```
 
-_Enforces that a game with the provided game ID has started. `gameId` is the ID of the game.
+*Enforces that a game with the provided game ID has started. `gameId` is the ID of the game.
 
 Requirements:
 
 - `gameId` must not be zero.
-- The game with `gameId` must have started._
-
-### canEndTurn
+- The game with `gameId` must have started.*
+### internal function canEndTurn
 
 ```solidity
-function canEndTurn(uint256 gameId) internal view returns (bool)
+function canEndTurn(uint256 gameId) internal view returns (bool) 
 ```
 
-_Enforces that a game with the provided game ID has started. `gameId` is the ID of the game.
+*Enforces that a game with the provided game ID has started. `gameId` is the ID of the game.
 
 Requirements:
 
 - `gameId` must not be zero.
-- The game with `gameId` must have started._
-
-### canEndTurnEarly
+- The game with `gameId` must have started.*
+### internal function canEndTurnEarly
 
 ```solidity
-function canEndTurnEarly(uint256 gameId) internal view returns (bool)
+function canEndTurnEarly(uint256 gameId) internal view returns (bool) 
 ```
 
-_Checks if the current turn in a game with the provided game ID can end early. `gameId` is the ID of the game.
+*Checks if the current turn in a game with the provided game ID can end early. `gameId` is the ID of the game.
 
 Returns:
 
-- A boolean indicating whether the current turn can end early._
-
-### onlyInTurnTime
+- A boolean indicating whether the current turn can end early.*
+### internal modifier onlyInTurnTime
 
 ```solidity
-modifier onlyInTurnTime(uint256 gameId)
+modifier onlyInTurnTime(uint256 gameId) 
 ```
 
-_Modifier that requires the current turn in a game with the provided game ID to be able to end. `gameId` is the ID of the game.
+*Modifier that requires the current turn in a game with the provided game ID to be able to end. `gameId` is the ID of the game.
 
 Requirements:
 
-- The current turn in the game with `gameId` must be able to end._
-
-### onlyWhenTurnCanEnd
-
-```solidity
-modifier onlyWhenTurnCanEnd(uint256 gameId)
-```
-
-### _clearCurrentMoves
+- The current turn in the game with `gameId` must be able to end.*
+### internal modifier onlyWhenTurnCanEnd
 
 ```solidity
-function _clearCurrentMoves(struct LibTBG.GameInstance game) internal
+modifier onlyWhenTurnCanEnd(uint256 gameId) 
 ```
 
-_Clears the current moves in a game. `game` is the game.
+### internal function _clearCurrentMoves
+
+```solidity
+function _clearCurrentMoves(struct LibTBG.GameInstance game) internal 
+```
+
+*Clears the current moves in a game. `game` is the game.
 
 Modifies:
 
-- Sets the madeMove of each player in `game` to false._
-
-### _resetPlayerStates
+- Sets the madeMove of each player in `game` to false.*
+### internal function _resetPlayerStates
 
 ```solidity
-function _resetPlayerStates(struct LibTBG.GameInstance game) internal
+function _resetPlayerStates(struct LibTBG.GameInstance game) internal 
 ```
 
-_Resets the states of the players in a game. `game` is the game.
+*Resets the states of the players in a game. `game` is the game.
 
 Modifies:
 
-- Sets the madeMove and score of each player in `game` to their initial values._
-
-### setScore
+- Sets the madeMove and score of each player in `game` to their initial values.*
+### internal function setScore
 
 ```solidity
-function setScore(uint256 gameId, address player, uint256 value) internal
+function setScore(uint256 gameId, address player, uint256 value) internal 
 ```
 
-_Sets the score of a player in a game with the provided game ID. `gameId` is the ID of the game. `player` is the address of the player. `value` is the score.
+*Sets the score of a player in a game with the provided game ID. `gameId` is the ID of the game. `player` is the address of the player. `value` is the score.
 
 Requirements:
 
@@ -335,40 +319,37 @@ Requirements:
 
 Modifies:
 
-- Sets the score of `player` in the game with `gameId` to `value`._
-
-### getScore
+- Sets the score of `player` in the game with `gameId` to `value`.*
+### internal function getScore
 
 ```solidity
-function getScore(uint256 gameId, address player) internal view returns (uint256)
+function getScore(uint256 gameId, address player) internal view returns (uint256) 
 ```
 
-_Gets the score of a player in a game with the provided game ID. `gameId` is the ID of the game. `player` is the address of the player.
+*Gets the score of a player in a game with the provided game ID. `gameId` is the ID of the game. `player` is the address of the player.
 
 Returns:
 
-- The score of `player` in the game with `gameId`._
-
-### getScores
+- The score of `player` in the game with `gameId`.*
+### internal function getScores
 
 ```solidity
-function getScores(uint256 gameId) internal view returns (address[], uint256[])
+function getScores(uint256 gameId) internal view returns (address[], uint256[]) 
 ```
 
-_Gets the scores of the players in a game with the provided game ID. `gameId` is the ID of the game.
+*Gets the scores of the players in a game with the provided game ID. `gameId` is the ID of the game.
 
 Returns:
 
 - An array of the addresses of the players in the game with `gameId`.
-- An array of the scores of the players in the game with `gameId`._
-
-### openRegistration
+- An array of the scores of the players in the game with `gameId`.*
+### internal function openRegistration
 
 ```solidity
-function openRegistration(uint256 gameId) internal
+function openRegistration(uint256 gameId) internal 
 ```
 
-_Opens registration for a game with the provided game ID. `gameId` is the ID of the game.
+*Opens registration for a game with the provided game ID. `gameId` is the ID of the game.
 
 Requirements:
 
@@ -376,52 +357,48 @@ Requirements:
 
 Modifies:
 
-- Sets the registrationOpenAt of the game with `gameId` to the current block timestamp._
-
-### isRegistrationOpen
+- Sets the registrationOpenAt of the game with `gameId` to the current block timestamp.*
+### internal function isRegistrationOpen
 
 ```solidity
-function isRegistrationOpen(uint256 gameId) internal view returns (bool)
+function isRegistrationOpen(uint256 gameId) internal view returns (bool) 
 ```
 
-_Checks if registration is open for a game with the provided game ID. `gameId` is the ID of the game.
+*Checks if registration is open for a game with the provided game ID. `gameId` is the ID of the game.
 
 Returns:
 
-- A boolean indicating whether registration is open for the game._
-
-### canStart
+- A boolean indicating whether registration is open for the game.*
+### internal function canStart
 
 ```solidity
-function canStart(uint256 gameId) internal view returns (bool)
+function canStart(uint256 gameId) internal view returns (bool) 
 ```
 
-_Checks if a game with the provided game ID can start. `gameId` is the ID of the game.
+*Checks if a game with the provided game ID can start. `gameId` is the ID of the game.
 
 Returns:
 
-- A boolean indicating whether the game can start._
-
-### canStartEarly
+- A boolean indicating whether the game can start.*
+### internal function canStartEarly
 
 ```solidity
-function canStartEarly(uint256 gameId) internal view returns (bool)
+function canStartEarly(uint256 gameId) internal view returns (bool) 
 ```
 
-_Checks if a game with the provided game ID can start early. `gameId` is the ID of the game.
+*Checks if a game with the provided game ID can start early. `gameId` is the ID of the game.
 By "early" it is assumed that time to join has not yet passed, but it's already cap players limit reached.
 
 Returns:
 
-- A boolean indicating whether the game can start early._
-
-### startGameEarly
+- A boolean indicating whether the game can start early.*
+### internal function startGameEarly
 
 ```solidity
-function startGameEarly(uint256 gameId) internal
+function startGameEarly(uint256 gameId) internal 
 ```
 
-_Starts a game with the provided game ID early. `gameId` is the ID of the game.
+*Starts a game with the provided game ID early. `gameId` is the ID of the game.
 By "early" it is assumed that time to join has not yet passed, but it's already cap players limit reached.
 
 Requirements:
@@ -435,15 +412,14 @@ Requirements:
 Modifies:
 
 - Sets the hasStarted, hasEnded, currentTurn, and turnStartedAt of the game with `gameId` to their new values.
-- Resets the states of the players in the game with `gameId`._
-
-### startGame
+- Resets the states of the players in the game with `gameId`.*
+### internal function startGame
 
 ```solidity
-function startGame(uint256 gameId) internal
+function startGame(uint256 gameId) internal 
 ```
 
-_Starts a game with the provided game ID. `gameId` is the ID of the game.
+*Starts a game with the provided game ID. `gameId` is the ID of the game.
 
 Requirements:
 
@@ -455,75 +431,69 @@ Requirements:
 Modifies:
 
 - Sets the hasStarted, hasEnded, currentTurn, and turnStartedAt of the game with `gameId` to their new values.
-- Resets the states of the players in the game with `gameId`._
-
-### getTurn
+- Resets the states of the players in the game with `gameId`.*
+### internal function getTurn
 
 ```solidity
-function getTurn(uint256 gameId) internal view returns (uint256)
+function getTurn(uint256 gameId) internal view returns (uint256) 
 ```
 
-_Gets the current turn of a game with the provided game ID. `gameId` is the ID of the game.
+*Gets the current turn of a game with the provided game ID. `gameId` is the ID of the game.
 
 Returns:
 
-- The current turn of the game with `gameId`._
-
-### getGM
+- The current turn of the game with `gameId`.*
+### internal function getGM
 
 ```solidity
-function getGM(uint256 gameId) internal view returns (address)
+function getGM(uint256 gameId) internal view returns (address) 
 ```
 
-_Gets the game master of a game with the provided game ID. `gameId` is the ID of the game.
+*Gets the game master of a game with the provided game ID. `gameId` is the ID of the game.
 
 Returns:
 
-- The game master of the game with `gameId`._
-
-### isLastTurn
+- The game master of the game with `gameId`.*
+### internal function isLastTurn
 
 ```solidity
-function isLastTurn(uint256 gameId) internal view returns (bool)
+function isLastTurn(uint256 gameId) internal view returns (bool) 
 ```
 
-_Checks if the current turn is the last turn in a game with the provided game ID. `gameId` is the ID of the game.
+*Checks if the current turn is the last turn in a game with the provided game ID. `gameId` is the ID of the game.
 
 Returns:
 
-- A boolean indicating whether the current turn is the last turn in the game._
-
-### isGameOver
+- A boolean indicating whether the current turn is the last turn in the game.*
+### internal function isGameOver
 
 ```solidity
-function isGameOver(uint256 gameId) internal view returns (bool)
+function isGameOver(uint256 gameId) internal view returns (bool) 
 ```
 
-_Checks if a game with the provided game ID is over. `gameId` is the ID of the game.
+*Checks if a game with the provided game ID is over. `gameId` is the ID of the game.
 
 Returns:
 
-- A boolean indicating whether the game is over._
-
-### enforceIsNotOver
+- A boolean indicating whether the game is over.*
+### internal function enforceIsNotOver
 
 ```solidity
-function enforceIsNotOver(uint256 gameId) internal view
+function enforceIsNotOver(uint256 gameId) internal view 
 ```
 
-_Enforces that a game with the provided game ID is not over. `gameId` is the ID of the game.
+*Enforces that a game with the provided game ID is not over. `gameId` is the ID of the game.
 
 Requirements:
 
-- The game with `gameId` must not be over._
-
-### playerMove
+- The game with `gameId` must not be over.*
+### internal function playerMove
 
 ```solidity
-function playerMove(uint256 gameId, address player) internal
+function playerMove(uint256 gameId, address player) internal 
 ```
 
-_Records a player's move in a game with the provided game ID. `gameId` is the ID of the game. `player` is the address of the player.
+*Records a player's move in a game with the provided game ID. `gameId` is the ID of the game. `player` is the address of the player.
 
 Requirements:
 
@@ -535,57 +505,53 @@ Requirements:
 Modifies:
 
 - Sets the madeMove of `player` in the game with `gameId` to true.
-- Increments the numPlayersMadeMove of the game with `gameId`._
-
-### isPlayerTurnComplete
-
-```solidity
-function isPlayerTurnComplete(uint256 gameId, address player) internal view returns (bool)
-```
-
-### enforceIsPlayingGame
+- Increments the numPlayersMadeMove of the game with `gameId`.*
+### internal function isPlayerTurnComplete
 
 ```solidity
-function enforceIsPlayingGame(uint256 gameId, address player) internal view
+function isPlayerTurnComplete(uint256 gameId, address player) internal view returns (bool) 
 ```
 
-_Enforces that a player is in a game with the provided game ID. `gameId` is the ID of the game. `player` is the address of the player.
+### internal function enforceIsPlayingGame
+
+```solidity
+function enforceIsPlayingGame(uint256 gameId, address player) internal view 
+```
+
+*Enforces that a player is in a game with the provided game ID. `gameId` is the ID of the game. `player` is the address of the player.
 
 Requirements:
 
-- `player` must be in the game with `gameId`._
-
-### hasStarted
+- `player` must be in the game with `gameId`.*
+### internal function hasStarted
 
 ```solidity
-function hasStarted(uint256 gameId) internal view returns (bool)
+function hasStarted(uint256 gameId) internal view returns (bool) 
 ```
 
-_Checks if a game with the provided game ID has started. `gameId` is the ID of the game.
+*Checks if a game with the provided game ID has started. `gameId` is the ID of the game.
 
 Returns:
 
-- A boolean indicating whether the game has started._
-
-### getLeaderBoard
+- A boolean indicating whether the game has started.*
+### internal function getLeaderBoard
 
 ```solidity
-function getLeaderBoard(uint256 gameId) internal view returns (address[])
+function getLeaderBoard(uint256 gameId) internal view returns (address[]) 
 ```
 
-_Gets the leaderboard of a game with the provided game ID. `gameId` is the ID of the game.
+*Gets the leaderboard of a game with the provided game ID. `gameId` is the ID of the game.
 
 Returns:
 
-- An array of the addresses of the players in the game with `gameId`, sorted by score._
-
-### nextTurn
+- An array of the addresses of the players in the game with `gameId`, sorted by score.*
+### internal function nextTurn
 
 ```solidity
-function nextTurn(uint256 gameId) internal returns (bool, bool, bool)
+function nextTurn(uint256 gameId) internal returns (bool, bool, bool) 
 ```
 
-_Advances to the next turn in a game with the provided game ID. `gameId` is the ID of the game.
+*Advances to the next turn in a game with the provided game ID. `gameId` is the ID of the game.
 
 Requirements:
 
@@ -603,152 +569,141 @@ Returns:
 
 - A boolean indicating whether the current turn is the last turn.
 - A boolean indicating whether the game is a tie.
-- A boolean indicating whether the game is over._
-
-### getDataStorage
+- A boolean indicating whether the game is over.*
+### internal function getDataStorage
 
 ```solidity
-function getDataStorage() internal pure returns (bytes32 pointer)
+function getDataStorage() internal pure returns (bytes32 pointer) 
 ```
 
-_Gets the data storage pointer.
+*Gets the data storage pointer.
 
 Returns:
 
-- The data storage pointer._
-
-### getGameDataStorage
+- The data storage pointer.*
+### internal function getGameDataStorage
 
 ```solidity
-function getGameDataStorage(uint256 gameId) internal view returns (bytes32 pointer)
+function getGameDataStorage(uint256 gameId) internal view returns (bytes32 pointer) 
 ```
 
-_Gets the game data storage pointer of a game with the provided game ID. `gameId` is the ID of the game.
+*Gets the game data storage pointer of a game with the provided game ID. `gameId` is the ID of the game.
 
 Returns:
 
-- The game data storage pointer of the game with `gameId`._
-
-### getPlayersNumber
+- The game data storage pointer of the game with `gameId`.*
+### internal function getPlayersNumber
 
 ```solidity
-function getPlayersNumber(uint256 gameId) internal view returns (uint256)
+function getPlayersNumber(uint256 gameId) internal view returns (uint256) 
 ```
 
-_Gets the number of players in a game with the provided game ID. `gameId` is the ID of the game.
+*Gets the number of players in a game with the provided game ID. `gameId` is the ID of the game.
 
 Returns:
 
-- The number of players in the game with `gameId`._
-
-### getPlayers
+- The number of players in the game with `gameId`.*
+### internal function getPlayers
 
 ```solidity
-function getPlayers(uint256 gameId) internal view returns (address[])
+function getPlayers(uint256 gameId) internal view returns (address[]) 
 ```
 
-_Gets the players in a game with the provided game ID. `gameId` is the ID of the game.
+*Gets the players in a game with the provided game ID. `gameId` is the ID of the game.
 
 Returns:
 
-- An array of the addresses of the players in the game with `gameId`._
-
-### getGameSettings
+- An array of the addresses of the players in the game with `gameId`.*
+### internal function getGameSettings
 
 ```solidity
-function getGameSettings() internal view returns (struct LibTBG.GameSettings)
+function getGameSettings() internal view returns (struct LibTBG.GameSettings) 
 ```
 
-_Gets the game settings.
+*Gets the game settings.
 
 Returns:
 
-- The game settings._
-
-### enforceIsPreRegistrationStage
+- The game settings.*
+### internal function enforceIsPreRegistrationStage
 
 ```solidity
-function enforceIsPreRegistrationStage(uint256 gameId) internal view
+function enforceIsPreRegistrationStage(uint256 gameId) internal view 
 ```
 
-_Enforces that a game with the provided game ID is in the pre-registration stage. `gameId` is the ID of the game.
+*Enforces that a game with the provided game ID is in the pre-registration stage. `gameId` is the ID of the game.
 
 Requirements:
 
 - Registration must not be open for the game with `gameId`.
-- The game with `gameId` must not have started._
-
-### addOvertime
+- The game with `gameId` must not have started.*
+### internal function addOvertime
 
 ```solidity
-function addOvertime(uint256 gameId) internal
+function addOvertime(uint256 gameId) internal 
 ```
 
-_Adds overtime to a game with the provided game ID. `gameId` is the ID of the game.
+*Adds overtime to a game with the provided game ID. `gameId` is the ID of the game.
 
 Modifies:
 
-- Sets the isOvertime of the game with `gameId` to true._
-
-### isOvertime
+- Sets the isOvertime of the game with `gameId` to true.*
+### internal function isOvertime
 
 ```solidity
-function isOvertime(uint256 gameId) internal view returns (bool)
+function isOvertime(uint256 gameId) internal view returns (bool) 
 ```
 
-_Checks if a game with the provided game ID is in overtime. `gameId` is the ID of the game.
+*Checks if a game with the provided game ID is in overtime. `gameId` is the ID of the game.
 
 Returns:
 
-- A boolean indicating whether the game is in overtime._
-
-### resetOvertime
+- A boolean indicating whether the game is in overtime.*
+### internal function resetOvertime
 
 ```solidity
-function resetOvertime(uint256 gameId) internal
+function resetOvertime(uint256 gameId) internal 
 ```
 
-_Resets the overtime of a game with the provided game ID. `gameId` is the ID of the game.
+*Resets the overtime of a game with the provided game ID. `gameId` is the ID of the game.
 
 Modifies:
 
-- Sets the isOvertime of the game with `gameId` to false._
-
-### isTie
+- Sets the isOvertime of the game with `gameId` to false.*
+### internal function isTie
 
 ```solidity
-function isTie(uint256 gameId) internal view returns (bool)
+function isTie(uint256 gameId) internal view returns (bool) 
 ```
 
-_Checks if a game with the provided game ID is a tie. `gameId` is the ID of the game.
+*Checks if a game with the provided game ID is a tie. `gameId` is the ID of the game.
 Tie being defined as at least two of the top `numWinners` players having the same score.
 
 Returns:
 
-- A boolean indicating whether the game is a tie._
-
-### getPlayersGame
+- A boolean indicating whether the game is a tie.*
+### internal function getPlayersGame
 
 ```solidity
-function getPlayersGame(address player) internal view returns (uint256)
+function getPlayersGame(address player) internal view returns (uint256) 
 ```
 
-_Gets the game ID of the game a player is in. `player` is the address of the player.
+*Gets the game ID of the game a player is in. `player` is the address of the player.
 
 Returns:
 
-- The game ID of the game `player` is in._
-
-### sortByScore
+- The game ID of the game `player` is in.*
+### internal function sortByScore
 
 ```solidity
-function sortByScore(uint256 gameId) internal view returns (address[], uint256[])
+function sortByScore(uint256 gameId) internal view returns (address[], uint256[]) 
 ```
 
-_Sorts the players in a game with the provided game ID by score in descending order. `gameId` is the ID of the game.
+*Sorts the players in a game with the provided game ID by score in descending order. `gameId` is the ID of the game.
 
 Returns:
 
 - An array of the addresses of the players in the game with `gameId`, sorted by score.
-- An array of the scores of the players in the game with `gameId`, sorted in descending order._
+- An array of the scores of the players in the game with `gameId`, sorted in descending order.*
+<!--CONTRACT_END-->
 

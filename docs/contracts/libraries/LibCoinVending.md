@@ -1,8 +1,8 @@
-# Solidity API
 
-## LibCoinVending
+# 
+## Description
 
-_This library is used to simulate the vending machine coin acceptor state machine that:
+This library is used to simulate the vending machine coin acceptor state machine that:
  - Supports large number of positions; Each represents requirements to acess different goods of the virtual vending machine.
  - Accepts multiple assets of following types: Native (Eth), ERC20, ERC721, and ERC1155 tokens that can be stacked together.
  - Allows for each individual asset action promise can be one of following:
@@ -43,9 +43,11 @@ This library most functionality has been tested: see ../tests/LibCoinVending.ts 
 ERC721 token is checked only for "HAVE" condition since putting requirements on non fungable token id yet to be resolved.
 (see ERC721 section in the code below)
 
-This library has not been yet audited_
+This library has not been yet audited
 
-### Condition
+## Implementation
+
+### public struct Condition
 
 ```solidity
 struct Condition {
@@ -60,8 +62,7 @@ struct Condition {
   bool _isConfigured;
 }
 ```
-
-### RequirementTypes
+###  enum RequirementTypes
 
 ```solidity
 enum RequirementTypes {
@@ -72,8 +73,7 @@ enum RequirementTypes {
   PAY
 }
 ```
-
-### TransactionProperties
+### public struct TransactionProperties
 
 ```solidity
 struct TransactionProperties {
@@ -81,8 +81,7 @@ struct TransactionProperties {
   uint256 amount;
 }
 ```
-
-### ContractCondition
+### public struct ContractCondition
 
 ```solidity
 struct ContractCondition {
@@ -93,8 +92,7 @@ struct ContractCondition {
   struct LibCoinVending.TransactionProperties bet;
 }
 ```
-
-### NumericCondition
+### public struct NumericCondition
 
 ```solidity
 struct NumericCondition {
@@ -105,8 +103,7 @@ struct NumericCondition {
   uint256 bet;
 }
 ```
-
-### TransferTypes
+###  enum TransferTypes
 
 ```solidity
 enum TransferTypes {
@@ -115,8 +112,7 @@ enum TransferTypes {
   RELEASE
 }
 ```
-
-### ConditionReturn
+### public struct ConditionReturn
 
 ```solidity
 struct ConditionReturn {
@@ -130,8 +126,7 @@ struct ConditionReturn {
   bool _isConfigured;
 }
 ```
-
-### configSmartRequirement
+### public struct configSmartRequirement
 
 ```solidity
 struct configSmartRequirement {
@@ -141,8 +136,7 @@ struct configSmartRequirement {
   struct LibCoinVending.ContractCondition contractRequirement;
 }
 ```
-
-### ConfigPosition
+### public struct ConfigPosition
 
 ```solidity
 struct ConfigPosition {
@@ -150,8 +144,7 @@ struct ConfigPosition {
   struct LibCoinVending.configSmartRequirement[] contracts;
 }
 ```
-
-### LibCoinVendingStorage
+### public struct LibCoinVendingStorage
 
 ```solidity
 struct LibCoinVendingStorage {
@@ -159,8 +152,7 @@ struct LibCoinVendingStorage {
   address beneficiary;
 }
 ```
-
-### ContractTypes
+###  enum ContractTypes
 
 ```solidity
 enum ContractTypes {
@@ -169,32 +161,31 @@ enum ContractTypes {
   ERC721
 }
 ```
-
-### COIN_VENDING_STORAGE_POSITION
-
-```solidity
-bytes32 COIN_VENDING_STORAGE_POSITION
-```
-
-### coinVendingPosition
+### internal variable COIN_VENDING_STORAGE_POSITION
 
 ```solidity
-function coinVendingPosition(bytes32 position) internal view returns (struct LibCoinVending.Condition)
+bytes32 COIN_VENDING_STORAGE_POSITION 
 ```
 
-### coinVendingStorage
+### internal function coinVendingPosition
 
 ```solidity
-function coinVendingStorage() internal pure returns (struct LibCoinVending.LibCoinVendingStorage es)
+function coinVendingPosition(bytes32 position) internal view returns (struct LibCoinVending.Condition) 
 ```
 
-### refund
+### internal function coinVendingStorage
 
 ```solidity
-function refund(bytes32 position, address to) internal
+function coinVendingStorage() internal pure returns (struct LibCoinVending.LibCoinVendingStorage es) 
 ```
 
-_Returns all position requirements back to fundee. `position` is the identifier of the condition. `to` is the address to refund the balance to.
+### internal function refund
+
+```solidity
+function refund(bytes32 position, address to) internal 
+```
+
+*Returns all position requirements back to fundee. `position` is the identifier of the condition. `to` is the address to refund the balance to.
 
 Requirements:
 
@@ -203,15 +194,14 @@ Requirements:
 Modifies:
 
 - Transfers the remaining balance of the condition to the `to` address.
-- Increments the `timesRefunded` counter for the condition._
-
-### batchRefund
+- Increments the `timesRefunded` counter for the condition.*
+### internal function batchRefund
 
 ```solidity
-function batchRefund(bytes32 position, address[] returnAddresses) internal
+function batchRefund(bytes32 position, address[] returnAddresses) internal 
 ```
 
-_Returns all position requirements back to multiple fundees. `position` is the identifier of the condition. `returnAddresses` is an array of addresses to refund the balance to.
+*Returns all position requirements back to multiple fundees. `position` is the identifier of the condition. `returnAddresses` is an array of addresses to refund the balance to.
 
 Requirements:
 
@@ -220,15 +210,14 @@ Requirements:
 Modifies:
 
 - Transfers the remaining balance of the condition to each address in `returnAddresses`.
-- Increments the `timesRefunded` counter for the condition for each address in `returnAddresses`._
-
-### release
+- Increments the `timesRefunded` counter for the condition for each address in `returnAddresses`.*
+### internal function release
 
 ```solidity
-function release(bytes32 position, address payee, address beneficiary, address returnAddress) internal
+function release(bytes32 position, address payee, address beneficiary, address returnAddress) internal 
 ```
 
-_Releases the funds from a coin vending position to the specified addresses. `position` is the identifier of the condition. `payee`, `beneficiary`, and `returnAddress` are the addresses to release the funds to.
+*Releases the funds from a coin vending position to the specified addresses. `position` is the identifier of the condition. `payee`, `beneficiary`, and `returnAddress` are the addresses to release the funds to.
 
 Requirements:
 
@@ -237,15 +226,14 @@ Requirements:
 Modifies:
 
 - Transfers the remaining balance of the condition to the `payee`, `beneficiary`, and `returnAddress`.
-- Increments the `timesReleased` counter for the condition._
-
-### batchRelease
+- Increments the `timesReleased` counter for the condition.*
+### internal function batchRelease
 
 ```solidity
-function batchRelease(bytes32 position, address payee, address beneficiary, address[] returnAddresses) internal
+function batchRelease(bytes32 position, address payee, address beneficiary, address[] returnAddresses) internal 
 ```
 
-_Releases the funds from a coin vending position to multiple return addresses. `position` is the identifier of the condition. `payee`, `beneficiary`, and `returnAddresses` are the addresses to release the funds to.
+*Releases the funds from a coin vending position to multiple return addresses. `position` is the identifier of the condition. `payee`, `beneficiary`, and `returnAddresses` are the addresses to release the funds to.
 
 Requirements:
 
@@ -254,15 +242,14 @@ Requirements:
 Modifies:
 
 - Transfers the remaining balance of the condition to the `payee`, `beneficiary`, and each address in `returnAddresses`.
-- Increments the `timesReleased` counter for the condition for each address in `returnAddresses`._
-
-### fund
+- Increments the `timesReleased` counter for the condition for each address in `returnAddresses`.*
+### internal function fund
 
 ```solidity
-function fund(bytes32 position) internal
+function fund(bytes32 position) internal 
 ```
 
-_Funds the position by `msg.sender`. `position` is the identifier of the condition.
+*Funds the position by `msg.sender`. `position` is the identifier of the condition.
 
 Requirements:
 
@@ -271,15 +258,14 @@ Requirements:
 Modifies:
 
 - Transfers the funds from `msg.sender` to this contract.
-- Increments the `timesFunded` counter for the condition._
-
-### configure
+- Increments the `timesFunded` counter for the condition.*
+### internal function configure
 
 ```solidity
-function configure(bytes32 position, struct LibCoinVending.ConfigPosition configuration) internal
+function configure(bytes32 position, struct LibCoinVending.ConfigPosition configuration) internal 
 ```
 
-_Configures the position. `position` is the identifier of the condition. `configuration` is the new configuration for the condition.
+*Configures the position. `position` is the identifier of the condition. `configuration` is the new configuration for the condition.
 
 Requirements:
 
@@ -287,29 +273,28 @@ Requirements:
 
 Modifies:
 
-- Sets the configuration of the condition to `configuration`._
-
-### getPosition
+- Sets the configuration of the condition to `configuration`.*
+### internal function getPosition
 
 ```solidity
-function getPosition(bytes32 position) internal view returns (struct LibCoinVending.ConditionReturn)
+function getPosition(bytes32 position) internal view returns (struct LibCoinVending.ConditionReturn) 
 ```
 
-_Returns the condition associated with the given position. `position` is the identifier of the condition.
+*Returns the condition associated with the given position. `position` is the identifier of the condition.
 
 Returns:
 
-- The condition associated with `position`._
-
-### getPositionByContract
+- The condition associated with `position`.*
+### internal function getPositionByContract
 
 ```solidity
-function getPositionByContract(bytes32 position, address contractAddress, uint256 contractId, enum LibCoinVending.ContractTypes contractType) internal view returns (struct LibCoinVending.ContractCondition)
+function getPositionByContract(bytes32 position, address contractAddress, uint256 contractId, enum LibCoinVending.ContractTypes contractType) internal view returns (struct LibCoinVending.ContractCondition) 
 ```
 
-_Returns the contract condition associated with the given position, contract address, contract ID, and contract type. `position` is the identifier of the condition. `contractAddress` is the address of the contract. `contractId` is the ID of the contract. `contractType` is the type of the contract.
+*Returns the contract condition associated with the given position, contract address, contract ID, and contract type. `position` is the identifier of the condition. `contractAddress` is the address of the contract. `contractId` is the ID of the contract. `contractType` is the type of the contract.
 
 Returns:
 
-- The contract condition associated with `position`, `contractAddress`, `contractId`, and `contractType`._
+- The contract condition associated with `position`, `contractAddress`, `contractId`, and `contractType`.*
+<!--CONTRACT_END-->
 

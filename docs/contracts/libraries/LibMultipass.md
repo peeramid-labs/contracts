@@ -1,19 +1,19 @@
-# Solidity API
 
-## LibMultipass
+# 
+## Description
 
-### NameQuery
+## Implementation
 
-_resolves user from any given argument
+### public struct NameQuery
+
+| Input | Type | Description |
+|:----- | ---- | ----------- |
+
+*resolves user from any given argument
 Requirements:
  domainName must be given and must be initialized
  id OR username OR address must be given
-This method first tries to resolve by address, then by user id and finally by username_
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
+This method first tries to resolve by address, then by user id and finally by username*
 
 ```solidity
 struct NameQuery {
@@ -24,15 +24,12 @@ struct NameQuery {
   bytes32 targetDomain;
 }
 ```
+### public struct Domain
 
-### Domain
+| Input | Type | Description |
+|:----- | ---- | ----------- |
 
-_The domain name of the registrar._
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
+*The domain name of the registrar.*
 
 ```solidity
 struct Domain {
@@ -47,8 +44,7 @@ struct Domain {
   uint256 registerSize;
 }
 ```
-
-### Record
+### public struct Record
 
 ```solidity
 struct Record {
@@ -59,21 +55,18 @@ struct Record {
   bytes32 domainName;
 }
 ```
-
-### MULTIPASS_STORAGE_POSITION
+### internal variable MULTIPASS_STORAGE_POSITION
 
 ```solidity
-bytes32 MULTIPASS_STORAGE_POSITION
+bytes32 MULTIPASS_STORAGE_POSITION 
 ```
 
-### DomainNameService
+### public struct DomainNameService
 
-_The domain name of the registrar._
+| Input | Type | Description |
+|:----- | ---- | ----------- |
 
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
+*The domain name of the registrar.*
 
 ```solidity
 struct DomainNameService {
@@ -85,8 +78,7 @@ struct DomainNameService {
   mapping(bytes32 => bytes32) idToName;
 }
 ```
-
-### MultipassStorageStruct
+### public struct MultipassStorageStruct
 
 ```solidity
 struct MultipassStorageStruct {
@@ -95,105 +87,104 @@ struct MultipassStorageStruct {
   uint256 numDomains;
 }
 ```
-
-### MultipassStorage
-
-```solidity
-function MultipassStorage() internal pure returns (struct LibMultipass.MultipassStorageStruct es)
-```
-
-### _TYPEHASH
+### internal function MultipassStorage
 
 ```solidity
-bytes32 _TYPEHASH
+function MultipassStorage() internal pure returns (struct LibMultipass.MultipassStorageStruct es) 
 ```
 
-### _TYPEHASH_REFERRAL
+### internal variable _TYPEHASH
 
 ```solidity
-bytes32 _TYPEHASH_REFERRAL
+bytes32 _TYPEHASH 
 ```
 
-### _checkStringFits32b
+### internal variable _TYPEHASH_REFERRAL
 
 ```solidity
-function _checkStringFits32b(string value) internal pure returns (bool)
+bytes32 _TYPEHASH_REFERRAL 
 ```
 
-### _checkNotEmpty
+### internal function _checkStringFits32b
 
 ```solidity
-function _checkNotEmpty(bytes32 value) internal pure returns (bool)
+function _checkStringFits32b(string value) internal pure returns (bool) 
 ```
 
-### resolveDomainIndex
+### internal function _checkNotEmpty
 
 ```solidity
-function resolveDomainIndex(bytes32 domainName) internal view returns (uint256)
+function _checkNotEmpty(bytes32 value) internal pure returns (bool) 
 ```
 
-### _getDomainStorage
+### internal function resolveDomainIndex
 
 ```solidity
-function _getDomainStorage(bytes32 domainName) internal view returns (struct LibMultipass.DomainNameService)
+function resolveDomainIndex(bytes32 domainName) internal view returns (uint256) 
 ```
 
-### _initializeDomain
+### internal function _getDomainStorage
 
 ```solidity
-function _initializeDomain(address registrar, uint256 freeRegistrationsNumber, uint256 fee, bytes32 domainName, uint256 referrerReward, uint256 referralDiscount) internal
+function _getDomainStorage(bytes32 domainName) internal view returns (struct LibMultipass.DomainNameService) 
 ```
 
-### _getModifyPrice
+### internal function _initializeDomain
 
 ```solidity
-function _getModifyPrice(struct LibMultipass.Record userRecord) internal view returns (uint256)
+function _initializeDomain(address registrar, uint256 freeRegistrationsNumber, uint256 fee, bytes32 domainName, uint256 referrerReward, uint256 referralDiscount) internal 
 ```
 
-### resolveRecord
+### internal function _getModifyPrice
 
 ```solidity
-function resolveRecord(struct LibMultipass.NameQuery query) internal view returns (bool, struct LibMultipass.Record)
+function _getModifyPrice(struct LibMultipass.Record userRecord) internal view returns (uint256) 
 ```
 
-_resolves Record of name query in to status and identity_
-
-### _setRecord
+### internal function resolveRecord
 
 ```solidity
-function _setRecord(struct LibMultipass.DomainNameService domain, struct LibMultipass.Record record) internal
+function resolveRecord(struct LibMultipass.NameQuery query) internal view returns (bool, struct LibMultipass.Record) 
 ```
 
-_this function bears no security checks, it will ignore nonce in arg and will increment
-  nonce value stored in domain instread_
-
-### queryFromRecord
+*resolves Record of name query in to status and identity*
+### internal function _setRecord
 
 ```solidity
-function queryFromRecord(struct LibMultipass.Record _record, bytes32 _domainName) internal pure returns (struct LibMultipass.NameQuery)
+function _setRecord(struct LibMultipass.DomainNameService domain, struct LibMultipass.Record record) internal 
 ```
 
-### shouldRegisterForFree
+*this function bears no security checks, it will ignore nonce in arg and will increment
+  nonce value stored in domain instread*
+### internal function queryFromRecord
 
 ```solidity
-function shouldRegisterForFree(struct LibMultipass.DomainNameService domain) internal view returns (bool)
+function queryFromRecord(struct LibMultipass.Record _record, bytes32 _domainName) internal pure returns (struct LibMultipass.NameQuery) 
 ```
 
-### _registerNew
+### internal function shouldRegisterForFree
 
 ```solidity
-function _registerNew(struct LibMultipass.Record newRecord, struct LibMultipass.DomainNameService domain) internal
+function shouldRegisterForFree(struct LibMultipass.DomainNameService domain) internal view returns (bool) 
 ```
 
-### _getContractState
+### internal function _registerNew
 
 ```solidity
-function _getContractState() internal view returns (uint256)
+function _registerNew(struct LibMultipass.Record newRecord, struct LibMultipass.DomainNameService domain) internal 
 ```
 
-### _getDomainStorageByIdx
+### internal function _getContractState
 
 ```solidity
-function _getDomainStorageByIdx(uint256 index) internal view returns (struct LibMultipass.DomainNameService)
+function _getContractState() internal view returns (uint256) 
 ```
+
+### internal function _getDomainStorageByIdx
+
+```solidity
+function _getDomainStorageByIdx(uint256 index) internal view returns (struct LibMultipass.DomainNameService) 
+```
+
+<!--CONTRACT_END-->
 

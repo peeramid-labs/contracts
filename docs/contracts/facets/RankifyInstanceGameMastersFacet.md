@@ -1,44 +1,46 @@
-# Solidity API
 
-## RankifyInstanceGameMastersFacet
+# 
+## Description
 
-### OverTime
+## Implementation
 
-```solidity
-event OverTime(uint256 gameId)
-```
-
-### LastTurn
+###  event OverTime
 
 ```solidity
-event LastTurn(uint256 gameId)
+event OverTime(uint256 gameId) 
 ```
 
-### ProposalScore
+###  event LastTurn
 
 ```solidity
-event ProposalScore(uint256 gameId, uint256 turn, string proposalHash, string proposal, uint256 score)
+event LastTurn(uint256 gameId) 
 ```
 
-### TurnEnded
+###  event ProposalScore
 
 ```solidity
-event TurnEnded(uint256 gameId, uint256 turn, address[] players, uint256[] scores, string[] newProposals, uint256[] proposerIndicies, uint256[][] votes)
+event ProposalScore(uint256 gameId, uint256 turn, string proposalHash, string proposal, uint256 score) 
 ```
 
-### GameOver
+###  event TurnEnded
 
 ```solidity
-event GameOver(uint256 gameId, address[] players, uint256[] scores)
+event TurnEnded(uint256 gameId, uint256 turn, address[] players, uint256[] scores, string[] newProposals, uint256[] proposerIndicies, uint256[][] votes) 
 ```
 
-### ProposalSubmitted
+###  event GameOver
 
 ```solidity
-event ProposalSubmitted(uint256 gameId, uint256 turn, address proposer, bytes32 commitmentHash, string proposalEncryptedByGM)
+event GameOver(uint256 gameId, address[] players, uint256[] scores) 
 ```
 
-### ProposalParams
+###  event ProposalSubmitted
+
+```solidity
+event ProposalSubmitted(uint256 gameId, uint256 turn, address proposer, bytes32 commitmentHash, string proposalEncryptedByGM) 
+```
+
+### public struct ProposalParams
 
 ```solidity
 struct ProposalParams {
@@ -48,20 +50,19 @@ struct ProposalParams {
   address proposer;
 }
 ```
-
-### VoteSubmitted
-
-```solidity
-event VoteSubmitted(uint256 gameId, uint256 turn, address player, string votesHidden)
-```
-
-### submitVote
+###  event VoteSubmitted
 
 ```solidity
-function submitVote(uint256 gameId, string encryptedVotes, address voter) public
+event VoteSubmitted(uint256 gameId, uint256 turn, address player, string votesHidden) 
 ```
 
-_Submits a vote for a game. `gameId` is the ID of the game. `encryptedVotes` is the encrypted votes. `voter` is the address of the voter.
+### public function submitVote
+
+```solidity
+function submitVote(uint256 gameId, string encryptedVotes, address voter) public 
+```
+
+*Submits a vote for a game. `gameId` is the ID of the game. `encryptedVotes` is the encrypted votes. `voter` is the address of the voter.
 
 Emits a _VoteSubmitted_ event.
 
@@ -72,28 +73,26 @@ Requirements:
 - The game with `gameId` must have started.
 - The game with `gameId` must not be over.
 - `voter` must be in the game with `gameId`.
-- The current turn of the game with `gameId` must be greater than 1._
-
-### submitProposal
+- The current turn of the game with `gameId` must be greater than 1.*
+### public function submitProposal
 
 ```solidity
-function submitProposal(struct RankifyInstanceGameMastersFacet.ProposalParams proposalData) public
+function submitProposal(struct RankifyInstanceGameMastersFacet.ProposalParams proposalData) public 
 ```
 
-_Submits a proposal for a game. `proposalData` is the proposal data.
+*Submits a proposal for a game. `proposalData` is the proposal data.
 
 Requirements:
 
 - The game with `proposalData.gameId` must exist.
-- The caller must be a game master of the game with `proposalData.gameId`._
-
-### endTurn
+- The caller must be a game master of the game with `proposalData.gameId`.*
+### public function endTurn
 
 ```solidity
-function endTurn(uint256 gameId, uint256[][] votes, string[] newProposals, uint256[] proposerIndicies) public
+function endTurn(uint256 gameId, uint256[][] votes, string[] newProposals, uint256[] proposerIndicies) public 
 ```
 
-_Ends the current turn of a game with the provided game ID. `gameId` is the ID of the game. `votes` is the array of votes.
+*Ends the current turn of a game with the provided game ID. `gameId` is the ID of the game. `votes` is the array of votes.
  `newProposals` is the array of new proposals for the upcoming voting round.
  `proposerIndicies` is the array of indices of the proposers in the previous voting round.
 
@@ -112,5 +111,6 @@ Requirements:
 - The game with `gameId` must have started.
 - The game with `gameId` must not be over.
 -  newProposals array MUST be sorted randomly to ensure privacy
-votes and proposerIndicies MUST correspond to players array from game.getPlayers()_
+votes and proposerIndicies MUST correspond to players array from game.getPlayers()*
+<!--CONTRACT_END-->
 

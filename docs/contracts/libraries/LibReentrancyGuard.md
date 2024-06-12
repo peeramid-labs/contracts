@@ -1,24 +1,27 @@
-# Solidity API
 
-## LibReentrancyGuard
+# 
+## Description
 
-### TBG_STORAGE_POSITION
+## Implementation
+
+### internal variable TBG_STORAGE_POSITION
 
 ```solidity
-bytes32 TBG_STORAGE_POSITION
+bytes32 TBG_STORAGE_POSITION 
 ```
 
-### ReentrancyGuardStruct
+### public struct ReentrancyGuardStruct
 
 ```solidity
 struct ReentrancyGuardStruct {
   bool _entered;
 }
 ```
-
-### reentrancyGuardStorage
+### internal function reentrancyGuardStorage
 
 ```solidity
-function reentrancyGuardStorage() internal pure returns (struct LibReentrancyGuard.ReentrancyGuardStruct ds)
+function reentrancyGuardStorage() internal pure returns (struct LibReentrancyGuard.ReentrancyGuardStruct ds) 
 ```
+
+<!--CONTRACT_END-->
 

@@ -1,20 +1,22 @@
-# Solidity API
 
-## RankifyInstanceMainFacet
+# 
+## Description
 
-### RInstanceStorage
+## Implementation
 
-```solidity
-function RInstanceStorage() internal pure returns (struct IRankifyInstanceCommons.RInstanceSettings bog)
-```
-
-### createGame
+### internal function RInstanceStorage
 
 ```solidity
-function createGame(address gameMaster, uint256 gameId, uint256 gameRank) public
+function RInstanceStorage() internal pure returns (struct IRankifyInstanceCommons.RInstanceSettings bog) 
 ```
 
-_Creates a new game with the provided game master, game ID, and game rank. Optionally, additional ranks can be provided. `gameMaster` is the address of the game master. `gameId` is the ID of the new game. `gameRank` is the rank of the new game. `additionalRanks` is the array of additional ranks.
+### public function createGame
+
+```solidity
+function createGame(address gameMaster, uint256 gameId, uint256 gameRank) public 
+```
+
+*Creates a new game with the provided game master, game ID, and game rank. Optionally, additional ranks can be provided. `gameMaster` is the address of the game master. `gameId` is the ID of the new game. `gameRank` is the rank of the new game. `additionalRanks` is the array of additional ranks.
 
 emits a _GameCreated_ event.
 
@@ -25,27 +27,26 @@ Modifies:
 
 - Calls the `newGame` function with `gameMaster`, `gameRank`, and `msg.sender`.
 - Configures the coin vending with `gameId` and an empty configuration.
-- If `additionalRanks` is not empty, mints rank tokens for each additional rank and sets the additional ranks of the game with `gameId` to `additionalRanks`._
-
-### createGame
-
-```solidity
-function createGame(address gameMaster, uint256 gameId, uint256 gameRank, address[] additionalRanks) public
-```
-
-### createGame
+- If `additionalRanks` is not empty, mints rank tokens for each additional rank and sets the additional ranks of the game with `gameId` to `additionalRanks`.*
+### public function createGame
 
 ```solidity
-function createGame(address gameMaster, uint256 gameRank) public
+function createGame(address gameMaster, uint256 gameId, uint256 gameRank, address[] additionalRanks) public 
 ```
 
-### cancelGame
+### public function createGame
 
 ```solidity
-function cancelGame(uint256 gameId) public
+function createGame(address gameMaster, uint256 gameRank) public 
 ```
 
-_Cancels a game with the provided game ID. `gameId` is the ID of the game.
+### public function cancelGame
+
+```solidity
+function cancelGame(uint256 gameId) public 
+```
+
+*Cancels a game with the provided game ID. `gameId` is the ID of the game.
 
 Modifies:
 
@@ -54,15 +55,14 @@ Modifies:
 Requirements:
 
 - The caller must be the game creator of the game with `gameId`.
-- Game must not be started._
-
-### leaveGame
+- Game must not be started.*
+### public function leaveGame
 
 ```solidity
-function leaveGame(uint256 gameId) public
+function leaveGame(uint256 gameId) public 
 ```
 
-_Allows a player to leave a game with the provided game ID. `gameId` is the ID of the game.
+*Allows a player to leave a game with the provided game ID. `gameId` is the ID of the game.
 
 Modifies:
 
@@ -71,15 +71,14 @@ Modifies:
 Requirements:
 
 - The caller must be a player in the game with `gameId`.
-- Game must not be started._
-
-### openRegistration
+- Game must not be started.*
+### public function openRegistration
 
 ```solidity
-function openRegistration(uint256 gameId) public
+function openRegistration(uint256 gameId) public 
 ```
 
-_Opens registration for a game with the provided game ID. `gameId` is the ID of the game.
+*Opens registration for a game with the provided game ID. `gameId` is the ID of the game.
 
 emits a _RegistrationOpen_ event.
 
@@ -92,15 +91,14 @@ Modifies:
 Requirements:
 
 - The caller must be the game creator of the game with `gameId`.
-- The game with `gameId` must be in the pre-registration stage._
-
-### joinGame
+- The game with `gameId` must be in the pre-registration stage.*
+### public function joinGame
 
 ```solidity
-function joinGame(uint256 gameId) public payable
+function joinGame(uint256 gameId) public payable 
 ```
 
-_Allows a player to join a game with the provided game ID. `gameId` is the ID of the game.
+*Allows a player to join a game with the provided game ID. `gameId` is the ID of the game.
 
 emits a _PlayerJoined_ event.
 
@@ -113,15 +111,14 @@ Requirements:
 
 - The caller must not be a player in the game with `gameId`.
 - Game phase must be registration.
-- Caller must be able to fulfill funding requirements._
-
-### startGame
+- Caller must be able to fulfill funding requirements.*
+### public function startGame
 
 ```solidity
-function startGame(uint256 gameId) public
+function startGame(uint256 gameId) public 
 ```
 
-_Starts a game with the provided game ID early. `gameId` is the ID of the game.
+*Starts a game with the provided game ID early. `gameId` is the ID of the game.
 
 emits a _GameStarted_ event.
 
@@ -132,125 +129,126 @@ Modifies:
 
 Requirements:
 
-- The game with `gameId` must exist._
-
-### onERC1155Received
-
-```solidity
-function onERC1155Received(address operator, address, uint256, uint256, bytes) public view returns (bytes4)
-```
-
-### onERC1155BatchReceived
+- The game with `gameId` must exist.*
+### public function onERC1155Received
 
 ```solidity
-function onERC1155BatchReceived(address operator, address, uint256[], uint256[], bytes) external view returns (bytes4)
+function onERC1155Received(address operator, address, uint256, uint256, bytes) public view returns (bytes4) 
 ```
 
-### onERC721Received
+### external function onERC1155BatchReceived
 
 ```solidity
-function onERC721Received(address operator, address, uint256, bytes) external view returns (bytes4)
+function onERC1155BatchReceived(address operator, address, uint256[], uint256[], bytes) external view returns (bytes4) 
 ```
 
-### getContractState
+### external function onERC721Received
 
 ```solidity
-function getContractState() public view returns (struct IRankifyInstanceCommons.RInstanceState)
+function onERC721Received(address operator, address, uint256, bytes) external view returns (bytes4) 
 ```
 
-### getTurn
+### public function getContractState
 
 ```solidity
-function getTurn(uint256 gameId) public view returns (uint256)
+function getContractState() public view returns (struct IRankifyInstanceCommons.RInstanceState) 
 ```
 
-### getGM
+### public function getTurn
 
 ```solidity
-function getGM(uint256 gameId) public view returns (address)
+function getTurn(uint256 gameId) public view returns (uint256) 
 ```
 
-### getScores
+### public function getGM
 
 ```solidity
-function getScores(uint256 gameId) public view returns (address[], uint256[])
+function getGM(uint256 gameId) public view returns (address) 
 ```
 
-### isOvertime
+### public function getScores
 
 ```solidity
-function isOvertime(uint256 gameId) public view returns (bool)
+function getScores(uint256 gameId) public view returns (address[], uint256[]) 
 ```
 
-### isGameOver
+### public function isOvertime
 
 ```solidity
-function isGameOver(uint256 gameId) public view returns (bool)
+function isOvertime(uint256 gameId) public view returns (bool) 
 ```
 
-### getPlayersGame
+### public function isGameOver
 
 ```solidity
-function getPlayersGame(address player) public view returns (uint256)
+function isGameOver(uint256 gameId) public view returns (bool) 
 ```
 
-### isLastTurn
+### public function getPlayersGame
 
 ```solidity
-function isLastTurn(uint256 gameId) public view returns (bool)
+function getPlayersGame(address player) public view returns (uint256) 
 ```
 
-### isRegistrationOpen
+### public function isLastTurn
 
 ```solidity
-function isRegistrationOpen(uint256 gameId) public view returns (bool)
+function isLastTurn(uint256 gameId) public view returns (bool) 
 ```
 
-### gameCreator
+### public function isRegistrationOpen
 
 ```solidity
-function gameCreator(uint256 gameId) public view returns (address)
+function isRegistrationOpen(uint256 gameId) public view returns (bool) 
 ```
 
-### getGameRank
+### public function gameCreator
 
 ```solidity
-function getGameRank(uint256 gameId) public view returns (uint256)
+function gameCreator(uint256 gameId) public view returns (address) 
 ```
 
-### getPlayers
+### public function getGameRank
 
 ```solidity
-function getPlayers(uint256 gameId) public view returns (address[])
+function getGameRank(uint256 gameId) public view returns (uint256) 
 ```
 
-### canStartGame
+### public function getPlayers
 
 ```solidity
-function canStartGame(uint256 gameId) public view returns (bool)
+function getPlayers(uint256 gameId) public view returns (address[]) 
 ```
 
-### canEndTurn
+### public function canStartGame
 
 ```solidity
-function canEndTurn(uint256 gameId) public view returns (bool)
+function canStartGame(uint256 gameId) public view returns (bool) 
 ```
 
-### isPlayerTurnComplete
+### public function canEndTurn
 
 ```solidity
-function isPlayerTurnComplete(uint256 gameId, address player) public view returns (bool)
+function canEndTurn(uint256 gameId) public view returns (bool) 
 ```
 
-### getPlayerVotedArray
+### public function isPlayerTurnComplete
 
 ```solidity
-function getPlayerVotedArray(uint256 gameId) public view returns (bool[])
+function isPlayerTurnComplete(uint256 gameId, address player) public view returns (bool) 
 ```
 
-### getPlayersMoved
+### public function getPlayerVotedArray
 
 ```solidity
-function getPlayersMoved(uint256 gameId) public view returns (bool[], uint256)
+function getPlayerVotedArray(uint256 gameId) public view returns (bool[]) 
 ```
+
+### public function getPlayersMoved
+
+```solidity
+function getPlayersMoved(uint256 gameId) public view returns (bool[], uint256) 
+```
+
+<!--CONTRACT_END-->
 

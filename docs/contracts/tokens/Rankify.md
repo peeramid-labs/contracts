@@ -1,22 +1,26 @@
-# Solidity API
 
-## Rankify
+# 
+## Description
 
-### numTokens
+## Implementation
 
-```solidity
-uint256 numTokens
-```
-
-### constructor
+### internal variable numTokens
 
 ```solidity
-constructor(address owner) public
+uint256 numTokens 
 ```
 
-### mint
+### public function constructor
 
 ```solidity
-function mint(address to, uint256 amount) public
+constructor(address owner) public 
 ```
+
+### public function mint
+
+```solidity
+function mint(address to, uint256 amount) public 
+```
+
+<!--CONTRACT_END-->
 
