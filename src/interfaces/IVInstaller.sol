@@ -7,71 +7,53 @@
 pragma solidity ^0.8.20;
 
 import {IRepository} from "./IRepository.sol";
-import {Tag, Version} from "./IVTag.sol";
+import {Tag, Version, VersionControl, Envelope} from "./IVTag.sol";
 
 /**
- * @dev Enum defining the types of version requirements for repositories.
- * - All: Matches any version.
- * - MajorVersion: Matches any version with the same major version number.
- * - ExactVersion: Matches the exact version specified.
+ * @title IVInstaller
+ * @author Peersky
+ * @notice Interface for managing the installation and instantiation of repositories.
+ * @dev Distinguishing
  */
-enum VersionRequirementTypes {
-    All, // *
-    MajorVersion, // ^1.0
-    ExactVersion // =1.0
-}
-
-enum InstallationTypes {
-    Cloneable,
-    Constructable
-}
-
-/**
- * @dev Struct defining a version requirement for a repository.
- * @param requirementType The type of version requirement.
- * @param baseVersion The base version to match against.
- * @param VersionRequirementTypes type of requirement counted from baseVersion Tag
- */
-struct VersionControl {
-    address source;
-    Tag baseVersion;
-    VersionRequirementTypes requirementType;
-}
-
-/**
- * @dev Struct defining the installation plan for a repository.
- * @param requiredSource The source of the repository required for installation.
- * @param initializerFnSelectors The function selectors for the initializers to call after installation.
- */
-struct InstallationPlan {
-    VersionControl requiredSource;
-    bytes4[] initializerFnSelectors;
-    InstallationTypes installationType;
-}
-
-struct Envelope {
-    address destination;
-    bytes[] data;
-}
-
 interface IVInstaller {
+    /**
+     * @dev Enum defining the types of installation for repositories.
+     * - Cloneable: The repository is cloneable.
+     * - Constructable: The repository is constructable.
+     */
+    enum InstallationTypes {
+        Cloneable,
+        Constructable
+    }
+
+    /**
+     * @dev Struct defining the installation plan for a repository.
+     * @param requiredSource The source of the repository required for installation.
+     * @param initializerFnSelectors The function selectors for the initializers to call after installation.
+     */
+    struct Distribution {
+        VersionControl requiredSource;
+        bytes4[] initializerFnSelectors;
+        InstallationTypes installationType;
+    }
+
     /**
      * @dev Error thrown when a repository is not added to the installer.
      */
-    error RepositoryIsNotAdded(IRepository repository);
+    error NotDistributing(IRepository repository);
 
     /**
      * @dev Error thrown when the version does not match the requirement for a repository.
      */
-    error VersionDoesNotMatchRequirement(address repository, Tag version, Tag requiredTag);
+    error VersionOutOfBounds(address repository, Tag version, Tag requiredTag);
 
     /**
-     * @dev Event emitted when the version requirement for a repository is updated.
+     * @dev Event emitted when the installer for repository is updated.
      * @param repository The address of the repository.
-     * @param oldTag The old version requirement for the repository.
-     * @param newTag The new version requirement for the repository.
+     * @param oldInstaller The old version requirement for the repository.
+     * @param newInstaller The new version requirement for the repository.
      */
-    event RepositoryRequirementUpdated(IRepository indexed repository, Tag oldTag, Tag newTag);
+    event DistributionChanged(IRepository indexed repository, Distribution oldInstaller, Distribution newInstaller);
 
     /**
      * @dev Event emitted when a repository is added to the installer.
@@ -80,7 +62,7 @@ interface IVInstaller {
      * @param requirement The version requirement for the repository.
      * @param metadata The metadata associated with the repository.
      */
-    event RepositoryAdded(
+    event DistributionCreated(
         IRepository indexed repository,
         address indexed adder,
         VersionControl requirement,
@@ -91,10 +73,10 @@ interface IVInstaller {
      * @dev Event emitted when a repository is removed from the installer.
      * @param repository The address of the repository.
      */
-    event RepositoryRemoved(IRepository indexed repository);
+    event DistributionRemoved(IRepository indexed repository);
 
     /**
-     * @dev Event emitted when a new instance is instantiated from a repository.
+     * @dev Event emitted when a new instance is instantiated from a distribution.
      * @param newInstance The address of the new instance.
      * @param repository The address of the repository.
      * @param instantiator The address of the account that instantiated the instance.
@@ -110,7 +92,7 @@ interface IVInstaller {
     );
 
     /**
-     * @dev Event emitted when source repository is upgraded to a new minor version.
+     * @dev Event emitted when distribution is upgraded to a new minor version.
      * @param repository The address of the repository.
      * @param oldMinor The old minor version.
      * @param newMinor The new minor version.
@@ -143,15 +125,10 @@ interface IVInstaller {
 
     /**
      * @dev Adds new source repository to the installer.
-     * @param versionedSource The version of the source repository.
      * @param config The configuration for the source repository.
      * @param metadata The metadata associated with the source repository.
      */
-    function addSource(
-        VersionControl memory versionedSource,
-        InstallationPlan memory config,
-        bytes32 metadata
-    ) external;
+    function addDistribution(Distribution memory config, bytes32 metadata) external;
 
     /**
      * @dev Removes a repository from the installer.
@@ -178,8 +155,8 @@ interface IVInstaller {
      * @param migrationContract The address of the migration contract.
      * @param migrationData The data for the migration contract.
      */
-    function upgradeSource(
-        InstallationPlan memory newConfig,
+    function upgradeDistribution(
+        Distribution memory newConfig,
         address migrationContract,
         bytes calldata migrationData
     ) external returns (address[] memory instances);
@@ -199,17 +176,17 @@ interface IVInstaller {
     function getInstancesByVersion(VersionControl memory sources) external view returns (address[] memory);
 
     /**
-     * @dev Gets all repositories added to the installer.
+     * @dev Gets all distributions added to the installer.
      * @return An array of addresses representing the repositories.
      */
-    function getRepositories() external view returns (address[] memory);
+    function getDistributions() external view returns (Distribution[] memory);
 
     /**
      * @dev Gets the repository associated with a specific instance.
      * @param instance The address of the instance.
      * @return The address of the repository.
      */
-    function getRepository(IRepository instance) external view returns (address);
+    function getDistributor(IRepository instance) external view returns (Distribution memory);
 
     /**
      * @dev Gets the version of a specific instance.
@@ -219,16 +196,9 @@ interface IVInstaller {
     function getVersion(address instance) external view returns (Tag memory);
 
     /**
-     * @dev Gets the version requirement for a specific instance.
-     * @param instance The address of the instance.
-     * @return The version requirement for the instance.
-     */
-    function getVersionControl(address instance) external view returns (VersionControl memory);
-
-    /**
      * @dev Gets the installation plan for a specific repository.
      * @param repository The address of the repository.
      * @return The installation plan for the repository.
      */
-    function getInstallationPlan(IRepository repository) external view returns (InstallationPlan memory);
+    function getDistribution(IRepository repository) external view returns (Distribution memory);
 }

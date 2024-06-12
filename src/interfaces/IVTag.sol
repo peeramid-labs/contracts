@@ -20,3 +20,37 @@ struct Version {
     address source;
     bytes buildMetadata;
 }
+
+/**
+ * @dev Enum defining the types of version requirements for repositories.
+ * - All: Matches any version.
+ * - MajorVersion: Matches any version with the same major version number.
+ * - ExactVersion: Matches the exact version specified.
+ */
+enum VersionRequirementTypes {
+    All, // *
+    MajorVersion, // ^1.0
+    ExactVersion // =1.0
+}
+
+/**
+ * @dev Struct defining a version requirement for a repository.
+ * @param requirementType The type of version requirement.
+ * @param baseVersion The base version to match against.
+ * @param VersionRequirementTypes type of requirement counted from baseVersion Tag
+ */
+struct VersionControl {
+    address source;
+    Tag baseVersion;
+    VersionRequirementTypes requirementType;
+}
+
+/**
+ * @dev Struct defining the envelope for the installation of a new instance.
+ * @param destination The address of the destination contract.
+ * @param data The data to be sent to the destination contract.
+ */
+struct Envelope {
+    address destination;
+    bytes[] data;
+}
