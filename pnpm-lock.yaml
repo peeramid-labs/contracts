@@ -18,11 +18,11 @@ importers:
         specifier: ^5.7.2
         version: 5.7.2(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       '@openzeppelin/contracts':
-        specifier: ^4.7.0
-        version: 4.9.3
+        specifier: ^5.0.0
+        version: 5.0.2
       '@openzeppelin/contracts-upgradeable':
-        specifier: ^4.7.0
-        version: 4.9.3
+        specifier: ^5.0.0
+        version: 5.0.2(@openzeppelin/contracts@5.0.2)
       '@types/chai':
         specifier: ^4.3.1
         version: 4.3.9
@@ -790,14 +790,16 @@ packages:
   '@openzeppelin/contracts-upgradeable@4.8.1':
     resolution: {integrity: sha512-1wTv+20lNiC0R07jyIAbHU7TNHKRwGiTGRfiNnA8jOWjKT98g5OgLpYWOi40Vgpk8SPLA9EvfJAbAeIyVn+7Bw==}
 
-  '@openzeppelin/contracts-upgradeable@4.9.3':
-    resolution: {integrity: sha512-jjaHAVRMrE4UuZNfDwjlLGDxTHWIOwTJS2ldnc278a0gevfXfPr8hxKEVBGFBE96kl2G3VHDZhUimw/+G3TG2A==}
+  '@openzeppelin/contracts-upgradeable@5.0.2':
+    resolution: {integrity: sha512-0MmkHSHiW2NRFiT9/r5Lu4eJq5UJ4/tzlOgYXNAIj/ONkQTVnz22pLxDvp4C4uZ9he7ZFvGn3Driptn1/iU7tQ==}
+    peerDependencies:
+      '@openzeppelin/contracts': 5.0.2
 
   '@openzeppelin/contracts@4.8.1':
     resolution: {integrity: sha512-xQ6eUZl+RDyb/FiZe1h+U7qr/f4p/SrTSQcTPH2bjur3C5DbuW/zFgCU/b1P/xcIaEqJep+9ju4xDRi3rmChdQ==}
 
-  '@openzeppelin/contracts@4.9.3':
-    resolution: {integrity: sha512-He3LieZ1pP2TNt5JbkPA4PNT9WC3gOTOlDcFGJW4Le4QKqwmiNJCRt44APfxMxvq7OugU/cqYuPcSBzOw38DAg==}
+  '@openzeppelin/contracts@5.0.2':
+    resolution: {integrity: sha512-ytPc6eLGcHHnapAZ9S+5qsdomhjo6QBHTDRRBFfTxXIpsicMhVPouPgmUPebZZZGX7vt9USA+Z+0M0dSVtSUEA==}
 
   '@openzeppelin/test-helpers@0.5.16':
     resolution: {integrity: sha512-T1EvspSfH1qQO/sgGlskLfYVBbqzJR23SZzYl/6B2JnT4EhThcI85UpvDk0BkLWKaDScQTabGHt4GzHW+3SfZg==}
@@ -6269,7 +6271,7 @@ snapshots:
     dependencies:
       '@ensdomains/buffer': 0.0.13(@nomiclabs/hardhat-web3@2.0.0(hardhat@2.18.2(bufferutil@4.0.8)(ts-node@10.9.1(@types/node@17.0.45)(typescript@5.2.2))(typescript@5.2.2)(utf-8-validate@5.0.10))(web3@1.10.3(bufferutil@4.0.8)(utf-8-validate@5.0.10)))(bufferutil@4.0.8)(hardhat@2.18.2(bufferutil@4.0.8)(ts-node@10.9.1(@types/node@17.0.45)(typescript@5.2.2))(typescript@5.2.2)(utf-8-validate@5.0.10))(utf-8-validate@5.0.10)(web3-core-helpers@1.10.3)(web3-core-promievent@1.10.3)(web3-eth-abi@1.10.3)(web3-utils@1.10.3)(web3@1.10.3(bufferutil@4.0.8)(utf-8-validate@5.0.10))
       '@ensdomains/solsha1': 0.0.3
-      '@openzeppelin/contracts': 4.9.3
+      '@openzeppelin/contracts': 4.8.1
       dns-packet: 5.6.1
     transitivePeerDependencies:
       - '@nomiclabs/hardhat-web3'
@@ -7066,11 +7068,13 @@ snapshots:
 
   '@openzeppelin/contracts-upgradeable@4.8.1': {}
 
-  '@openzeppelin/contracts-upgradeable@4.9.3': {}
+  '@openzeppelin/contracts-upgradeable@5.0.2(@openzeppelin/contracts@5.0.2)':
+    dependencies:
+      '@openzeppelin/contracts': 5.0.2
 
   '@openzeppelin/contracts@4.8.1': {}
 
-  '@openzeppelin/contracts@4.9.3': {}
+  '@openzeppelin/contracts@5.0.2': {}
 
   '@openzeppelin/test-helpers@0.5.16(bn.js@5.2.1)(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
     dependencies:

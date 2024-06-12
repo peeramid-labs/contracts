@@ -385,53 +385,33 @@ export const setupTest = deployments.createFixture(async ({ deployments, getName
     .mint(adr.maliciousActor3.wallet.address, ethers.utils.parseEther('1000000'));
   await env.rankifyToken
     .connect(adr.gameCreator1.wallet)
-    ['increaseAllowance(address,uint256)'](env.rankifyInstance.address, ethers.constants.MaxUint256);
+    .approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
   await env.rankifyToken
     .connect(adr.gameCreator2.wallet)
-    ['increaseAllowance(address,uint256)'](env.rankifyInstance.address, ethers.constants.MaxUint256);
+    .approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
   await env.rankifyToken
     .connect(adr.gameCreator3.wallet)
-    ['increaseAllowance(address,uint256)'](env.rankifyInstance.address, ethers.constants.MaxUint256);
-  await env.rankifyToken
-    .connect(adr.player1.wallet)
-    ['increaseAllowance(address,uint256)'](env.rankifyInstance.address, ethers.constants.MaxUint256);
-  await env.rankifyToken
-    .connect(adr.player2.wallet)
-    ['increaseAllowance(address,uint256)'](env.rankifyInstance.address, ethers.constants.MaxUint256);
-  await env.rankifyToken
-    .connect(adr.player3.wallet)
-    ['increaseAllowance(address,uint256)'](env.rankifyInstance.address, ethers.constants.MaxUint256);
-  await env.rankifyToken
-    .connect(adr.player4.wallet)
-    ['increaseAllowance(address,uint256)'](env.rankifyInstance.address, ethers.constants.MaxUint256);
-  await env.rankifyToken
-    .connect(adr.player5.wallet)
-    ['increaseAllowance(address,uint256)'](env.rankifyInstance.address, ethers.constants.MaxUint256);
-  await env.rankifyToken
-    .connect(adr.player6.wallet)
-    ['increaseAllowance(address,uint256)'](env.rankifyInstance.address, ethers.constants.MaxUint256);
-  await env.rankifyToken
-    .connect(adr.player7.wallet)
-    ['increaseAllowance(address,uint256)'](env.rankifyInstance.address, ethers.constants.MaxUint256);
-  await env.rankifyToken
-    .connect(adr.player8.wallet)
-    ['increaseAllowance(address,uint256)'](env.rankifyInstance.address, ethers.constants.MaxUint256);
-  await env.rankifyToken
-    .connect(adr.player9.wallet)
-    ['increaseAllowance(address,uint256)'](env.rankifyInstance.address, ethers.constants.MaxUint256);
-  await env.rankifyToken
-    .connect(adr.player10.wallet)
-    ['increaseAllowance(address,uint256)'](env.rankifyInstance.address, ethers.constants.MaxUint256);
+    .approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
+  await env.rankifyToken.connect(adr.player1.wallet).approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
+  await env.rankifyToken.connect(adr.player2.wallet).approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
+  await env.rankifyToken.connect(adr.player3.wallet).approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
+  await env.rankifyToken.connect(adr.player4.wallet).approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
+  await env.rankifyToken.connect(adr.player5.wallet).approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
+  await env.rankifyToken.connect(adr.player6.wallet).approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
+  await env.rankifyToken.connect(adr.player7.wallet).approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
+  await env.rankifyToken.connect(adr.player8.wallet).approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
+  await env.rankifyToken.connect(adr.player9.wallet).approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
+  await env.rankifyToken.connect(adr.player10.wallet).approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
 
   await env.rankifyToken
     .connect(adr.maliciousActor1.wallet)
-    ['increaseAllowance(address,uint256)'](env.rankifyInstance.address, ethers.constants.MaxUint256);
+    .approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
   await env.rankifyToken
     .connect(adr.maliciousActor2.wallet)
-    ['increaseAllowance(address,uint256)'](env.rankifyInstance.address, ethers.constants.MaxUint256);
+    .approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
   await env.rankifyToken
     .connect(adr.maliciousActor3.wallet)
-    ['increaseAllowance(address,uint256)'](env.rankifyInstance.address, ethers.constants.MaxUint256);
+    .approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
 
   return {
     adr,
