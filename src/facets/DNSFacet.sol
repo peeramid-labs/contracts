@@ -4,7 +4,6 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "../abstracts/draft-EIP712Diamond.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "../interfaces/IMultipass.sol";
 import "../libraries/LibMultipass.sol";
 import "../modifiers/OnlyOwnerDiamond.sol";
@@ -90,7 +89,7 @@ contract DNSFacet is EIP712, IMultipass {
             LibMultipass.resolveDomainIndex(domainName) == 0,
             "Multipass->initializeDomain: Domain name already exists"
         );
-        (bool status, uint256 result) = SafeMath.tryAdd(referrerReward, referralDiscount);
+        (bool status, uint256 result) = Math.tryAdd(referrerReward, referralDiscount);
         require(status == true, "Multipass->initializeDomain: referrerReward + referralDiscount overflow");
         require(result <= fee, "Multipass->initializeDomain: referral values are higher then fee itself");
 
@@ -169,7 +168,7 @@ contract DNSFacet is EIP712, IMultipass {
     ) public override onlyOwner {
         _enforseDomainNameIsValid(domainName);
         LibMultipass.DomainNameService storage _domain = LibMultipass._getDomainStorage(domainName);
-        (bool status, uint256 result) = SafeMath.tryAdd(referrerReward, referralDiscount);
+        (bool status, uint256 result) = Math.tryAdd(referrerReward, referralDiscount);
         require(status == true, "Multipass->changeReferralProgram: referrerReward + referralDiscount overflow");
         require(
             result <= _domain.properties.fee,
@@ -204,10 +203,7 @@ contract DNSFacet is EIP712, IMultipass {
         uint256 referrersShare = 0;
         if (!LibMultipass.shouldRegisterForFree(_domain)) {
             referrersShare = hasValidReferrer ? _domain.properties.referrerReward : 0;
-            uint256 valueToPay = SafeMath.sub(
-                _domain.properties.fee,
-                hasValidReferrer ? _domain.properties.referralDiscount : 0
-            );
+            uint256 valueToPay = _domain.properties.fee - (hasValidReferrer ? _domain.properties.referralDiscount : 0);
             require(msg.value >= valueToPay, "Multipass->register: Payment value is not enough");
         }
         LibMultipass._registerNew(newRecord, _domain);
