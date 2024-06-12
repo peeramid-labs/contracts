@@ -36,6 +36,18 @@ interface IRepository {
     /// @notice Thrown if release does not exist.
     error ReleaseDoesNotExist();
 
+    /// @notice Emitted if the same source exists in previous releases.
+    /// @param release The release number.
+    /// @param build The build number.
+    /// @param source The address of the source code.
+    /// @param buildMetadata The build metadata URI.
+    event VersionCreated(uint8 release, uint16 build, address indexed source, bytes buildMetadata);
+
+    /// @notice Emitted when a release's metadata was updated.
+    /// @param release The release number.
+    /// @param releaseMetadata The release metadata URI.
+    event ReleaseMetadataUpdated(uint8 release, bytes releaseMetadata);
+
     /// @notice Updates the metadata for release with content `@fromHex(releaseMetadata)`.
     /// @param release The release number.
     /// @param releaseMetadata The release metadata URI.
@@ -52,18 +64,6 @@ interface IRepository {
         bytes calldata buildMetadata,
         bytes calldata releaseMetadata
     ) external;
-
-    /// @notice Emitted if the same source exists in previous releases.
-    /// @param release The release number.
-    /// @param build The build number.
-    /// @param source The address of the source code.
-    /// @param buildMetadata The build metadata URI.
-    event VersionCreated(uint8 release, uint16 build, address indexed source, bytes buildMetadata);
-
-    /// @notice Emitted when a release's metadata was updated.
-    /// @param release The release number.
-    /// @param releaseMetadata The release metadata URI.
-    event ReleaseMetadataUpdated(uint8 release, bytes releaseMetadata);
 
     /// @notice Gets the total number of builds for a given release number.
     /// @param release The release number.

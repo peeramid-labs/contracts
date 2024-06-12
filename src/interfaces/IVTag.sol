@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-/// @notice This is a modified source from Aragon X, where interfaces were generalized to be more generic and reusable.
+
 pragma solidity ^0.8.0;
 
 /// @notice The struct describing the tag of a version obtained by a release and build number as `RELEASE.BUILD`.
