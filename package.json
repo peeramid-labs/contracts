@@ -69,8 +69,8 @@
   "dependencies": {
     "@ethersproject/abi": "^5.7.0",
     "@ethersproject/providers": "^5.7.2",
-    "@openzeppelin/contracts": "^4.7.0",
-    "@openzeppelin/contracts-upgradeable": "^4.7.0",
+    "@openzeppelin/contracts": "^5.0.0",
+    "@openzeppelin/contracts-upgradeable": "^5.0.0",
     "@types/chai": "^4.3.1",
     "@types/mocha": "^9.1.1",
     "@types/node": "^17.0.36",

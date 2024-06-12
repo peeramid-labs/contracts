@@ -361,7 +361,7 @@ describe(scriptName, () => {
       env.rankifyInstance
         .connect(adr.gameCreator1.wallet)
         ['createGame(address,uint256)'](adr.gameMaster1.wallet.address, 1),
-    ).to.revertedWith('ERC20: insufficient allowance');
+    ).to.revertedWithCustomError(env.rankifyToken, 'ERC20InsufficientAllowance');
     await env.rankifyToken
       .connect(adr.gameCreator1.wallet)
       .approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
@@ -377,7 +377,7 @@ describe(scriptName, () => {
       env.rankifyInstance
         .connect(adr.gameCreator1.wallet)
         ['createGame(address,uint256)'](adr.gameMaster1.wallet.address, 1),
-    ).to.revertedWith('ERC20: transfer amount exceeds balance');
+    ).to.revertedWithCustomError(env.rankifyToken, 'ERC20InsufficientBalance');
   });
 
   it('Cannot perform actions on games that do not exist', async () => {
@@ -1061,7 +1061,7 @@ describe(scriptName, () => {
       it('Fulfills funding requirement on join', async () => {
         await env.mockERC20
           .connect(adr.player1.wallet)
-          .increaseAllowance(env.rankifyInstance.address, ethers.utils.parseEther('100'));
+          .approve(env.rankifyInstance.address, ethers.utils.parseEther('100'));
         const balance1155 = await env.mockERC1155.balanceOf(env.rankifyInstance.address, '1');
         await env.rankifyInstance.connect(adr.player1.wallet).joinGame(1, { value: ethers.utils.parseEther('0.4') });
         expect(await env.mockERC1155.balanceOf(env.rankifyInstance.address, '1')).to.be.equal(
@@ -1072,7 +1072,7 @@ describe(scriptName, () => {
       it('Returns requirements on leave', async () => {
         await env.mockERC20
           .connect(adr.player1.wallet)
-          .increaseAllowance(env.rankifyInstance.address, ethers.utils.parseEther('100'));
+          .approve(env.rankifyInstance.address, ethers.utils.parseEther('100'));
         await env.rankifyInstance.connect(adr.player1.wallet).joinGame(1, { value: ethers.utils.parseEther('0.4') });
         await env.rankifyInstance.connect(adr.player1.wallet).leaveGame(1);
         expect(await env.mockERC1155.balanceOf(adr.player1.wallet.address, '1')).to.be.equal(
@@ -1083,7 +1083,7 @@ describe(scriptName, () => {
       it('Returns requirements on game closed', async () => {
         await env.mockERC20
           .connect(adr.player1.wallet)
-          .increaseAllowance(env.rankifyInstance.address, ethers.utils.parseEther('100'));
+          .approve(env.rankifyInstance.address, ethers.utils.parseEther('100'));
         await env.rankifyInstance.connect(adr.player1.wallet).joinGame(1, { value: ethers.utils.parseEther('0.4') });
         expect(await env.rankifyInstance.connect(adr.gameCreator1.wallet).cancelGame(1)).to.changeEtherBalance(
           adr.player1.wallet.address,
