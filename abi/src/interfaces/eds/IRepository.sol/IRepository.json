@@ -194,6 +194,11 @@
             "type": "address"
           },
           {
+            "internalType": "enum SourceTypes",
+            "name": "sourceType",
+            "type": "uint8"
+          },
+          {
             "internalType": "bytes",
             "name": "buildMetadata",
             "type": "bytes"
@@ -242,6 +247,11 @@
             "type": "address"
           },
           {
+            "internalType": "enum SourceTypes",
+            "name": "sourceType",
+            "type": "uint8"
+          },
+          {
             "internalType": "bytes",
             "name": "buildMetadata",
             "type": "bytes"
@@ -288,6 +298,11 @@
             "internalType": "address",
             "name": "source",
             "type": "address"
+          },
+          {
+            "internalType": "enum SourceTypes",
+            "name": "sourceType",
+            "type": "uint8"
           },
           {
             "internalType": "bytes",
@@ -348,6 +363,11 @@
             "internalType": "address",
             "name": "source",
             "type": "address"
+          },
+          {
+            "internalType": "enum SourceTypes",
+            "name": "sourceType",
+            "type": "uint8"
           },
           {
             "internalType": "bytes",
