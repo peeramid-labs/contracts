@@ -16,7 +16,7 @@ interface IRepository {
         Constructable,
         Distributable,
         OSxPlugin,
-    }
+    };
 
     /// @notice Thrown if a version does not exist.
     /// @param versionHash The tag hash.
