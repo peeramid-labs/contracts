@@ -16,8 +16,6 @@ The Ethereum Distribution System now includes the following features:
 - **Loosely coupled**: Interfaces are designed to be unaware of their consumers, promoting flexibility.
 - **Version controlled**: Facilitates easy upgrades and maintenance.
 - **Easy to use**: A simple API and clear documentation make the system user-friendly.
-- **New Feature 1**: (Describe the new feature here)
-- **New Feature 2**: (Describe the new feature here)
 
 ## Interfaces
 
