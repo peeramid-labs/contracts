@@ -92,7 +92,7 @@ export default {
       anvil: '0x507c2d32185667156de5B4C440FEEf3800078bDb',
     },
     registrar: {
-      localhost: '0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc',
+      localhost: '0xa0Ee7A142d267C1f36714E4a8F75612F20a79720',
     }
   },
   defaultNetwork: 'hardhat',

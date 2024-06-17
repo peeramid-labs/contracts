@@ -70,8 +70,6 @@ export type { MultipassInit } from "./src/initializers/MultipassInit";
 export { MultipassInit__factory } from "./factories/src/initializers/MultipassInit__factory";
 export type { RankifyInstanceInit } from "./src/initializers/RankifyInstanceInit";
 export { RankifyInstanceInit__factory } from "./factories/src/initializers/RankifyInstanceInit__factory";
-export type { RankifyInstanceMigration } from "./src/initializers/RankifyInstanceMigration";
-export { RankifyInstanceMigration__factory } from "./factories/src/initializers/RankifyInstanceMigration__factory";
 export type { ILockableERC1155 } from "./src/interfaces/ILockableERC1155";
 export { ILockableERC1155__factory } from "./factories/src/interfaces/ILockableERC1155__factory";
 export type { IMultipass } from "./src/interfaces/IMultipass";
