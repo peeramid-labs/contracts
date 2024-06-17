@@ -4,7 +4,7 @@
 pragma solidity ^0.8.20;
 
 import {LibCoinVending} from "../libraries/LibCoinVending.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "hardhat/console.sol";
 

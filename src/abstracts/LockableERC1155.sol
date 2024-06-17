@@ -59,28 +59,24 @@ abstract contract LockableERC1155 is ERC1155, ILockableERC1155 {
      * @dev Hook function that is called before any token transfer.
      * It checks if the transfer is allowed based on the locked amounts of the tokens.
      * If the transfer is not allowed, it reverts with an error message.
-     * @param operator The address performing the token transfer.
      * @param from The address from which the tokens are being transferred.
      * @param to The address to which the tokens are being transferred.
      * @param ids An array of token IDs being transferred.
-     * @param amounts An array of token amounts being transferred.
-     * @param data Additional data attached to the transfer.
+     * @param values An array of token amounts being transferred.
      */
-    function _beforeTokenTransfer(
-        address operator,
+    function _update(
         address from,
         address to,
         uint256[] memory ids,
-        uint256[] memory amounts,
-        bytes memory data
+        uint256[] memory values
     ) internal virtual override {
         for (uint256 i = 0; i < ids.length; i++) {
             if (from != address(0)) {
-                if (lockedAmounts[from][ids[i]] + amounts[i] > balanceOf(from, ids[i])) {
+                if (lockedAmounts[from][ids[i]] + values[i] > balanceOf(from, ids[i])) {
                     require(false, "insufficient");
                 }
             }
         }
-        super._afterTokenTransfer(operator, from, to, ids, amounts, data);
+        super._update(from, to, ids, values);
     }
 }

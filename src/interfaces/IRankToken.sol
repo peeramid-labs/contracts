@@ -6,7 +6,7 @@ import {ILockableERC1155} from "./ILockableERC1155.sol";
 interface IRankToken is ILockableERC1155 {
     event RankingInstanceUpdated(address indexed newRankingInstance);
 
-    event LevelUp(address indexed account, uint256 id);
+    // event LevelUp(address indexed account, uint256 id);
 
     /**
      * @dev Mints a specified amount of tokens to an account. `to` is the address of the account to mint the tokens to. `amount` is the amount of tokens to mint. `poolId` is the ID of the pool. `data` is the additional data.
@@ -18,19 +18,12 @@ interface IRankToken is ILockableERC1155 {
      */
     function batchMint(address to, uint256[] memory ids, uint256[] memory amounts, bytes memory data) external;
 
-    /**
-     * @dev Levels up an account. `to` is the address of the account to level up. `id` is the ID of the token. `data` is the additional data.
-     *
-     * emits a _LevelUp_ event.
-     */
-    function levelUp(address to, uint256 id, bytes memory data) external;
-
-    /**
-     * @dev Updates the ranking instance. `newRankingInstance` is the address of the new ranking instance.
-     *
-     * emits a _RankingInstanceUpdated_ event.
-     */
-    function updateRankingInstance(address newRankingInstance) external;
+    // /**
+    //  * @dev Updates the ranking instance. `newRankingInstance` is the address of the new ranking instance.
+    //  *
+    //  * emits a _RankingInstanceUpdated_ event.
+    //  */
+    // function updateRankingInstance(address newRankingInstance) external;
 
     /**
      * @dev Gets the ranking instance which can emit new rank updates and mint rank tokens.
@@ -41,22 +34,22 @@ interface IRankToken is ILockableERC1155 {
      */
     function getRankingInstance() external view returns (address);
 
-    /**
-     * @dev Finds the new rank of an account. `account` is the address of the account. `oldRank` is the old rank of the account.
-     * It checks the balance of the account and returns the new rank that can be upgraded to.
-     *
-     * Returns:
-     *
-     * - The new rank of the account.
-     */
-    function findNewRank(address account, uint256 oldRank) external view returns (uint256);
+    // /**
+    //  * @dev Finds the new rank of an account. `account` is the address of the account. `oldRank` is the old rank of the account.
+    //  * It checks the balance of the account and returns the new rank that can be upgraded to.
+    //  *
+    //  * Returns:
+    //  *
+    //  * - The new rank of the account.
+    //  */
+    // function findNewRank(address account, uint256 oldRank) external view returns (uint256);
 
-    /**
-     * @dev Gets the rank of an account. `account` is the address of the account.
-     *
-     * Returns:
-     *
-     * - The rank of the account.
-     */
-    function getAccountRank(address account) external view returns (uint256);
+    // /**
+    //  * @dev Gets the rank of an account. `account` is the address of the account.
+    //  *
+    //  * Returns:
+    //  *
+    //  * - The rank of the account.
+    //  */
+    // function getAccountRank(address account) external view returns (uint256);
 }
