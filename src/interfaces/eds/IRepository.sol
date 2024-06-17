@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import {Tag, Version} from "./IVTag.sol";
 pragma solidity ^0.8.8;
 
 /// @title IRepository
@@ -11,13 +10,6 @@ pragma solidity ^0.8.8;
 /// @notice Arguably, the enum could be moved into build metadata, if you have an opinion please reach out.
 
 interface IRepository {
-    enum SourceTypes {
-        Cloneable,
-        Constructable,
-        Distributable,
-        OSxPlugin,
-    };
-
     /// @notice Thrown if a version does not exist.
     /// @param versionHash The tag hash.
     error VersionHashDoesNotExist(bytes32 versionHash);
@@ -99,6 +91,13 @@ interface IRepository {
     /// @notice Returns the latest version for a given release number.
     /// @return The latest version of this repository.
     function latestRelease() external view returns (uint8);
+}
+
+enum SourceTypes {
+    Cloneable,
+    Constructable,
+    Distributable,
+    OSxPlugin
 }
 
 /// @notice The struct describing the tag of a version obtained by a release and build number as `RELEASE.BUILD`.

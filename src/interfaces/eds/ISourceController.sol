@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {IRepository} from "../IRepository.sol";
-import {Tag, Version, VersionRequirement, Envelope} from "../IVTag.sol";
-import {Distribution} from "./IDistributor.sol";
+import {IRepository, Tag, Version} from "./IRepository.sol";
+import {Distribution, VersionRequirement} from "./IDistributon.sol";
 
 /**
  * @title IVSourceController

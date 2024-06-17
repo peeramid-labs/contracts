@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
-import {IRepository, Tag} from "../IRepository.sol";
+import {IRepository, Tag} from "./IRepository.sol";
 import {ISourceController} from "./ISourceController.sol";
 
 /**
@@ -55,7 +55,7 @@ interface IInstantiator {
      * @param repository The repository used for instantiation.
      * @param args The arguments used for instantiation.
      * @dev NB for "constructable" source types, the first argument should be constructor code.
-     * @return instance Id of the newly instantiated instance.
+     * @return instanceId of the newly instantiated instance.
      */
     function instantiate(IRepository repository, bytes[][] calldata args) external returns (uint256 instanceId);
 
@@ -64,7 +64,7 @@ interface IInstantiator {
      * @param repository The repository used for instantiation.
      * @param version The version tag required for instantiation.
      * @param args The arguments used for instantiation.
-     * @return instance Id of the newly instantiated instance.
+     * @return instanceId of the newly instantiated instance.
      */
     function instantiateExact(
         IRepository repository,
@@ -89,7 +89,7 @@ interface IInstantiator {
     /**
      * @dev Retrieves the version tag of the provided instance.
      * @param instance The address of the instance.
-     * @return The version tag of the instance.
+     * @return version The version tag of the instance.
      */
     function instanceVersion(address instance) external view returns (Tag memory version);
 
@@ -102,14 +102,14 @@ interface IInstantiator {
     /**
      * @dev Retrieves the source control contract associated with the provided instance.
      * @param instance The address of the instance.
-     * @return The source control contract associated with the instance.
+     * @return ISourceController The source control contract associated with the instance.
      */
     function getSourceControl(address instance) external view returns (ISourceController);
 
     /**
      * @dev Retrieves the instance contracts associated with the provided instance id.
      * @param instanceId The id of the instance.
-     * @return The instance contracts associated with the instance id.
+     * @return instaneContracts associated with the instance id.
      */
-    function getInstance(uint256 instanceId) external view returns (address[] instaneContracts);
+    function getInstance(uint256 instanceId) external view returns (address[] memory instaneContracts);
 }
