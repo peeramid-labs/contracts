@@ -17,7 +17,7 @@ import {Distribution} from "./IDistributor.sol";
  * @title IVSourceController
  * @dev Interface for the Source Controller contract.
  */
-interface IVSourceController {
+interface ISourceController {
     /**
      * @dev Emitted when a repository is added to the Source Controller.
      * @param repository The address of the repository.
