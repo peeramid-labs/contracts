@@ -20,7 +20,8 @@
     "lint:sol": "prettier --log-level warn --ignore-path .gitignore '{src,test}/**/*.sol' --check && solhint '{contracts,test}/**/*.sol'",
     "lint:sol:fix": "prettier --log-level warn --ignore-path .gitignore '{src,test}/**/*.sol' --write",
     "version": "pnpm build && changeset version",
-    "release": "pnpm build && changeset publish"
+    "release": "pnpm build && changeset publish",
+    "anvil:deploy": "./playbook/utils/deploy-to-local-anvil.sh"
   },
   "keywords": [],
   "author": "Tim Pechersky (@Peersky)",
@@ -52,7 +53,7 @@
     "eslint-plugin-promise": "^6.1.1",
     "eth-create2-calculator": "^1.1.5",
     "ethers": "^5.6.6",
-    "hardhat": "^2.10.0",
+    "hardhat": "^2.18.2",
     "hardhat-abi-exporter": "^2.9.0",
     "hardhat-contract-sizer": "^2.6.1",
     "hardhat-deploy": "^0.12.2",
