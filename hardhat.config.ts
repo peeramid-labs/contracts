@@ -69,7 +69,8 @@ task('addFacet', 'adds a facet')
 export default {
   docgen: {
     outputDir: './docs/contracts',
-    pages: 'single',
+    pages: 'files',
+    templates: 'docs/templates',
     sourcesDir: './src',
     pageExtension: '.md',
     exclude: ['mocks', 'initializers', 'vendor', 'modifiers', 'fixtures'],

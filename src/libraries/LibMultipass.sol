@@ -4,7 +4,7 @@ pragma solidity ^0.8.4;
 // import "./LibDiamondOwner.sol";
 // import { IMultipass } from "../interfaces/sol";
 import "hardhat/console.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 
 library LibMultipass {
     /**
@@ -175,9 +175,9 @@ library LibMultipass {
 
     function _getModifyPrice(LibMultipass.Record memory userRecord) internal view returns (uint256) {
         LibMultipass.DomainNameService storage _domain = LibMultipass._getDomainStorage(userRecord.domainName);
-        uint256 feeCoefficient = SafeMath.div(_domain.properties.fee, 10);
-        uint256 nonceCoefficient = SafeMath.mul(userRecord.nonce, userRecord.nonce);
-        return SafeMath.add(SafeMath.mul(feeCoefficient, nonceCoefficient), _domain.properties.fee);
+        uint256 feeCoefficient = _domain.properties.fee / 10;
+        uint256 nonceCoefficient = userRecord.nonce * userRecord.nonce;
+        return ((feeCoefficient * nonceCoefficient) + _domain.properties.fee);
     }
 
     function _resolveRecord(NameQuery memory query) private view returns (bool, Record memory) {

@@ -20,18 +20,28 @@ abstract contract CompositeERC1155 is LockableERC1155 {
         weights = tokenWeights;
     }
 
-    function _mint(address to, uint256 tokenId, uint256 value, bytes memory data) internal virtual override {
-        for (uint256 i = 0; i < dimensions.length; i++) {
-            LockableERC1155(dimensions[i]).lock(to, tokenId, value * weights[i]);
+    function _update(
+        address from,
+        address to,
+        uint256[] memory ids,
+        uint256[] memory values
+    ) internal virtual override {
+        if (to == address(0)) // let it burn
+        {
+            for (uint256 i = 0; i < dimensions.length; i++) {
+                for (uint256 j = 0; j < ids.length; j++) {
+                    LockableERC1155(dimensions[i]).unlock(from, ids[j], values[j] * weights[i]);
+                }
+            }
+        } else if (from == address(0)) {
+            // let it rise
+            for (uint256 i = 0; i < dimensions.length; i++) {
+                for (uint256 j = 0; j < ids.length; j++) {
+                    LockableERC1155(dimensions[i]).lock(to, ids[j], values[j] * weights[i]);
+                }
+            }
         }
-        super._mint(to, tokenId, value, data);
-    }
-
-    function _burn(address from, uint256 id, uint256 amount) internal override {
-        for (uint256 i = 0; i < dimensions.length; i++) {
-            CompositeERC1155(dimensions[i]).burn(from, id, amount * weights[i]);
-        }
-        super._burn(from, id, amount);
+        super._update(from, to, ids, values);
     }
 
     /**

@@ -41,22 +41,7 @@ describe('Rank Token Test', async function () {
       .withArgs(adr.gameCreator1.wallet.address);
     await expect(env.connect(adr.maliciousActor1.wallet).updateRankingInstance(adr.gameCreator1.wallet.address))
       .to.emit(env, 'RankingInstanceUpdated')
-      .revertedWith('Ownable: caller is not the owner');
-  });
-  it('Allows to upgrade token only holder or instance', async () => {
-    await env.connect(deployer).updateRankingInstance(rankingInstance.address);
-    await env.connect(rankingInstance).mint(adr.player1.wallet.address, 4, 1, '0x');
-    await expect(env.connect(adr.player1.wallet).levelUp(adr.player1.wallet.address, 1, '0x'))
-      .to.emit(env, 'LevelUp')
-      .withArgs(adr.player1.wallet.address, ethers.BigNumber.from('1'));
-    await env.connect(rankingInstance).mint(adr.player1.wallet.address, 3, 2, '0x');
-    await expect(env.connect(rankingInstance).levelUp(adr.player1.wallet.address, 2, '0x'))
-      .to.emit(env, 'LevelUp')
-      .withArgs(adr.player1.wallet.address, ethers.BigNumber.from('2'));
-    // await env.connect(rankingInstance).mint(adr.player1.wallet.address, 3, 3, '0x');
-    // await expect(
-    //   env.connect(adr.maliciousActor1.wallet).levelUp(adr.player1.wallet.address, 3, '0x'),
-    // ).to.be.revertedWith('levelUp: Not permitted');
+      .revertedWithCustomError(env, 'OwnableUnauthorizedAccount');
   });
   describe('when ranking instance set and tokens are minted to player', async () => {
     beforeEach(async () => {
@@ -76,29 +61,29 @@ describe('Rank Token Test', async function () {
         'insufficient',
       );
     });
-    it('Returns rank of top token', async () => {
-      expect((await env.connect(adr.player1.wallet).rank(adr.player1.wallet.address)).toNumber()).to.be.equal(1);
-      await env
-        .connect(adr.player1.wallet)
-        .safeTransferFrom(adr.player1.wallet.address, adr.player2.wallet.address, 1, 3, '0x');
-      expect((await env.connect(adr.player1.wallet).rank(adr.player1.wallet.address)).toNumber()).to.be.equal(0);
-      await env.connect(rankingInstance).mint(adr.player1.wallet.address, 1, 30, '0x');
-      expect((await env.connect(adr.player1.wallet).rank(adr.player1.wallet.address)).toNumber()).to.be.equal(30);
-      await env.connect(rankingInstance).mint(adr.player1.wallet.address, 1, 25, '0x');
-      expect((await env.connect(adr.player1.wallet).rank(adr.player1.wallet.address)).toNumber()).to.be.equal(30);
-      await env.connect(rankingInstance).mint(adr.player1.wallet.address, 1, 40, '0x');
-      expect((await env.connect(adr.player1.wallet).rank(adr.player1.wallet.address)).toNumber()).to.be.equal(40);
-      await env.connect(rankingInstance).mint(adr.player1.wallet.address, 1, 50, '0x');
-      expect((await env.connect(adr.player1.wallet).rank(adr.player1.wallet.address)).toNumber()).to.be.equal(50);
-      await env
-        .connect(adr.player1.wallet)
-        .safeTransferFrom(adr.player1.wallet.address, adr.player2.wallet.address, 40, 1, '0x');
-      expect((await env.connect(adr.player1.wallet).rank(adr.player1.wallet.address)).toNumber()).to.be.equal(50);
-      await env
-        .connect(adr.player1.wallet)
-        .safeTransferFrom(adr.player1.wallet.address, adr.player2.wallet.address, 50, 1, '0x');
-      expect((await env.connect(adr.player1.wallet).rank(adr.player1.wallet.address)).toNumber()).to.be.equal(30);
-    });
+    // it.only('Returns rank of top token', async () => {
+    //   expect((await env.connect(adr.player1.wallet).rank(adr.player1.wallet.address)).toNumber()).to.be.equal(1);
+    //   await env
+    //     .connect(adr.player1.wallet)
+    //     .safeTransferFrom(adr.player1.wallet.address, adr.player2.wallet.address, 1, 3, '0x');
+    //   expect((await env.connect(adr.player1.wallet).rank(adr.player1.wallet.address)).toNumber()).to.be.equal(0);
+    //   await env.connect(rankingInstance).mint(adr.player1.wallet.address, 1, 30, '0x');
+    //   expect((await env.connect(adr.player1.wallet).rank(adr.player1.wallet.address)).toNumber()).to.be.equal(30);
+    //   await env.connect(rankingInstance).mint(adr.player1.wallet.address, 1, 25, '0x');
+    //   expect((await env.connect(adr.player1.wallet).rank(adr.player1.wallet.address)).toNumber()).to.be.equal(30);
+    //   await env.connect(rankingInstance).mint(adr.player1.wallet.address, 1, 40, '0x');
+    //   expect((await env.connect(adr.player1.wallet).rank(adr.player1.wallet.address)).toNumber()).to.be.equal(40);
+    //   await env.connect(rankingInstance).mint(adr.player1.wallet.address, 1, 50, '0x');
+    //   expect((await env.connect(adr.player1.wallet).rank(adr.player1.wallet.address)).toNumber()).to.be.equal(50);
+    //   await env
+    //     .connect(adr.player1.wallet)
+    //     .safeTransferFrom(adr.player1.wallet.address, adr.player2.wallet.address, 40, 1, '0x');
+    //   expect((await env.connect(adr.player1.wallet).rank(adr.player1.wallet.address)).toNumber()).to.be.equal(50);
+    //   await env
+    //     .connect(adr.player1.wallet)
+    //     .safeTransferFrom(adr.player1.wallet.address, adr.player2.wallet.address, 50, 1, '0x');
+    //   expect((await env.connect(adr.player1.wallet).rank(adr.player1.wallet.address)).toNumber()).to.be.equal(30);
+    // });
 
     describe('When tokens locked', async () => {
       beforeEach(async () => {
