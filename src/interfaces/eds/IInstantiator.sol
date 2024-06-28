@@ -121,8 +121,7 @@ interface IInstantiator {
 
     /**
      * @dev Retrieves the instance id associated with the provided instance address.
-     * @param instance The address of the instance.
-     * @return The instance id associated with the instance address.
+     * @return list of active instance ids
      */
     function getActiveInstancesIds() external view returns (uint256[] memory);
 }
