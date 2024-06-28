@@ -272,4 +272,3 @@ build/
 types
 bin/
 /deployments/localhost/
-.vscode/settings.json

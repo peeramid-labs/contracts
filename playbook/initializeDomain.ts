@@ -40,12 +40,12 @@ task('initializeDomain', 'Initialize domain name and activate it')
         hre.ethers.utils.parseEther(reward),
         hre.ethers.utils.parseEther(discount),
       );
-      console.log(tx);
+      console.log(tx.wait(1));
 
       if(activate === true) {
         const tx = await multipassContract
           .activateDomain(hre.ethers.utils.formatBytes32String(domain));
-        console.log(tx);
+        console.log(tx.wait(1));
         console.log('Domain name "' + domain + '" successfully initialized and activated!')
       }
     },
