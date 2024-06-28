@@ -12,9 +12,6 @@ import 'hardhat-gas-reporter';
 import 'hardhat-contract-sizer';
 import 'hardhat-deploy';
 import 'solidity-docgen';
-import './playbook/initializeDomain';
-import initializeDomain from './playbook/initializeDomain';
-
 task('accounts', 'Prints the list of accounts', async (taskArgs, hre) => {
   const accounts = await hre.ethers.getSigners();
 
@@ -93,9 +90,6 @@ export default {
       default: '0x520E00225C4a43B6c55474Db44a4a44199b4c3eE',
       anvil: '0x507c2d32185667156de5B4C440FEEf3800078bDb',
     },
-    registrar: {
-      localhost: '0xaA63aA2D921F23f204B6Bcb43c2844Fb83c82eb9',
-    }
   },
   defaultNetwork: 'hardhat',
   networks: {
