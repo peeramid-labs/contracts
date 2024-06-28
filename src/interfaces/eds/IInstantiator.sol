@@ -112,4 +112,17 @@ interface IInstantiator {
      * @return instaneContracts associated with the instance id.
      */
     function getInstance(uint256 instanceId) external view returns (address[] memory instaneContracts);
+
+    /**
+     * @dev Retrieves the number of instances in the system.
+     * @return The number of instances in the system.
+     */
+    function getInstancesNum() external view returns (uint256);
+
+    /**
+     * @dev Retrieves the instance id associated with the provided instance address.
+     * @param instance The address of the instance.
+     * @return The instance id associated with the instance address.
+     */
+    function getActiveInstancesIds() external view returns (uint256[] memory);
 }
