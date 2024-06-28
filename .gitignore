@@ -271,3 +271,4 @@ artifacts/
 build/
 types
 bin/
+/deployments/localhost/
