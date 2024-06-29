@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@aragon/osx':
+        specifier: ^1.3.0
+        version: 1.3.0(@nomiclabs/hardhat-web3@2.0.0(hardhat@2.18.2(bufferutil@4.0.8)(ts-node@10.9.1(@types/node@17.0.45)(typescript@5.2.2))(typescript@5.2.2)(utf-8-validate@5.0.10))(web3@1.10.3(bufferutil@4.0.8)(utf-8-validate@5.0.10)))(bufferutil@4.0.8)(hardhat@2.18.2(bufferutil@4.0.8)(ts-node@10.9.1(@types/node@17.0.45)(typescript@5.2.2))(typescript@5.2.2)(utf-8-validate@5.0.10))(utf-8-validate@5.0.10)(web3-core-helpers@1.10.3)(web3-core-promievent@1.10.3)(web3-eth-abi@1.10.3)(web3-utils@1.10.3)(web3@1.10.3(bufferutil@4.0.8)(utf-8-validate@5.0.10))
       '@ethersproject/abi':
         specifier: ^5.7.0
         version: 5.7.0
@@ -172,6 +175,9 @@ packages:
   '@ampproject/remapping@2.2.1':
     resolution: {integrity: sha512-lFMjJTrFL3j7L9yBxwYfCq2k6qqwHyzuUl/XBnif78PWTJYyL/dfowQHWE3sp6U6ZzqWiiIZnpTMO96zhkjwtg==}
     engines: {node: '>=6.0.0'}
+
+  '@aragon/osx@1.3.0':
+    resolution: {integrity: sha512-ziLmnhWEoFS/uthxAYfI9tSylesMLTDe69XggKP9LK/tIOKAhyYjfAJ2mbhWZcH558c9o0gzAEErkDhqh/wdog==}
 
   '@babel/code-frame@7.22.13':
     resolution: {integrity: sha512-XktuhWlJ5g+3TJXc5upd9Ks1HutSArik6jf2eAjYFyIOf4ej3RN+184cZbzDvbPnuTJIUhPKKJE3cIsYTiAT3w==}
@@ -362,6 +368,12 @@ packages:
   '@ensdomains/address-encoder@0.1.9':
     resolution: {integrity: sha512-E2d2gP4uxJQnDu2Kfg1tHNspefzbLT8Tyjrm5sEuim32UkU2sm5xL4VXtgc2X33fmPEw9+jUMpGs4veMbf+PYg==}
 
+  '@ensdomains/buffer@0.0.13':
+    resolution: {integrity: sha512-8aA+U/e4S54ebPwcge1HHvvpgXLKxPd6EOSegMlrTvBnKB8RwB3OpNyflaikD6KqzIwDaBaH8bvnTrMcfpV7oQ==}
+
+  '@ensdomains/ens-contracts@0.0.11':
+    resolution: {integrity: sha512-b74OlFcds9eyHy26uE2fGcM+ZCSFtPeRGVbUYWq3NRlf+9t8TIgPwF3rCNwpAFQG0B/AHb4C4hYX2BBJYR1zPg==}
+
   '@ensdomains/ens@0.4.5':
     resolution: {integrity: sha512-JSvpj1iNMFjK6K+uVl4unqMoa9rf5jopb8cya5UGBWz23Nw8hSNT7efgUx4BTlAPAgpNlEioUfeTyQ6J9ZvTVw==}
     deprecated: Please use @ensdomains/ens-contracts
@@ -372,6 +384,9 @@ packages:
   '@ensdomains/resolver@0.2.4':
     resolution: {integrity: sha512-bvaTH34PMCbv6anRa9I/0zjLJgY4EuznbEMgbV77JBCQ9KNC46rzi0avuxpOfu+xDjPEtSFGqVEOr5GlUSGudA==}
     deprecated: Please use @ensdomains/ens-contracts
+
+  '@ensdomains/solsha1@0.0.3':
+    resolution: {integrity: sha512-uhuG5LzRt/UJC0Ux83cE2rCKwSleRePoYdQVcqPN1wyf3/ekMzT/KZUF9+v7/AG5w9jlMLCQkUM50vfjr0Yu9Q==}
 
   '@eslint-community/eslint-utils@4.4.0':
     resolution: {integrity: sha512-1/sA4dwrzBAyeUoQ6oxahHKmrZvsnLCg4RfxW3ZFGGmQkSNQPFNLV9CUEFQP1x9EYXHTo5p6xdhZM1Ne9p/AfA==}
@@ -537,6 +552,9 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.9':
     resolution: {integrity: sha512-3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ==}
+
+  '@leichtgewicht/ip-codec@2.0.5':
+    resolution: {integrity: sha512-Vo+PSpZG2/fmgmiNzYK9qWRh8h/CHrwD0mo1h1DzL4yzHNSfWYujGTYsWGreD000gcgmZ7K4Ys6Tx9TxtsKdDw==}
 
   '@manypkg/find-root@1.1.0':
     resolution: {integrity: sha512-mki5uBvhHzO8kYYix/WRy2WX8S3B5wdVSc9D6KcU5lQNglP2yt58/VfLuAK49glRXChosY8ap2oJ1qgma3GUVA==}
@@ -744,13 +762,41 @@ packages:
     peerDependencies:
       hardhat: ^2.0.4
 
+  '@nomiclabs/hardhat-truffle5@2.0.7':
+    resolution: {integrity: sha512-Pw8451IUZp1bTp0QqCHCYfCHs66sCnyxPcaorapu9mfOV9xnZsVaFdtutnhNEiXdiZwbed7LFKpRsde4BjFwig==}
+    peerDependencies:
+      '@nomiclabs/hardhat-web3': ^2.0.0
+      hardhat: ^2.6.4
+      web3: ^1.0.0-beta.36
+
+  '@nomiclabs/hardhat-web3@2.0.0':
+    resolution: {integrity: sha512-zt4xN+D+fKl3wW2YlTX3k9APR3XZgPkxJYf36AcliJn3oujnKEVRZaHu0PhgLjO+gR+F/kiYayo9fgd2L8970Q==}
+    peerDependencies:
+      hardhat: ^2.0.0
+      web3: ^1.0.0-beta.36
+
+  '@nomiclabs/truffle-contract@4.5.10':
+    resolution: {integrity: sha512-nF/6InFV+0hUvutyFgsdOMCoYlr//2fJbRER4itxYtQtc4/O1biTwZIKRu+5l2J5Sq6LU2WX7vZHtDgQdhWxIQ==}
+    peerDependencies:
+      web3: ^1.2.1
+      web3-core-helpers: ^1.2.1
+      web3-core-promievent: ^1.2.1
+      web3-eth-abi: ^1.2.1
+      web3-utils: ^1.2.1
+
   '@openzeppelin/contract-loader@0.6.3':
     resolution: {integrity: sha512-cOFIjBjwbGgZhDZsitNgJl0Ye1rd5yu/Yx5LMgeq3u0ZYzldm4uObzHDFq4gjDdoypvyORjjJa3BlFA7eAnVIg==}
+
+  '@openzeppelin/contracts-upgradeable@4.8.1':
+    resolution: {integrity: sha512-1wTv+20lNiC0R07jyIAbHU7TNHKRwGiTGRfiNnA8jOWjKT98g5OgLpYWOi40Vgpk8SPLA9EvfJAbAeIyVn+7Bw==}
 
   '@openzeppelin/contracts-upgradeable@5.0.2':
     resolution: {integrity: sha512-0MmkHSHiW2NRFiT9/r5Lu4eJq5UJ4/tzlOgYXNAIj/ONkQTVnz22pLxDvp4C4uZ9he7ZFvGn3Driptn1/iU7tQ==}
     peerDependencies:
       '@openzeppelin/contracts': 5.0.2
+
+  '@openzeppelin/contracts@4.8.1':
+    resolution: {integrity: sha512-xQ6eUZl+RDyb/FiZe1h+U7qr/f4p/SrTSQcTPH2bjur3C5DbuW/zFgCU/b1P/xcIaEqJep+9ju4xDRi3rmChdQ==}
 
   '@openzeppelin/contracts@5.0.2':
     resolution: {integrity: sha512-ytPc6eLGcHHnapAZ9S+5qsdomhjo6QBHTDRRBFfTxXIpsicMhVPouPgmUPebZZZGX7vt9USA+Z+0M0dSVtSUEA==}
@@ -865,6 +911,10 @@ packages:
   '@truffle/debug-utils@6.0.57':
     resolution: {integrity: sha512-Q6oI7zLaeNLB69ixjwZk2UZEWBY6b2OD1sjLMGDKBGR7GaHYiw96GLR2PFgPH1uwEeLmV4N78LYaQCrDsHbNeA==}
     engines: {node: ^16.20 || ^18.16 || >=20}
+
+  '@truffle/error@0.1.1':
+    resolution: {integrity: sha512-sE7c9IHIGdbK4YayH4BC8i8qMjoAOeg6nUXUDZZp8wlU21/EMpaG+CLx+KqcIPyR+GSWIW3Dm0PXkr2nlggFDA==}
+    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
 
   '@truffle/error@0.2.2':
     resolution: {integrity: sha512-TqbzJ0O8DHh34cu8gDujnYl4dUl6o2DE4PR6iokbybvnIm/L2xl6+Gv1VC+YJS45xfH83Yo3/Zyg/9Oq8/xZWg==}
@@ -2094,6 +2144,10 @@ packages:
     resolution: {integrity: sha512-WkrWp9GR4KXfKGYzOLmTuGVi1UWFfws377n9cc55/tb6DuqyF6pcQ5AbiHEshaDpY9v6oaSr2XCDidGmMwdzIA==}
     engines: {node: '>=8'}
 
+  dns-packet@5.6.1:
+    resolution: {integrity: sha512-l4gcSouhcgIKRvyy99RNVOgxXiicE+2jZoNmaNmZ6JXiGajBOJAesk1OBlJuM5k2c+eudGdLxDqXuPCKIj6kpw==}
+    engines: {node: '>=6'}
+
   doctrine@2.1.0:
     resolution: {integrity: sha512-35mSku4ZXK0vfCuHEDAwt55dg2jNajHZ1odvF+8SSr82EsZY4QmXfuWso8oEd8zRhVObSN18aM0CjSdoBX7zIw==}
     engines: {node: '>=0.10.0'}
@@ -2484,6 +2538,9 @@ packages:
 
   ethereum-cryptography@2.1.2:
     resolution: {integrity: sha512-Z5Ba0T0ImZ8fqXrJbpHcbpAvIswRte2wGNR/KePnu8GbbvgJ47lMxT/ZZPG6i9Jaht4azPDop4HaM00J0J59ug==}
+
+  ethereum-ens@0.8.0:
+    resolution: {integrity: sha512-a8cBTF4AWw1Q1Y37V1LSCS9pRY4Mh3f8vCg5cbXCCEJ3eno1hbI/+Ccv9SZLISYpqQhaglP3Bxb/34lS4Qf7Bg==}
 
   ethereumjs-abi@0.6.8:
     resolution: {integrity: sha512-Tx0r/iXI6r+lRsdvkFDlut0N08jWMnKRZ6Gkq+Nmw75lZe4e6o3EkSnkaBP5NF6+m5PTGAr9JP43N3LyeoglsA==}
@@ -3042,6 +3099,9 @@ packages:
   hash-base@3.1.0:
     resolution: {integrity: sha512-1nmYp/rhMDiE7AYkDw+lLwlAzz0AntGIe51F3RfFfEqyQ3feY2eI/NcwC6umIQVOASPMsWJLJScWKSSvzL9IVA==}
     engines: {node: '>=4'}
+
+  hash-test-vectors@1.3.2:
+    resolution: {integrity: sha512-PKd/fitmsrlWGh3OpKbgNLE04ZQZsvs1ZkuLoQpeIKuwx+6CYVNdW6LaPIS1QAdZvV40+skk0w4YomKnViUnvQ==}
 
   hash.js@1.1.3:
     resolution: {integrity: sha512-/UETyP0W22QILqS+6HowevwhEFJ3MBJnwTf75Qob9Wz9t0DPuisL8kW8YZMK62dHAKE1c1p+gY1TtOLY+USEHA==}
@@ -4227,6 +4287,9 @@ packages:
     resolution: {integrity: sha512-R4nPAVTAU0B9D35/Gk3uJf/7XYbQcyohSKdvAxIRSNghFl4e71hVoGnBNQz9cWaXxO2I10KTC+3jMdvvoKw6dQ==}
     engines: {node: '>=6'}
 
+  pako@1.0.11:
+    resolution: {integrity: sha512-4hLB8Py4zZce5s4yd9XzopqwVv/yGNhV1Bl8NTmCq1763HeK2+EwVTv+leGeL13Dnh2wfbqowVPXCIO0z4taYw==}
+
   param-case@2.1.1:
     resolution: {integrity: sha512-eQE845L6ot89sk2N8liD8HAuH4ca6Vvr7VWAWwt7+kvvG5aBcPmmphQ68JsEG2qa9n1TykS2DLeMt363AAH8/w==}
 
@@ -5312,6 +5375,9 @@ packages:
   unbzip2-stream@1.4.3:
     resolution: {integrity: sha512-mlExGW4w71ebDJviH16lQLtZS32VKqsSfk80GCfUlwT/4/hNRFsoscrF/c++9xinkMzECL1uL9DDwXqFWkruPg==}
 
+  underscore@1.13.6:
+    resolution: {integrity: sha512-+A5Sja4HP1M08MaXya7p5LvjuM7K6q/2EaC0+iovj/wOcMsTzMvDFbasi/oSapiwOlt252IqsKqPjCl7huKS0A==}
+
   undici@5.26.4:
     resolution: {integrity: sha512-OG+QOf0fTLtazL9P9X7yqWxQ+Z0395Wk6DSkyTxtaq3wQEjIroVe7Y4asCX/vcCxYpNGMnwz8F0qbRYUoaQVMw==}
     engines: {node: '>=14.0'}
@@ -5822,6 +5888,24 @@ snapshots:
       '@jridgewell/gen-mapping': 0.3.3
       '@jridgewell/trace-mapping': 0.3.20
 
+  '@aragon/osx@1.3.0(@nomiclabs/hardhat-web3@2.0.0(hardhat@2.18.2(bufferutil@4.0.8)(ts-node@10.9.1(@types/node@17.0.45)(typescript@5.2.2))(typescript@5.2.2)(utf-8-validate@5.0.10))(web3@1.10.3(bufferutil@4.0.8)(utf-8-validate@5.0.10)))(bufferutil@4.0.8)(hardhat@2.18.2(bufferutil@4.0.8)(ts-node@10.9.1(@types/node@17.0.45)(typescript@5.2.2))(typescript@5.2.2)(utf-8-validate@5.0.10))(utf-8-validate@5.0.10)(web3-core-helpers@1.10.3)(web3-core-promievent@1.10.3)(web3-eth-abi@1.10.3)(web3-utils@1.10.3)(web3@1.10.3(bufferutil@4.0.8)(utf-8-validate@5.0.10))':
+    dependencies:
+      '@ensdomains/ens-contracts': 0.0.11(@nomiclabs/hardhat-web3@2.0.0(hardhat@2.18.2(bufferutil@4.0.8)(ts-node@10.9.1(@types/node@17.0.45)(typescript@5.2.2))(typescript@5.2.2)(utf-8-validate@5.0.10))(web3@1.10.3(bufferutil@4.0.8)(utf-8-validate@5.0.10)))(bufferutil@4.0.8)(hardhat@2.18.2(bufferutil@4.0.8)(ts-node@10.9.1(@types/node@17.0.45)(typescript@5.2.2))(typescript@5.2.2)(utf-8-validate@5.0.10))(utf-8-validate@5.0.10)(web3-core-helpers@1.10.3)(web3-core-promievent@1.10.3)(web3-eth-abi@1.10.3)(web3-utils@1.10.3)(web3@1.10.3(bufferutil@4.0.8)(utf-8-validate@5.0.10))
+      '@openzeppelin/contracts': 4.8.1
+      '@openzeppelin/contracts-upgradeable': 4.8.1
+    transitivePeerDependencies:
+      - '@nomiclabs/hardhat-web3'
+      - bufferutil
+      - encoding
+      - hardhat
+      - supports-color
+      - utf-8-validate
+      - web3
+      - web3-core-helpers
+      - web3-core-promievent
+      - web3-eth-abi
+      - web3-utils
+
   '@babel/code-frame@7.22.13':
     dependencies:
       '@babel/highlight': 7.22.20
@@ -6167,6 +6251,41 @@ snapshots:
       nano-base32: 1.0.1
       ripemd160: 2.0.2
 
+  '@ensdomains/buffer@0.0.13(@nomiclabs/hardhat-web3@2.0.0(hardhat@2.18.2(bufferutil@4.0.8)(ts-node@10.9.1(@types/node@17.0.45)(typescript@5.2.2))(typescript@5.2.2)(utf-8-validate@5.0.10))(web3@1.10.3(bufferutil@4.0.8)(utf-8-validate@5.0.10)))(bufferutil@4.0.8)(hardhat@2.18.2(bufferutil@4.0.8)(ts-node@10.9.1(@types/node@17.0.45)(typescript@5.2.2))(typescript@5.2.2)(utf-8-validate@5.0.10))(utf-8-validate@5.0.10)(web3-core-helpers@1.10.3)(web3-core-promievent@1.10.3)(web3-eth-abi@1.10.3)(web3-utils@1.10.3)(web3@1.10.3(bufferutil@4.0.8)(utf-8-validate@5.0.10))':
+    dependencies:
+      '@nomiclabs/hardhat-truffle5': 2.0.7(@nomiclabs/hardhat-web3@2.0.0(hardhat@2.18.2(bufferutil@4.0.8)(ts-node@10.9.1(@types/node@17.0.45)(typescript@5.2.2))(typescript@5.2.2)(utf-8-validate@5.0.10))(web3@1.10.3(bufferutil@4.0.8)(utf-8-validate@5.0.10)))(bufferutil@4.0.8)(hardhat@2.18.2(bufferutil@4.0.8)(ts-node@10.9.1(@types/node@17.0.45)(typescript@5.2.2))(typescript@5.2.2)(utf-8-validate@5.0.10))(utf-8-validate@5.0.10)(web3-core-helpers@1.10.3)(web3-core-promievent@1.10.3)(web3-eth-abi@1.10.3)(web3-utils@1.10.3)(web3@1.10.3(bufferutil@4.0.8)(utf-8-validate@5.0.10))
+    transitivePeerDependencies:
+      - '@nomiclabs/hardhat-web3'
+      - bufferutil
+      - encoding
+      - hardhat
+      - supports-color
+      - utf-8-validate
+      - web3
+      - web3-core-helpers
+      - web3-core-promievent
+      - web3-eth-abi
+      - web3-utils
+
+  '@ensdomains/ens-contracts@0.0.11(@nomiclabs/hardhat-web3@2.0.0(hardhat@2.18.2(bufferutil@4.0.8)(ts-node@10.9.1(@types/node@17.0.45)(typescript@5.2.2))(typescript@5.2.2)(utf-8-validate@5.0.10))(web3@1.10.3(bufferutil@4.0.8)(utf-8-validate@5.0.10)))(bufferutil@4.0.8)(hardhat@2.18.2(bufferutil@4.0.8)(ts-node@10.9.1(@types/node@17.0.45)(typescript@5.2.2))(typescript@5.2.2)(utf-8-validate@5.0.10))(utf-8-validate@5.0.10)(web3-core-helpers@1.10.3)(web3-core-promievent@1.10.3)(web3-eth-abi@1.10.3)(web3-utils@1.10.3)(web3@1.10.3(bufferutil@4.0.8)(utf-8-validate@5.0.10))':
+    dependencies:
+      '@ensdomains/buffer': 0.0.13(@nomiclabs/hardhat-web3@2.0.0(hardhat@2.18.2(bufferutil@4.0.8)(ts-node@10.9.1(@types/node@17.0.45)(typescript@5.2.2))(typescript@5.2.2)(utf-8-validate@5.0.10))(web3@1.10.3(bufferutil@4.0.8)(utf-8-validate@5.0.10)))(bufferutil@4.0.8)(hardhat@2.18.2(bufferutil@4.0.8)(ts-node@10.9.1(@types/node@17.0.45)(typescript@5.2.2))(typescript@5.2.2)(utf-8-validate@5.0.10))(utf-8-validate@5.0.10)(web3-core-helpers@1.10.3)(web3-core-promievent@1.10.3)(web3-eth-abi@1.10.3)(web3-utils@1.10.3)(web3@1.10.3(bufferutil@4.0.8)(utf-8-validate@5.0.10))
+      '@ensdomains/solsha1': 0.0.3
+      '@openzeppelin/contracts': 4.8.1
+      dns-packet: 5.6.1
+    transitivePeerDependencies:
+      - '@nomiclabs/hardhat-web3'
+      - bufferutil
+      - encoding
+      - hardhat
+      - supports-color
+      - utf-8-validate
+      - web3
+      - web3-core-helpers
+      - web3-core-promievent
+      - web3-eth-abi
+      - web3-utils
+
   '@ensdomains/ens@0.4.5':
     dependencies:
       bluebird: 3.7.2
@@ -6190,6 +6309,10 @@ snapshots:
       - utf-8-validate
 
   '@ensdomains/resolver@0.2.4': {}
+
+  '@ensdomains/solsha1@0.0.3':
+    dependencies:
+      hash-test-vectors: 1.3.2
 
   '@eslint-community/eslint-utils@4.4.0(eslint@8.52.0)':
     dependencies:
@@ -6532,6 +6655,8 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.1
       '@jridgewell/sourcemap-codec': 1.4.15
+
+  '@leichtgewicht/ip-codec@2.0.5': {}
 
   '@manypkg/find-root@1.1.0':
     dependencies:
@@ -6887,14 +7012,67 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@nomiclabs/hardhat-truffle5@2.0.7(@nomiclabs/hardhat-web3@2.0.0(hardhat@2.18.2(bufferutil@4.0.8)(ts-node@10.9.1(@types/node@17.0.45)(typescript@5.2.2))(typescript@5.2.2)(utf-8-validate@5.0.10))(web3@1.10.3(bufferutil@4.0.8)(utf-8-validate@5.0.10)))(bufferutil@4.0.8)(hardhat@2.18.2(bufferutil@4.0.8)(ts-node@10.9.1(@types/node@17.0.45)(typescript@5.2.2))(typescript@5.2.2)(utf-8-validate@5.0.10))(utf-8-validate@5.0.10)(web3-core-helpers@1.10.3)(web3-core-promievent@1.10.3)(web3-eth-abi@1.10.3)(web3-utils@1.10.3)(web3@1.10.3(bufferutil@4.0.8)(utf-8-validate@5.0.10))':
+    dependencies:
+      '@nomiclabs/hardhat-web3': 2.0.0(hardhat@2.18.2(bufferutil@4.0.8)(ts-node@10.9.1(@types/node@17.0.45)(typescript@5.2.2))(typescript@5.2.2)(utf-8-validate@5.0.10))(web3@1.10.3(bufferutil@4.0.8)(utf-8-validate@5.0.10))
+      '@nomiclabs/truffle-contract': 4.5.10(bufferutil@4.0.8)(utf-8-validate@5.0.10)(web3-core-helpers@1.10.3)(web3-core-promievent@1.10.3)(web3-eth-abi@1.10.3)(web3-utils@1.10.3)(web3@1.10.3(bufferutil@4.0.8)(utf-8-validate@5.0.10))
+      '@types/chai': 4.3.9
+      chai: 4.3.10
+      ethereumjs-util: 7.1.5
+      fs-extra: 7.0.1
+      hardhat: 2.18.2(bufferutil@4.0.8)(ts-node@10.9.1(@types/node@17.0.45)(typescript@5.2.2))(typescript@5.2.2)(utf-8-validate@5.0.10)
+      web3: 1.10.3(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+    transitivePeerDependencies:
+      - bufferutil
+      - encoding
+      - supports-color
+      - utf-8-validate
+      - web3-core-helpers
+      - web3-core-promievent
+      - web3-eth-abi
+      - web3-utils
+
+  '@nomiclabs/hardhat-web3@2.0.0(hardhat@2.18.2(bufferutil@4.0.8)(ts-node@10.9.1(@types/node@17.0.45)(typescript@5.2.2))(typescript@5.2.2)(utf-8-validate@5.0.10))(web3@1.10.3(bufferutil@4.0.8)(utf-8-validate@5.0.10))':
+    dependencies:
+      '@types/bignumber.js': 5.0.0
+      hardhat: 2.18.2(bufferutil@4.0.8)(ts-node@10.9.1(@types/node@17.0.45)(typescript@5.2.2))(typescript@5.2.2)(utf-8-validate@5.0.10)
+      web3: 1.10.3(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+
+  '@nomiclabs/truffle-contract@4.5.10(bufferutil@4.0.8)(utf-8-validate@5.0.10)(web3-core-helpers@1.10.3)(web3-core-promievent@1.10.3)(web3-eth-abi@1.10.3)(web3-utils@1.10.3)(web3@1.10.3(bufferutil@4.0.8)(utf-8-validate@5.0.10))':
+    dependencies:
+      '@ensdomains/ensjs': 2.1.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+      '@truffle/blockchain-utils': 0.1.9
+      '@truffle/contract-schema': 3.4.16
+      '@truffle/debug-utils': 6.0.57
+      '@truffle/error': 0.1.1
+      '@truffle/interface-adapter': 0.5.37(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+      bignumber.js: 7.2.1
+      ethereum-ens: 0.8.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+      ethers: 4.0.49
+      source-map-support: 0.5.21
+      web3: 1.10.3(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+      web3-core-helpers: 1.10.3
+      web3-core-promievent: 1.10.3
+      web3-eth-abi: 1.10.3
+      web3-utils: 1.10.3
+    transitivePeerDependencies:
+      - bufferutil
+      - encoding
+      - supports-color
+      - utf-8-validate
+
   '@openzeppelin/contract-loader@0.6.3':
     dependencies:
       find-up: 4.1.0
       fs-extra: 8.1.0
 
+  '@openzeppelin/contracts-upgradeable@4.8.1': {}
+
   '@openzeppelin/contracts-upgradeable@5.0.2(@openzeppelin/contracts@5.0.2)':
     dependencies:
       '@openzeppelin/contracts': 5.0.2
+
+  '@openzeppelin/contracts@4.8.1': {}
 
   '@openzeppelin/contracts@5.0.2': {}
 
@@ -7127,6 +7305,8 @@ snapshots:
       highlightjs-solidity: 2.0.6
     transitivePeerDependencies:
       - supports-color
+
+  '@truffle/error@0.1.1': {}
 
   '@truffle/error@0.2.2': {}
 
@@ -8548,6 +8728,10 @@ snapshots:
     dependencies:
       path-type: 4.0.0
 
+  dns-packet@5.6.1:
+    dependencies:
+      '@leichtgewicht/ip-codec': 2.0.5
+
   doctrine@2.1.0:
     dependencies:
       esutils: 2.0.3
@@ -9118,6 +9302,20 @@ snapshots:
       '@noble/hashes': 1.3.1
       '@scure/bip32': 1.3.1
       '@scure/bip39': 1.2.1
+
+  ethereum-ens@0.8.0(bufferutil@4.0.8)(utf-8-validate@5.0.10):
+    dependencies:
+      bluebird: 3.7.2
+      eth-ens-namehash: 2.0.8
+      js-sha3: 0.5.7
+      pako: 1.0.11
+      underscore: 1.13.6
+      web3: 1.10.3(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+    transitivePeerDependencies:
+      - bufferutil
+      - encoding
+      - supports-color
+      - utf-8-validate
 
   ethereumjs-abi@0.6.8:
     dependencies:
@@ -9971,6 +10169,8 @@ snapshots:
       inherits: 2.0.4
       readable-stream: 3.6.2
       safe-buffer: 5.2.1
+
+  hash-test-vectors@1.3.2: {}
 
   hash.js@1.1.3:
     dependencies:
@@ -11181,6 +11381,8 @@ snapshots:
   p-try@1.0.0: {}
 
   p-try@2.2.0: {}
+
+  pako@1.0.11: {}
 
   param-case@2.1.1:
     dependencies:
@@ -12449,6 +12651,8 @@ snapshots:
     dependencies:
       buffer: 5.7.1
       through: 2.3.8
+
+  underscore@1.13.6: {}
 
   undici@5.26.4:
     dependencies:
