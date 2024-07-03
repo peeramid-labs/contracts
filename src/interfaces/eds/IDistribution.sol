@@ -5,8 +5,8 @@ import {IRepository, Tag, Version} from "./IRepository.sol";
 
 /**
  * @title IDistribution
- * @notice Interface for the Distributon contract.
- * @notice The Distributon contract is responsible for serving package information on groups of source code from version controlled repositories.
+ * @notice Interface for the Distribution contract.
+ * @notice The Distribution contract is responsible for serving package information on groups of source code from version controlled repositories.
  * @notice NB: Distributed sources MUST implement IRepository
  * @author Peersky
  */
