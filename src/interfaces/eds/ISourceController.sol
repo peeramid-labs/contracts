@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {IRepository, Tag, Version} from "./IRepository.sol";
-import {Distribution, VersionRequirement} from "./IDistributon.sol";
+import {Distribution, VersionRequirement} from "./IDistribution.sol";
 
 /**
  * @title IVSourceController
