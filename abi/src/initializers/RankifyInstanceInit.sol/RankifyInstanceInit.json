@@ -64,11 +64,6 @@
             "type": "uint256"
           },
           {
-            "internalType": "string",
-            "name": "subject",
-            "type": "string"
-          },
-          {
             "internalType": "address",
             "name": "rankifyToken",
             "type": "address"

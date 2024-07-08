@@ -53,7 +53,6 @@ contract RankifyInstanceInit {
         uint256 maxTurns;
         uint256 numWinners;
         uint256 voteCredits;
-        string subject;
         address rankifyToken;
     }
 
@@ -101,7 +100,6 @@ contract RankifyInstanceInit {
         settings.timeToJoin = initializer.timeToJoin;
         settings.maxTurns = initializer.maxTurns;
         settings.numWinners = initializer.numWinners;
-        settings.subject = initializer.subject;
         LibTBG.init(settings);
 
         // add your own state variables
