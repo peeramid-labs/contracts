@@ -23,4 +23,4 @@ describe('CloneDistributor', function () {
     const metadata = await cloneDistributor.getMetadata();
     expect(metadata).to.equal('MockCloneDistributor');
   });
-}); // SPDX-License-Identifier: MIT
+});
