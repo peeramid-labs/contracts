@@ -15,7 +15,7 @@ contract CuttedDiamondDistribution is DiamondDistribution {
     error NotInitialized();
     error AlreadyInitialized();
 
-    constructor(address _initializer) DiamondDistribution(msg.sender) {
+    constructor(address _initializer) DiamondDistribution() {
         initializer = _initializer;
     }
 
