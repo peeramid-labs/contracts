@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.20;
 
-import {IDiamondCut} from "../vendor/interfaces/IDiamondCut.sol";
+import {IDiamondCut} from "../vendor/diamond/interfaces/IDiamondCut.sol";
 
 library LibEIP712WithStorage {
     bytes32 constant EIP712_STORAGE_POSITION = keccak256("EIP.712.STORAGE.POSITION");

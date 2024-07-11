@@ -78,6 +78,24 @@ library LibDiamond {
         initializeDiamondCut(_init, _calldata);
     }
 
+    // // Modified function version of diamondCut that does not expect any call data
+    // function diamondSoloCut(IDiamondCut.FacetCut[] memory _diamondCut, address _init, bytes memory _calldata) internal {
+    //     for (uint256 facetIndex; facetIndex < _diamondCut.length; facetIndex++) {
+    //         IDiamondCut.FacetCutAction action = _diamondCut[facetIndex].action;
+    //         if (action == IDiamondCut.FacetCutAction.Add) {
+    //             addFunctions(_diamondCut[facetIndex].facetAddress, _diamondCut[facetIndex].functionSelectors);
+    //         } else if (action == IDiamondCut.FacetCutAction.Replace) {
+    //             replaceFunctions(_diamondCut[facetIndex].facetAddress, _diamondCut[facetIndex].functionSelectors);
+    //         } else if (action == IDiamondCut.FacetCutAction.Remove) {
+    //             removeFunctions(_diamondCut[facetIndex].facetAddress, _diamondCut[facetIndex].functionSelectors);
+    //         } else {
+    //             revert("LibDiamondCut: Incorrect FacetCutAction");
+    //         }
+    //     }
+    //     emit DiamondCut(_diamondCut, _init, _calldata);
+    //     initializeDiamondCut(_init, _calldata);
+    // }
+
     function addFunctions(address _facetAddress, bytes4[] memory _functionSelectors) internal {
         require(_functionSelectors.length > 0, "LibDiamondCut: No selectors in facet to cut");
         DiamondStorage storage ds = diamondStorage();
@@ -180,7 +198,8 @@ library LibDiamond {
         if (_init == address(0)) {
             require(_calldata.length == 0, "LibDiamondCut: _init is address(0) but_calldata is not empty");
         } else {
-            require(_calldata.length > 0, "LibDiamondCut: _calldata is empty but _init is not address(0)");
+            // this is removed in order to work with ethereum distribution system
+            // require(_calldata.length > 0, "LibDiamondCut: _calldata is empty but _init is not address(0)");
             if (_init != address(this)) {
                 enforceHasContractCode(_init, "LibDiamondCut: _init address has no code");
             }
