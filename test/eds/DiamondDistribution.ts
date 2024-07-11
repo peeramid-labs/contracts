@@ -14,7 +14,7 @@ describe('DiamondDistribution', function () {
       'DiamondDistribution',
     )) as DiamondDistribution__factory;
     [owner, addr1, addr2] = await ethers.getSigners();
-    diamondDistribution = await DiamondDistribution.deploy();
+    diamondDistribution = await DiamondDistribution.deploy(await owner.getAddress());
     await diamondDistribution.deployed();
   });
 
