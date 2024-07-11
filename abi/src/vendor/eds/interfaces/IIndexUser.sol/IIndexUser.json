@@ -1,0 +1,15 @@
+[
+  {
+    "inputs": [],
+    "name": "getContractsIndex",
+    "outputs": [
+      {
+        "internalType": "contract ICodeIndex",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]
