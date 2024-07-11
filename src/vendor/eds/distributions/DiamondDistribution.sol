@@ -2,15 +2,15 @@
 pragma solidity ^0.8.20;
 
 import "../abstracts/CloneDistributor.sol";
-import "../vendor/Diamond.sol";
-import "../vendor/facets/DiamondCutFacet.sol";
+import "../../diamond/Diamond.sol";
+import "../../diamond/facets/DiamondCutFacet.sol";
 
 contract DiamondDistribution is CloneDistributor {
     address immutable _reference;
-    constructor() {
+    constructor(address owner) {
         address diamondCutFacet = address(new DiamondCutFacet());
         // Deploy the diamond proxy contract
-        address diamondProxy = address(new Diamond(msg.sender, diamondCutFacet));
+        address diamondProxy = address(new Diamond(owner, diamondCutFacet));
         _reference = diamondProxy;
     }
 

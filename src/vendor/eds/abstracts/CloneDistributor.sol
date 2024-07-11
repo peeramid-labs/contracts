@@ -2,13 +2,13 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/proxy/Clones.sol";
-import "../interfaces/eds/IDistribution.sol";
+import "../interfaces/IDistribution.sol";
 
 // event Distributed(address indexed distributor, address[] instances);
 abstract contract CloneDistributor is IDistribution {
     function sources() internal view virtual returns (address[] memory);
 
-    function instantiate() public returns (address[] memory instances) {
+    function instantiate() public virtual returns (address[] memory instances) {
         address[] memory _sources = sources();
         instances = new address[](_sources.length);
         for (uint256 i = 0; i < _sources.length; i++) {
