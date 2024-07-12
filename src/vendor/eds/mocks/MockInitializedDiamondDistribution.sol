@@ -6,6 +6,7 @@ import "../../diamond/interfaces/IDiamondCut.sol";
 import "../../diamond/facets/DiamondLoupeFacet.sol";
 import "../../diamond/facets/DiamondCutFacet.sol";
 import "hardhat/console.sol";
+
 contract TestFacet {
     event Bar();
 

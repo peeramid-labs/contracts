@@ -18,8 +18,10 @@ abstract contract CloneDistributor is IDistribution {
         emit Distributed(msg.sender, instances);
         return instances;
     }
+
     function getSources() public view virtual returns (address[] memory) {
         return sources();
     }
+
     function getMetadata() public view virtual returns (string memory);
 }

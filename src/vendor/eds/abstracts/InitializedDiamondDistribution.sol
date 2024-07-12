@@ -8,6 +8,7 @@ import "../distributions/DiamondDistribution.sol";
 import "../../diamond/libraries/LibDiamond.sol";
 import "../../diamond/interfaces/IDiamondCut.sol";
 import "hardhat/console.sol";
+
 abstract contract InitializedDiamondDistribution is DiamondDistribution {
     address immutable initializer;
     bytes4 immutable initializerSelector;
