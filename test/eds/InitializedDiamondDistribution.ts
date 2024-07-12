@@ -5,6 +5,7 @@ import {
   DiamondLoupeFacet,
   MockDiamondInitialize,
   MockDiamondInitialize__factory,
+  MockInitializedDiamondDistribution,
   MockInitializedDiamondDistribution__factory,
   TestFacet,
 } from '../../types';
@@ -55,12 +56,12 @@ describe('InitializedDiamondDistribution', function () {
   });
 
   it('Should emit on initialized', async function () {
-    const CuttedDiamondDistribution = (await ethers.getContractFactory(
+    const InitializedDiamondDistribution = (await ethers.getContractFactory(
       'MockInitializedDiamondDistribution',
     )) as MockInitializedDiamondDistribution__factory;
 
     // mockDiamondInitialize;
-    const tx = await CuttedDiamondDistribution.deploy(
+    const tx = await InitializedDiamondDistribution.deploy(
       mockDiamondInitialize.address,
       mockDiamondInitialize.interface.getSighash('init'),
     );
@@ -68,20 +69,20 @@ describe('InitializedDiamondDistribution', function () {
   });
 
   it('Should emit respond on facet requests', async function () {
-    const CuttedDiamondDistribution = (await ethers.getContractFactory(
+    const InitializedDiamondDistribution = (await ethers.getContractFactory(
       'MockInitializedDiamondDistribution',
     )) as MockInitializedDiamondDistribution__factory;
 
     // mockDiamondInitialize;
-    const tx = await CuttedDiamondDistribution.deploy(
+    const tx = await InitializedDiamondDistribution.deploy(
       mockDiamondInitialize.address,
       mockDiamondInitialize.interface.getSighash(mockDiamondInitialize.interface.functions['init(bytes)']),
-    );
+    ) as MockInitializedDiamondDistribution;
     await tx.deployed();
     const instantiation = await tx.instantiate();
     const { logs } = await instantiation.wait(1);
-    const parsed = logs.map(log => ({ rawLog: log, ...superInterface.parseLog(log) }));
-    const distributionLog = parsed.find(log => log?.name === 'Distributed');
+    const parsed = logs.map((log) => ({ rawLog: log, ...superInterface.parseLog(log) }));
+    const distributionLog = parsed.find((log)=> log?.name === 'Distributed');
     expect(!!distributionLog).to.be.true;
     if (distributionLog) {
       expect(distributionLog.args.instances.length).to.be.equal(1);
