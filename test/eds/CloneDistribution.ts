@@ -3,7 +3,7 @@ import { Signer } from 'ethers';
 import { expect } from 'chai';
 
 describe('CloneDistribution', function () {
-  let CloneDistribution: any;
+  let cloneDistribution: any;
   let owner: Signer;
   let addr1: Signer;
   let addr2: Signer;
@@ -11,16 +11,16 @@ describe('CloneDistribution', function () {
   beforeEach(async function () {
     const CloneDistribution = await ethers.getContractFactory('MockCloneDistribution');
     [owner, addr1, addr2] = await ethers.getSigners();
-    CloneDistribution = await CloneDistribution.deploy();
-    await CloneDistribution.deployed();
+    cloneDistribution = await CloneDistribution.deploy();
+    await cloneDistribution.deployed();
   });
 
   it('should emit Distributed event', async function () {
-    expect(await CloneDistribution.instantiate()).to.emit(CloneDistribution, 'Distributed');
+    expect(await cloneDistribution.instantiate()).to.emit(cloneDistribution, 'Distributed');
   });
 
   it('Should read metadata', async function () {
-    const metadata = await CloneDistribution.getMetadata();
+    const metadata = await cloneDistribution.getMetadata();
     expect(metadata).to.equal('MockCloneDistribution');
   });
 });
