@@ -3,8 +3,9 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "../interfaces/IDistribution.sol";
+import "./CodeIndexer.sol";
 
-abstract contract CloneDistributor is IDistribution {
+abstract contract CloneDistribution is IDistribution, CodeIndexer {
     function sources() internal view virtual returns (address[] memory);
 
     function instantiate() public virtual returns (address[] memory instances) {

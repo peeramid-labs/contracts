@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "../abstracts/CloneDistributor.sol";
+import "../abstracts/CloneDistribution.sol";
 
-contract MockCloneDistributor is CloneDistributor {
+contract MockCloneDistribution is CloneDistribution {
     function getMetadata() public pure override returns (string memory) {
-        return "MockCloneDistributor";
+        return "MockCloneDistribution";
     }
 
     function sources() internal view override returns (address[] memory) {

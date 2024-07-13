@@ -1,14 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "../abstracts/CloneDistributor.sol";
+import "../abstracts/CloneDistribution.sol";
 import "../../diamond/DiamondClonable.sol";
 import "../../diamond/facets/DiamondCutFacet.sol";
 
-contract DiamondDistribution is CloneDistributor {
+contract DiamondDistribution is CloneDistribution {
     address immutable _reference;
+    // address immutable codeIndex;
 
     constructor(address owner) {
+        // codeIndex =
+
         address diamondCutFacet = address(new DiamondCutFacet());
         // Deploy the diamond proxy contract
         address diamondProxy = address(new DiamondClonable(owner, diamondCutFacet));
