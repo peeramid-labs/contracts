@@ -4,16 +4,18 @@ pragma solidity ^0.8.20;
 import "../abstracts/CloneDistribution.sol";
 import "../../diamond/DiamondClonable.sol";
 import "../../diamond/facets/DiamondCutFacet.sol";
-import "../distributions/DiamondDistribution.sol";
+import "../distributions/CodeHashDistribution.sol";
 import "../../diamond/libraries/LibDiamond.sol";
 import "../../diamond/interfaces/IDiamondCut.sol";
-import "hardhat/console.sol";
 
-abstract contract InitializedDiamondDistribution is DiamondDistribution {
+
+abstract contract DiamondDistribution is CodeHashDistribution {
     address immutable initializer;
     bytes4 immutable initializerSelector;
 
-    constructor(address owner, address _initializer, bytes4 _initializerSelector) DiamondDistribution(owner) {
+    constructor(bytes32 diamondSourceId, bytes32 diamondSourceMetadata, bytes32 initializerId, bytes4 _initializerSelector) CodeHashDistribution(diamondSourceId, diamondSourceMetadata) {
+        address _initializer = getContractsIndex().get(initializerId);
+        if(_initializer == address(0)) revert("DiamondDistribution: Initializer not found in index");
         initializer = _initializer;
         initializerSelector = _initializerSelector;
     }
@@ -36,7 +38,7 @@ abstract contract InitializedDiamondDistribution is DiamondDistribution {
         return srcs;
     }
 
-    function getMetadata() public pure virtual override returns (string memory) {
-        return string(abi.encodePacked(super.getMetadata(), ";", "InitializedDiamondDistribution")); //ToDo: Add IPFS link with readme!
+    function getMetadata() public view virtual override returns (string memory) {
+        return string(abi.encodePacked(super.getMetadata(), ";", "DiamondDistribution")); //ToDo: Add IPFS link with readme!
     }
 }
