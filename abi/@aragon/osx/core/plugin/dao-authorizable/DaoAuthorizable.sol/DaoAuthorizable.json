@@ -1,10 +1,10 @@
 [
   {
     "inputs": [],
-    "name": "getContractsIndex",
+    "name": "dao",
     "outputs": [
       {
-        "internalType": "contract ICodeIndex",
+        "internalType": "contract IDAO",
         "name": "",
         "type": "address"
       }

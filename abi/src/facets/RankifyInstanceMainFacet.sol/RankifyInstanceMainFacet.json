@@ -347,6 +347,11 @@
                 "internalType": "uint256",
                 "name": "voteCredits",
                 "type": "uint256"
+              },
+              {
+                "internalType": "string",
+                "name": "subject",
+                "type": "string"
               }
             ],
             "internalType": "struct LibTBG.GameSettings",

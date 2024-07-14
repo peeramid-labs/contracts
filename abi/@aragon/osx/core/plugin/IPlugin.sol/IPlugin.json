@@ -1,12 +1,12 @@
 [
   {
     "inputs": [],
-    "name": "getContractsIndex",
+    "name": "pluginType",
     "outputs": [
       {
-        "internalType": "contract ICodeIndex",
+        "internalType": "enum IPlugin.PluginType",
         "name": "",
-        "type": "address"
+        "type": "uint8"
       }
     ],
     "stateMutability": "view",
