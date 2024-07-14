@@ -20,7 +20,6 @@ contract TestFacet {
 }
 
 contract MockDiamondDistribution is DiamondDistribution {
-
     address immutable testFacetAddress;
     address immutable dimondLoupeFacetAddress;
 
@@ -30,8 +29,14 @@ contract MockDiamondDistribution is DiamondDistribution {
         bytes32 diamondLoupeFacetId,
         bytes32 initializerId,
         bytes4 initializerSelector
-
-    ) DiamondDistribution(diamondSourceId, bytes32(abi.encodePacked('Diamond.sol')), initializerId, initializerSelector) {
+    )
+        DiamondDistribution(
+            diamondSourceId,
+            bytes32(abi.encodePacked("Diamond.sol")),
+            initializerId,
+            initializerSelector
+        )
+    {
         ICodeIndex index = getContractsIndex();
         dimondLoupeFacetAddress = index.get(diamondLoupeFacetId);
         testFacetAddress = index.get(testFacetId);

@@ -8,14 +8,18 @@ import "../distributions/CodeHashDistribution.sol";
 import "../../diamond/libraries/LibDiamond.sol";
 import "../../diamond/interfaces/IDiamondCut.sol";
 
-
 abstract contract DiamondDistribution is CodeHashDistribution {
     address immutable initializer;
     bytes4 immutable initializerSelector;
 
-    constructor(bytes32 diamondSourceId, bytes32 diamondSourceMetadata, bytes32 initializerId, bytes4 _initializerSelector) CodeHashDistribution(diamondSourceId, diamondSourceMetadata) {
+    constructor(
+        bytes32 diamondSourceId,
+        bytes32 diamondSourceMetadata,
+        bytes32 initializerId,
+        bytes4 _initializerSelector
+    ) CodeHashDistribution(diamondSourceId, diamondSourceMetadata) {
         address _initializer = getContractsIndex().get(initializerId);
-        if(_initializer == address(0)) revert("DiamondDistribution: Initializer not found in index");
+        if (_initializer == address(0)) revert("DiamondDistribution: Initializer not found in index");
         initializer = _initializer;
         initializerSelector = _initializerSelector;
     }

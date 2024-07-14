@@ -6,20 +6,16 @@ import "../../diamond/DiamondClonable.sol";
 import "../../diamond/facets/DiamondCutFacet.sol";
 
 contract CodeHashDistribution is CloneDistribution {
-
     bytes32 immutable metadata;
     address immutable _reference;
 
     constructor(bytes32 codeHash, bytes32 _metadata) {
-
         metadata = _metadata;
         ICodeIndex index = getContractsIndex();
         _reference = index.get(codeHash);
-        if(_reference == address(0))
-        {
-          revert("CodeHashDistribution: CodeHash not found in index");
+        if (_reference == address(0)) {
+            revert("CodeHashDistribution: CodeHash not found in index");
         }
-
     }
 
     function sources() internal view virtual override returns (address[] memory) {
