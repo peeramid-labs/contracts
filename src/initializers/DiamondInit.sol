@@ -8,11 +8,11 @@ pragma solidity ^0.8.20;
 * Implementation of a diamond.
 /******************************************************************************/
 
-import {LibDiamond} from "../vendor/libraries/LibDiamond.sol";
-import {IDiamondLoupe} from "../vendor/interfaces/IDiamondLoupe.sol";
-import {IDiamondCut} from "../vendor/interfaces/IDiamondCut.sol";
-import {IERC173} from "../vendor/interfaces/IERC173.sol";
-import {IERC165} from "../vendor/interfaces/IERC165.sol";
+import {LibDiamond} from "../vendor/diamond/libraries/LibDiamond.sol";
+import {IDiamondLoupe} from "../vendor/diamond/interfaces/IDiamondLoupe.sol";
+import {IDiamondCut} from "../vendor/diamond/interfaces/IDiamondCut.sol";
+import {IERC173} from "../vendor/diamond/interfaces/IERC173.sol";
+import {IERC165} from "../vendor/diamond/interfaces/IERC165.sol";
 
 // It is expected that this contract is customized if you want to deploy your diamond
 // with data from a deployment script. Use the init function to initialize state variables

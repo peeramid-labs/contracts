@@ -8,11 +8,11 @@ pragma solidity ^0.8.20;
 * Implementation of a diamond.
 /******************************************************************************/
 
-import {LibDiamond} from "../vendor/libraries/LibDiamond.sol";
-import {IDiamondLoupe} from "../vendor/interfaces/IDiamondLoupe.sol";
-import {IDiamondCut} from "../vendor/interfaces/IDiamondCut.sol";
-import {IERC173} from "../vendor/interfaces/IERC173.sol";
-import {IERC165} from "../vendor/interfaces/IERC165.sol";
+import {LibDiamond} from "../vendor/diamond/libraries/LibDiamond.sol";
+import {IDiamondLoupe} from "../vendor/diamond/interfaces/IDiamondLoupe.sol";
+import {IDiamondCut} from "../vendor/diamond/interfaces/IDiamondCut.sol";
+import {IERC173} from "../vendor/diamond/interfaces/IERC173.sol";
+import {IERC165} from "../vendor/diamond/interfaces/IERC165.sol";
 import {LibEIP712WithStorage} from "../libraries/LibEIP712Storage.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {IRankifyInstanceCommons} from "../interfaces/IRankifyInstanceCommons.sol";
@@ -53,7 +53,6 @@ contract RankifyInstanceInit {
         uint256 maxTurns;
         uint256 numWinners;
         uint256 voteCredits;
-        string subject;
         address rankifyToken;
     }
 
@@ -101,7 +100,6 @@ contract RankifyInstanceInit {
         settings.timeToJoin = initializer.timeToJoin;
         settings.maxTurns = initializer.maxTurns;
         settings.numWinners = initializer.numWinners;
-        settings.subject = initializer.subject;
         LibTBG.init(settings);
 
         // add your own state variables

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.20;
 
 /******************************************************************************\
 * Author: Nick Mudge <nick@perfectabstractions.com> (https://twitter.com/mudgen)
@@ -8,11 +8,11 @@ pragma solidity ^0.8.0;
 * Implementation of a diamond.
 /******************************************************************************/
 
-import {LibDiamond} from "../vendor/libraries/LibDiamond.sol";
-import {IDiamondLoupe} from "../vendor/interfaces/IDiamondLoupe.sol";
-import {IDiamondCut} from "../vendor/interfaces/IDiamondCut.sol";
-import {IERC173} from "../vendor/interfaces/IERC173.sol";
-import {IERC165} from "../vendor/interfaces/IERC165.sol";
+import {LibDiamond} from "../vendor/diamond/libraries/LibDiamond.sol";
+import {IDiamondLoupe} from "../vendor/diamond/interfaces/IDiamondLoupe.sol";
+import {IDiamondCut} from "../vendor/diamond/interfaces/IDiamondCut.sol";
+import {IERC173} from "../vendor/diamond/interfaces/IERC173.sol";
+import {IERC165} from "../vendor/diamond/interfaces/IERC165.sol";
 import {IMultipass} from "../interfaces/IMultipass.sol";
 import {LibEIP712WithStorage} from "../libraries/LibEIP712Storage.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";

@@ -36,7 +36,6 @@ library LibTBG {
         uint256 maxTurns;
         uint256 numWinners;
         uint256 voteCredits;
-        string subject;
     }
 
     struct GameInstance {
@@ -89,8 +88,6 @@ library LibTBG {
      * - `settings.numWinners` must not be zero and must be less than `settings.minPlayersSize`.
      * - `settings.timeToJoin` must not be zero.
      * - `settings.maxPlayersSize` must not be less than `settings.minPlayersSize`.
-     * - `settings.subject` must not be an empty string.
-     *
      * Modifies:
      *
      * - Sets the settings of the game to `settings`.
@@ -104,7 +101,6 @@ library LibTBG {
         if (settings.numWinners == 0 || settings.numWinners >= settings.minPlayersSize) require(false, "numWinners"); //revert invalidConfiguration('numWinners');
         if (settings.timeToJoin == 0) require(false, "timeToJoin"); // revert invalidConfiguration('timeToJoin');
         if (settings.maxPlayersSize < settings.minPlayersSize) require(false, "maxPlayersSize"); //revert invalidConfiguration('maxPlayersSize');
-        if (bytes(settings.subject).length == 0) require(false, "subject length"); //revert invalidConfiguration('subject length');
 
         tbg.settings = settings;
     }
