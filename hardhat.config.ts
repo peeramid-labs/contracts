@@ -13,7 +13,7 @@ import 'hardhat-contract-sizer';
 import 'hardhat-deploy';
 import 'solidity-docgen';
 import './playbook/initializeDomain';
-import initializeDomain from './playbook/initializeDomain';
+import './playbook/createGame';
 
 task('accounts', 'Prints the list of accounts', async (taskArgs, hre) => {
   const accounts = await hre.ethers.getSigners();
@@ -95,6 +95,9 @@ export default {
     },
     registrar: {
       localhost: '0xaA63aA2D921F23f204B6Bcb43c2844Fb83c82eb9',
+    },
+    defaultPlayer: {
+      localhost: '0xF52E5dF676f51E410c456CC34360cA6F27959420',
     }
   },
   defaultNetwork: 'hardhat',
