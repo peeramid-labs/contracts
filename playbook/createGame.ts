@@ -3,7 +3,7 @@ import { RankifyDiamondInstance, Rankify } from '../types';
 import { IRankifyInstanceCommons } from '../types/src/facets/RankifyInstanceMainFacet';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 
-task('createGame', 'Create new game')
+task('gameCreated', 'Create new game')
   .addOptionalParam('gameCreator', 'Player address who will create game')
   .setAction(
     async ({
@@ -35,7 +35,6 @@ export const mintTokensToGameCreator = async (
   ) as Rankify;
   const tx = await rankifyContract
     .mint(gameCreator, hre.ethers.utils.parseEther('1000'));
-  console.log(await tx.wait().then((r: any) => r.logs));
 };
 
 export const approveTokensUse = async (
@@ -52,7 +51,6 @@ export const approveTokensUse = async (
 
   const tx = await rankifyContract
     .approve(rankifyInstanceDeployment.address, hre.ethers.constants.MaxUint256);
-  console.log(await tx.wait().then((r: any) => r.logs));
 };
 
 export const createGame = async (
@@ -69,7 +67,6 @@ export const createGame = async (
 
   const tx = await rankifyInstanceContract
   ['createGame(address,uint256)'](registrar, 1);
-  console.log(await tx.wait().then((r: any) => r.logs));
 
   const gameId = await rankifyInstanceContract
     .getContractState()

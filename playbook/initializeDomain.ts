@@ -5,7 +5,7 @@ import { LibMultipass } from '../types/src/facets/DNSFacet';
 import crypto from "crypto";
 import { signRegistrarMessage } from "../playbook/utils/utils";
 
-task('initializeDomain', 'Initialize domain name and activate it')
+task('domainInitialized', 'Initialize domain name and activate it')
   .addOptionalParam('registrarAddress', 'Registrar address')
   .addOptionalParam('domain', 'Domain name to register', 'Rankify.it')
   .addOptionalParam('freeRegistrationsNumber', 'Free registration count number', '1000')
@@ -47,12 +47,10 @@ task('initializeDomain', 'Initialize domain name and activate it')
         hre.ethers.utils.parseEther(reward),
         hre.ethers.utils.parseEther(discount),
       );
-      console.log(await tx.wait().then((r: any) => r.logs));
 
       if (activate === true) {
         const tx = await multipassContract
           .activateDomain(hre.ethers.utils.formatBytes32String(domain));
-        console.log(await tx.wait().then((r: any) => r.logs));
         console.log('Domain name "' + domain + '" successfully initialized and activated!');
       }
 
@@ -94,7 +92,6 @@ task('initializeDomain', 'Initialize domain name and activate it')
           emptyUserQuery,
           hre.ethers.constants.HashZero,
         );
-        console.log(await tx.wait().then((r: any) => r.logs));
       }
     },
   );
