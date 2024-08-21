@@ -272,3 +272,4 @@ build/
 types
 bin/
 /deployments/localhost/
+/deployments/hardhat/
