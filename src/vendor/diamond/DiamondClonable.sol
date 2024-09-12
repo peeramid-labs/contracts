@@ -29,7 +29,6 @@ contract DiamondClonable {
         });
         LibDiamond.diamondCut(cut, address(0), "");
     }
-    event debuga(address target, bytes data);
 
     // Find facet for function that is called and execute the
     // function if a facet is found and return any value.
@@ -48,7 +47,6 @@ contract DiamondClonable {
                     msg.data[4:],
                     (IDiamondCut.FacetCut[], address, bytes)
                 );
-                emit debuga(target, data);
                 // diamond was cloned, has no state
                 // Owner is inferred from msg.sender
                 addDiamondCutFacet(msg.sender);

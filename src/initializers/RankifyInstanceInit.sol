@@ -46,14 +46,14 @@ contract RankifyInstanceInit {
         uint256 timePerTurn;
         uint256 maxPlayersSize;
         uint256 minPlayersSize;
-        address rankTokenAddress;
+        address rewardToken;
         uint256 timeToJoin;
         uint256 gamePrice;
         uint256 joinGamePrice;
         uint256 maxTurns;
         uint256 numWinners;
         uint256 voteCredits;
-        address rankifyToken;
+        address paymentToken;
     }
 
     // You can add parameters to this function in order to pass in
@@ -83,14 +83,14 @@ contract RankifyInstanceInit {
         _RInstance.voting = LibQuadraticVoting.precomputeValues(initializer.voteCredits, initializer.minPlayersSize);
         _RInstance.gamePrice = initializer.gamePrice;
         _RInstance.joinGamePrice = initializer.joinGamePrice;
-        require(initializer.rankifyToken != address(0), "initializer.rankifyToken not set");
-        _RInstance.gamePaymentToken = initializer.rankifyToken;
-        IRankToken rankContract = IRankToken(initializer.rankTokenAddress);
+        require(initializer.paymentToken != address(0), "initializer.paymentToken not set");
+        _RInstance.gamePaymentToken = initializer.paymentToken;
+        IRankToken rankContract = IRankToken(initializer.rewardToken);
         require(
             rankContract.supportsInterface(type(IRankToken).interfaceId),
             "RankifyInstance->init: rank token address does not support Rank interface"
         );
-        _RInstance.rankTokenAddress = initializer.rankTokenAddress;
+        _RInstance.rankTokenAddress = initializer.rewardToken;
         _RInstance.contractInitialized = true;
 
         LibTBG.GameSettings memory settings;

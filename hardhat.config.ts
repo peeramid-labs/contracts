@@ -98,7 +98,7 @@ export default {
     },
     defaultPlayer: {
       localhost: '0xF52E5dF676f51E410c456CC34360cA6F27959420',
-    }
+    },
   },
   defaultNetwork: 'hardhat',
   networks: {
@@ -106,6 +106,9 @@ export default {
       accounts: {
         mnemonic: 'casual vacant letter raw trend tool vacant opera buzz jaguar bridge myself',
       }, // ONLY LOCAL
+      forking: {
+        url: process.env.FORK_RPC_URL ?? '',
+      },
     },
     mumbai: {
       url: 'https://matic-mumbai.chainstacklabs.com',
@@ -146,7 +149,16 @@ export default {
         settings: {
           optimizer: {
             enabled: true,
-            runs: 200000,
+            runs: 2000,
+          },
+        },
+      },
+      {
+        version: '0.8.17',
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 2000,
           },
         },
       },
