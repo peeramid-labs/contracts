@@ -46,8 +46,8 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
         distributionVersion = LibSemver.toUint256(version);
     }
 
-    function instantiate() public override returns (address[] memory instances, bytes32, uint256) {
-        (address[] memory _instances, , ) = super.instantiate();
+    function instantiate(bytes memory ) public override returns (address[] memory instances, bytes32, uint256) {
+        (address[] memory _instances, , ) = super.instantiate("");
         address diamond = _instances[0];
 
         IDiamondCut.FacetCut[] memory facetCuts = new IDiamondCut.FacetCut[](5);

@@ -142,11 +142,6 @@ contract MAODistribution is IDistribution, CodeIndexer {
         distributionVersion = LibSemver.toUint256(_distributionVersion);
     }
 
-    struct MintSettings {
-        address[] receivers;
-        uint256[] amounts;
-    }
-
     struct TokenSettings {
         address addr;
         string name;
@@ -162,7 +157,6 @@ contract MAODistribution is IDistribution, CodeIndexer {
     }
 
     function instantiate(bytes memory data) public override returns (address[] memory instances, bytes32, uint256) {
-        address[] memory _sources = new address[](8);
         (DistributorArguments memory args, string memory tokenName, string memory tokenSymbol ) = abi.decode(
             data,
             (DistributorArguments, string, string)
@@ -178,7 +172,7 @@ contract MAODistribution is IDistribution, CodeIndexer {
         mintSettings.receivers[0] = address(this);
         mintSettings.amounts[0] = type(uint256).max;
 
-        ITokenVotingSetup tokenVotingSetup = tokenVotingPluginRepo.getLatestVersion(tokenVotingPluginRepo.latestRelease()).pluginSetup;
+        ITokenVotingSetup tokenVotingSetup = ITokenVotingSetup(tokenVotingPluginRepo.getLatestVersion(tokenVotingPluginRepo.latestRelease()).pluginSetup);
                     // Clone a `GovernanceERC20`.
             address token = tokenVotingSetup.governanceERC20Base().clone();
 
@@ -214,11 +208,15 @@ contract MAODistribution is IDistribution, CodeIndexer {
     }
 
     function getMetadata() public pure virtual override returns (string memory) {
-        return string(abi.encodePacked(super.getMetadata(), ";", "ArguableVotingTournament"));
+        return "";
     }
 
     function get() external view returns (address[] memory sources, bytes32 , uint256 ) {
-        (address[] memory srcs, , ) = super.sources();
+
+        address[] memory srcs = new address[](3);
+        srcs[0] = address(tokenVotingPluginRepo);
+        srcs[1] = address(daoFactory);
+        srcs[3] = address(trustedForwarder);
         return (srcs, distributionName, distributionVersion);
     }
 }

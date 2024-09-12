@@ -15,6 +15,15 @@ import {DaoAuthorizableUpgradeable} from "@aragon/osx/core/plugin/dao-authorizab
 import {IDAO} from "@aragon/osx/core/dao/IDAO.sol";
 // import {IERC20MintableUpgradeable} from "@aragon/osx/token/ERC20/IERC20MintableUpgradeable.sol";
 
+    /// @notice The settings for the initial mint of the token.
+    /// @param receivers The receivers of the tokens.
+    /// @param amounts The amounts of tokens to be minted for each receiver.
+    /// @dev The lengths of `receivers` and `amounts` must match.
+    struct MintSettings {
+        address[] receivers;
+        uint256[] amounts;
+    }
+
 /// @title IERC20MintableUpgradeable
 /// @notice Interface to allow minting of [ERC-20](https://eips.ethereum.org/EIPS/eip-20) tokens.
 interface IERC20MintableUpgradeable {
@@ -38,14 +47,7 @@ contract MAOGovernanceERC20 is
     /// @notice The permission identifier to mint new tokens
     bytes32 public constant MINT_PERMISSION_ID = keccak256("MINT_PERMISSION");
 
-    /// @notice The settings for the initial mint of the token.
-    /// @param receivers The receivers of the tokens.
-    /// @param amounts The amounts of tokens to be minted for each receiver.
-    /// @dev The lengths of `receivers` and `amounts` must match.
-    struct MintSettings {
-        address[] receivers;
-        uint256[] amounts;
-    }
+
 
     /// @notice Thrown if the number of receivers and amounts specified in the mint settings do not match.
     /// @param receiversArrayLength The length of the `receivers` array.
@@ -115,8 +117,8 @@ contract MAOGovernanceERC20 is
 
     // https://forum.openzeppelin.com/t/self-delegation-in-erc20votes/17501/12?u=novaknole
     /// @inheritdoc ERC20VotesUpgradeable
-    function _afterTokenTransfer(address from, address to, uint256 amount) internal override {
-        super._afterTokenTransfer(from, to, amount);
+    function _update(address from, address to, uint256 amount) internal override {
+        super._update(from, to, amount);
 
         // Automatically turn on delegation on mint/transfer but only for the first time.
         if (to != address(0) && numCheckpoints(to) == 0 && delegates(to) == address(0)) {
