@@ -10,19 +10,22 @@ import {ERC20VotesUpgradeable} from "@openzeppelin/contracts-upgradeable/token/E
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {ERC165Upgradeable} from "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/governance/utils/VotesUpgradeable.sol";
-
+import "hardhat/console.sol";
 import {DaoAuthorizableUpgradeable} from "@aragon/osx/core/plugin/dao-authorizable/DaoAuthorizableUpgradeable.sol";
+import "@peeramid-labs/eds/src/abstracts/ERC7746Middleware.sol";
+import "@peeramid-labs/eds/src/libraries/LibMiddleware.sol";
 import {IDAO} from "@aragon/osx/core/dao/IDAO.sol";
+import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 // import {IERC20MintableUpgradeable} from "@aragon/osx/token/ERC20/IERC20MintableUpgradeable.sol";
 
-    /// @notice The settings for the initial mint of the token.
-    /// @param receivers The receivers of the tokens.
-    /// @param amounts The amounts of tokens to be minted for each receiver.
-    /// @dev The lengths of `receivers` and `amounts` must match.
-    struct MintSettings {
-        address[] receivers;
-        uint256[] amounts;
-    }
+/// @notice The settings for the initial mint of the token.
+/// @param receivers The receivers of the tokens.
+/// @param amounts The amounts of tokens to be minted for each receiver.
+/// @dev The lengths of `receivers` and `amounts` must match.
+struct MintSettings {
+    address[] receivers;
+    uint256[] amounts;
+}
 
 /// @title IERC20MintableUpgradeable
 /// @notice Interface to allow minting of [ERC-20](https://eips.ethereum.org/EIPS/eip-20) tokens.
@@ -36,19 +39,15 @@ interface IERC20MintableUpgradeable {
 /// @title GovernanceERC20
 /// @author Aragon Association
 /// @notice An [OpenZeppelin `Votes`](https://docs.openzeppelin.com/contracts/4.x/api/governance#Votes) compatible [ERC-20](https://eips.ethereum.org/EIPS/eip-20) token that can be used for voting and is managed by a DAO.
-contract MAOGovernanceERC20 is
+contract DistributableGovernanceERC20 is
     IERC20MintableUpgradeable,
     Initializable,
     ERC165Upgradeable,
     ERC20VotesUpgradeable,
-    DaoAuthorizableUpgradeable
-    // ERC20PermitUpgradeable
+    DaoAuthorizableUpgradeable,
+    ERC7746Middleware,
+    ReentrancyGuardUpgradeable
 {
-    /// @notice The permission identifier to mint new tokens
-    bytes32 public constant MINT_PERMISSION_ID = keccak256("MINT_PERMISSION");
-
-
-
     /// @notice Thrown if the number of receivers and amounts specified in the mint settings do not match.
     /// @param receiversArrayLength The length of the `receivers` array.
     /// @param amountsArrayLength The length of the `amounts` array.
@@ -60,6 +59,7 @@ contract MAOGovernanceERC20 is
     /// @param _symbol The symbol of the [ERC-20](https://eips.ethereum.org/EIPS/eip-20) governance token.
     /// @param _mintSettings The token mint settings struct containing the `receivers` and `amounts`.
     constructor(IDAO _dao, string memory _name, string memory _symbol, MintSettings memory _mintSettings) {
+        console.log("constructor");
         initialize(_dao, _name, _symbol, _mintSettings);
     }
 
@@ -74,6 +74,13 @@ contract MAOGovernanceERC20 is
         string memory _symbol,
         MintSettings memory _mintSettings
     ) public initializer {
+        console.log("initialize");
+        LibMiddleware.LayerStruct[] memory layers = new LibMiddleware.LayerStruct[](1);
+
+        // Set the layer for the sender
+        layers[0] = LibMiddleware.LayerStruct({layerAddess: msg.sender, layerConfigData: ""});
+        LibMiddleware.setLayers(layers);
+
         // Check mint settings
         if (_mintSettings.receivers.length != _mintSettings.amounts.length) {
             revert MintSettingsArrayLengthMismatch({
@@ -111,7 +118,10 @@ contract MAOGovernanceERC20 is
     /// @notice Mints tokens to an address.
     /// @param to The address receiving the tokens.
     /// @param amount The amount of tokens to be minted.
-    function mint(address to, uint256 amount) external override auth(MINT_PERMISSION_ID) {
+    function mint(
+        address to,
+        uint256 amount
+    ) external override nonReentrant layers(msg.sig, msg.sender, msg.data, 0) {
         _mint(to, amount);
     }
 
@@ -125,4 +135,13 @@ contract MAOGovernanceERC20 is
             _delegate(to, to);
         }
     }
+
+    // event RankExchanged(address indexed account, uint256 rankTokenId, uint256 amount);
+    // function exchangeRankToGov(IERC1155 rankTokenAddress, uint256 rankTokenId, uint256 amount) external nonReentrant layers {
+    //     require(rankTokens.contains(address(rankTokenAddress)), "Rank token not supported");
+    //     rankTokenAddress.safeTransferFrom(msg.sender, address(this), rankTokenId, amount, "");
+    //     uint256 principal = minimumParticipantCount ** rankTokenId;
+    //     _mint(msg.sender, principal * amount);
+    //     emit RankExchanged(msg.sender, rankTokenId, amount);
+    // }
 }
