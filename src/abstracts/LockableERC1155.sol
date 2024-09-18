@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.20;
 import "../libraries/LibReentrancyGuard.sol";
-import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import {ILockableERC1155} from "../interfaces/ILockableERC1155.sol";
 error insufficient(uint256 id, uint256 balance, uint256 required);
 
@@ -11,8 +11,20 @@ error insufficient(uint256 id, uint256 balance, uint256 required);
  * @dev This is an abstract contract that extends the ERC1155 token contract and implements the ILockableERC1155 interface.
  *      It provides functionality to lock and unlock token amounts for specific accounts and IDs.
  */
-abstract contract LockableERC1155 is ERC1155, ILockableERC1155 {
-    mapping(address => mapping(uint256 => uint256)) lockedAmounts;
+abstract contract LockableERC1155 is ERC1155Upgradeable, ILockableERC1155 {
+
+    struct LockableERC1155Storage {
+        mapping(address => mapping(uint256 => uint256)) lockedAmounts;
+    }
+
+    bytes32 constant LOCKABLE_TOKEN_STORAGE_POSITION = keccak256("erc1155.lockable.storage.position");
+
+    function getLockableERC1155Storage() private pure returns (LockableERC1155Storage storage s) {
+        bytes32 position = LOCKABLE_TOKEN_STORAGE_POSITION;
+        assembly {
+            s.slot := position
+        }
+    }
 
     /**
      * @dev Locks a specified amount of tokens for a given account and token ID.
@@ -24,9 +36,10 @@ abstract contract LockableERC1155 is ERC1155, ILockableERC1155 {
      * @param amount The amount of tokens to lock.
      */
     function lock(address account, uint256 id, uint256 amount) public virtual {
-        if (balanceOf(account, id) < lockedAmounts[account][id] + amount) require(false, "insufficient");
+        LockableERC1155Storage storage s = getLockableERC1155Storage();
+        if (balanceOf(account, id) < s.lockedAmounts[account][id] + amount)
         // revert insufficient(id, lockedAmounts[account][id], amount);
-        lockedAmounts[account][id] += amount;
+        s.lockedAmounts[account][id] += amount;
         emit TokensLocked(account, id, amount);
     }
 
@@ -39,8 +52,9 @@ abstract contract LockableERC1155 is ERC1155, ILockableERC1155 {
      * @param amount The amount of tokens to unlock.
      */
     function unlock(address account, uint256 id, uint256 amount) public virtual {
-        if (lockedAmounts[account][id] < amount) require(false, "insufficient"); //revert insufficient(id, lockedAmounts[account][id], amount);
-        lockedAmounts[account][id] -= amount;
+        LockableERC1155Storage storage s = getLockableERC1155Storage();
+        if (s.lockedAmounts[account][id] < amount) require(false, "insufficient"); //revert insufficient(id, lockedAmounts[account][id], amount);
+        s.lockedAmounts[account][id] -= amount;
         emit TokensUnlocked(account, id, amount);
     }
 
@@ -52,7 +66,8 @@ abstract contract LockableERC1155 is ERC1155, ILockableERC1155 {
      * @return The unlocked balance of the ERC1155 token for the account.
      */
     function unlockedBalanceOf(address account, uint256 id) public view returns (uint256) {
-        return balanceOf(account, id) - lockedAmounts[account][id];
+        LockableERC1155Storage storage s = getLockableERC1155Storage();
+        return balanceOf(account, id) - s.lockedAmounts[account][id];
     }
 
     /**
@@ -72,7 +87,7 @@ abstract contract LockableERC1155 is ERC1155, ILockableERC1155 {
     ) internal virtual override {
         for (uint256 i = 0; i < ids.length; i++) {
             if (from != address(0)) {
-                if (lockedAmounts[from][ids[i]] + values[i] > balanceOf(from, ids[i])) {
+                if (getLockableERC1155Storage().lockedAmounts[from][ids[i]] + values[i] > balanceOf(from, ids[i])) {
                     require(false, "insufficient");
                 }
             }
