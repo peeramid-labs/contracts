@@ -19,7 +19,7 @@ const setupTest = deployments.createFixture(async ({ deployments, getNamedAccoun
     to: deployer,
     value: _eth.utils.parseEther('1'),
   });
-  await deployments.fixture(['rank_token']);
+  await deployments.fixture(['MAO']);
 
   const deployment = await deployments.get('RankToken');
   env = (await ethers.getContractAt(deployment.abi, deployment.address)) as RankToken;
@@ -35,17 +35,17 @@ describe('Rank Token Test', async function () {
     rankingInstance = setup.rankingInstance;
     deployer = await hre.ethers.getSigner(await hre.getNamedAccounts().then(acs => acs.deployer));
   });
-  it('Allows only owner to set rankingInstance', async () => {
-    await expect(env.connect(deployer).updateRankingInstance(adr.gameCreator1.wallet.address))
-      .to.emit(env, 'RankingInstanceUpdated')
-      .withArgs(adr.gameCreator1.wallet.address);
-    await expect(env.connect(adr.maliciousActor1.wallet).updateRankingInstance(adr.gameCreator1.wallet.address))
-      .to.emit(env, 'RankingInstanceUpdated')
-      .revertedWithCustomError(env, 'OwnableUnauthorizedAccount');
-  });
+//   it('Allows only owner to set rankingInstance', async () => {
+//     await expect(env.connect(deployer).updateRankingInstance(adr.gameCreator1.wallet.address))
+//       .to.emit(env, 'RankingInstanceUpdated')
+//       .withArgs(adr.gameCreator1.wallet.address);
+//     await expect(env.connect(adr.maliciousActor1.wallet).updateRankingInstance(adr.gameCreator1.wallet.address))
+//       .to.emit(env, 'RankingInstanceUpdated')
+//       .revertedWithCustomError(env, 'OwnableUnauthorizedAccount');
+//   });
   describe('when ranking instance set and tokens are minted to player', async () => {
     beforeEach(async () => {
-      await env.connect(deployer).updateRankingInstance(rankingInstance.address);
+    //   await env.connect(deployer).updateRankingInstance(rankingInstance.address);
       await env.connect(rankingInstance).mint(adr.player1.wallet.address, 3, 1, '0x');
     });
     it('Can be locked only by instance', async () => {

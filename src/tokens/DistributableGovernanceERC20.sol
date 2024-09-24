@@ -58,9 +58,9 @@ contract DistributableGovernanceERC20 is
     /// @param _name The name of the [ERC-20](https://eips.ethereum.org/EIPS/eip-20) governance token.
     /// @param _symbol The symbol of the [ERC-20](https://eips.ethereum.org/EIPS/eip-20) governance token.
     /// @param _mintSettings The token mint settings struct containing the `receivers` and `amounts`.
-    constructor(IDAO _dao, string memory _name, string memory _symbol, MintSettings memory _mintSettings) {
+    constructor(IDAO _dao, string memory _name, string memory _symbol, MintSettings memory _mintSettings, address _accessManager) {
         console.log("constructor");
-        initialize(_dao, _name, _symbol, _mintSettings);
+        initialize(_dao, _name, _symbol, _mintSettings, _accessManager);
     }
 
     /// @notice Initializes the contract and mints tokens to a list of receivers.
@@ -72,13 +72,15 @@ contract DistributableGovernanceERC20 is
         IDAO _dao,
         string memory _name,
         string memory _symbol,
-        MintSettings memory _mintSettings
+        MintSettings memory _mintSettings,
+        address accessManager
+
     ) public initializer {
         console.log("initialize");
         LibMiddleware.LayerStruct[] memory layers = new LibMiddleware.LayerStruct[](1);
 
         // Set the layer for the sender
-        layers[0] = LibMiddleware.LayerStruct({layerAddess: msg.sender, layerConfigData: ""});
+        layers[0] = LibMiddleware.LayerStruct({layerAddess: accessManager, layerConfigData: ""});
         LibMiddleware.setLayers(layers);
 
         // Check mint settings
@@ -90,15 +92,10 @@ contract DistributableGovernanceERC20 is
         }
 
         __ERC20_init(_name, _symbol);
-        // __ERC20Permit_init(_name);
         __DaoAuthorizableUpgradeable_init(_dao);
 
-        for (uint256 i; i < _mintSettings.receivers.length; ) {
+        for (uint256 i; i < _mintSettings.receivers.length; i++) {
             _mint(_mintSettings.receivers[i], _mintSettings.amounts[i]);
-
-            unchecked {
-                ++i;
-            }
         }
     }
 
@@ -121,7 +118,7 @@ contract DistributableGovernanceERC20 is
     function mint(
         address to,
         uint256 amount
-    ) external override nonReentrant layers(msg.sig, msg.sender, msg.data, 0) {
+    ) external override nonReentrant ERC7746C(msg.sig, msg.sender, msg.data, 0) {
         _mint(to, amount);
     }
 
@@ -137,7 +134,7 @@ contract DistributableGovernanceERC20 is
     }
 
     // event RankExchanged(address indexed account, uint256 rankTokenId, uint256 amount);
-    // function exchangeRankToGov(IERC1155 rankTokenAddress, uint256 rankTokenId, uint256 amount) external nonReentrant layers {
+    // function exchangeRankToGov(IERC1155 rankTokenAddress, uint256 rankTokenId, uint256 amount) external nonReentrant ERC7746C {
     //     require(rankTokens.contains(address(rankTokenAddress)), "Rank token not supported");
     //     rankTokenAddress.safeTransferFrom(msg.sender, address(this), rankTokenId, amount, "");
     //     uint256 principal = minimumParticipantCount ** rankTokenId;

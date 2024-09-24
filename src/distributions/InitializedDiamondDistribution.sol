@@ -6,22 +6,21 @@ import "../vendor/diamond/facets/DiamondCutFacet.sol";
 import "../distributions/DiamondDistribution.sol";
 import "../vendor/diamond/libraries/LibDiamond.sol";
 import "../vendor/diamond/interfaces/IDiamondCut.sol";
-import "hardhat/console.sol";
 abstract contract InitializedDiamondDistribution is DiamondDistribution {
     address immutable initializer;
     bytes4 immutable initializerSelector;
 
-    constructor(address owner, bytes32 _initializerId, bytes4 _initializerSelector) DiamondDistribution(owner) {
-        initializer = getContractsIndex().get(_initializerId);
-        initializerSelector = _initializerSelector;
-    }
+        constructor(address owner, bytes32 _initializerId, bytes4 _initializerSelector) DiamondDistribution(owner) {
+            initializer = getContractsIndex().get(_initializerId);
+            initializerSelector = _initializerSelector;
+        }
 
     function initialize(
         DiamondCutFacet instance,
         IDiamondCut.FacetCut[] memory _diamondCut,
         bytes memory args
     ) internal virtual {
-        bytes memory _calldata = abi.encodeWithSelector(initializerSelector, args);
+        bytes memory _calldata = args.length > 0 ? abi.encodeWithSelector(initializerSelector, args) : bytes("");
         instance.diamondCut(_diamondCut, initializer, _calldata);
     }
 

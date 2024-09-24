@@ -19,6 +19,8 @@ import {IRankifyInstanceCommons} from "../interfaces/IRankifyInstanceCommons.sol
 import {IRankToken} from "../interfaces/IRankToken.sol";
 import {LibTBG} from "../libraries/LibTurnBasedGame.sol";
 import {LibQuadraticVoting} from "../libraries/LibQuadraticVoting.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+
 // import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "hardhat/console.sol";
 
@@ -26,7 +28,7 @@ import "hardhat/console.sol";
 // with data from a deployment script. Use the init function to initialize state variables
 // of your diamond. Add parameters to the init funciton if you need to.
 
-contract RankifyInstanceInit {
+contract RankifyInstanceInit is Initializable {
     function _buildDomainSeparator(
         bytes32 typeHash,
         bytes32 nameHash,
@@ -58,9 +60,10 @@ contract RankifyInstanceInit {
 
     // You can add parameters to this function in order to pass in
     // data to set your own state variables
-    function init(string memory name, string memory version, contractInitializer memory initializer) external {
+    function init(string memory name, string memory version, contractInitializer memory initData) initializer external {
+        console.log("RankifyInstanceInit->init");
         // adding ERC165 data
-        LibDiamond.enforceIsContractOwner();
+        // LibDiamond.enforceIsContractOwner();
         LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();
         ds.supportedInterfaces[type(IERC165).interfaceId] = true;
         ds.supportedInterfaces[type(IDiamondCut).interfaceId] = true;
@@ -80,26 +83,26 @@ contract RankifyInstanceInit {
         ss._TYPE_HASH = typeHash;
 
         IRankifyInstanceCommons.RInstanceSettings storage _RInstance = RInstanceStorage();
-        _RInstance.voting = LibQuadraticVoting.precomputeValues(initializer.voteCredits, initializer.minPlayersSize);
-        _RInstance.gamePrice = initializer.gamePrice;
-        _RInstance.joinGamePrice = initializer.joinGamePrice;
-        require(initializer.paymentToken != address(0), "initializer.paymentToken not set");
-        _RInstance.gamePaymentToken = initializer.paymentToken;
-        IRankToken rankContract = IRankToken(initializer.rewardToken);
+        _RInstance.voting = LibQuadraticVoting.precomputeValues(initData.voteCredits, initData.minPlayersSize);
+        _RInstance.gamePrice = initData.gamePrice;
+        _RInstance.joinGamePrice = initData.joinGamePrice;
+        require(initData.paymentToken != address(0), "initializer.paymentToken not set");
+        _RInstance.gamePaymentToken = initData.paymentToken;
+        IRankToken rankContract = IRankToken(initData.rewardToken);
         require(
             rankContract.supportsInterface(type(IRankToken).interfaceId),
             "RankifyInstance->init: rank token address does not support Rank interface"
         );
-        _RInstance.rankTokenAddress = initializer.rewardToken;
+        _RInstance.rankTokenAddress = initData.rewardToken;
         _RInstance.contractInitialized = true;
 
         LibTBG.GameSettings memory settings;
-        settings.timePerTurn = initializer.timePerTurn;
-        settings.maxPlayersSize = initializer.maxPlayersSize;
-        settings.minPlayersSize = initializer.minPlayersSize;
-        settings.timeToJoin = initializer.timeToJoin;
-        settings.maxTurns = initializer.maxTurns;
-        settings.numWinners = initializer.numWinners;
+        settings.timePerTurn = initData.timePerTurn;
+        settings.maxPlayersSize = initData.maxPlayersSize;
+        settings.minPlayersSize = initData.minPlayersSize;
+        settings.timeToJoin = initData.timeToJoin;
+        settings.maxTurns = initData.maxTurns;
+        settings.numWinners = initData.numWinners;
         LibTBG.init(settings);
 
         // add your own state variables

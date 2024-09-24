@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/access/extensions/AccessControlDefaultAdminRules
 contract PeeramidLabsDistributor is Distributor, AccessControlDefaultAdminRules {
     constructor(address defaultAdmin) Distributor() AccessControlDefaultAdminRules(3 days, defaultAdmin) {}
 
-    function addDistribution(bytes32 id, bytes32 initializer) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function addDistribution(bytes32 id, address initializer) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _addDistribution(id, initializer);
     }
 
@@ -17,5 +17,9 @@ contract PeeramidLabsDistributor is Distributor, AccessControlDefaultAdminRules 
 
     function removeDistribution(bytes32 id) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _removeDistribution(id);
+    }
+
+    function supportsInterface(bytes4 interfaceId) public view virtual override(AccessControlDefaultAdminRules, Distributor) returns (bool) {
+        return AccessControlDefaultAdminRules.supportsInterface(interfaceId) || Distributor.supportsInterface(interfaceId);
     }
 }

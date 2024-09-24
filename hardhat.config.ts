@@ -11,6 +11,7 @@ import 'hardhat-gas-reporter';
 // import fs from "fs";
 import 'hardhat-contract-sizer';
 import 'hardhat-deploy';
+import 'hardhat-tracer';
 import 'solidity-docgen';
 import './playbook/initializeDomain';
 import './playbook/createGame';

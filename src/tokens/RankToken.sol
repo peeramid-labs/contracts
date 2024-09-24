@@ -16,7 +16,7 @@ import "hardhat/console.sol";
  * @author Peersky
  * @notice RankToken is a composite ERC1155 token that is used to track user ranks
  */
-contract RankToken is LockableERC1155, OwnableUpgradeable, IRankToken, ERC7746Middleware {
+contract RankToken is LockableERC1155, IRankToken, ERC7746Middleware {
 
         struct Storage {
         string  _contractURI;
@@ -33,21 +33,21 @@ contract RankToken is LockableERC1155, OwnableUpgradeable, IRankToken, ERC7746Mi
 
     constructor(
         string memory uri_,
-        address owner_,
-        string memory cURI
+        string memory cURI,
+        address accessLayer
     )  {
-       initialize(uri_, owner_, cURI);
+       initialize(uri_, cURI, accessLayer);
     }
 
-    function initialize( string memory uri_, address owner_, string memory cURI) public initializer
+    function initialize( string memory uri_, string memory cURI, address accessLayer) public initializer
     {
-        __Ownable_init(owner_);
+        // __Ownable_init(owner_);
         _setURI(uri_);
         getStorage()._contractURI = cURI;
         LibMiddleware.LayerStruct[] memory layers = new LibMiddleware.LayerStruct[](1);
 
         // Set the layer for the sender
-        layers[0] = LibMiddleware.LayerStruct({layerAddess: msg.sender, layerConfigData: ""});
+        layers[0] = LibMiddleware.LayerStruct({layerAddess: accessLayer, layerConfigData: ""});
         LibMiddleware.setLayers(layers);
     }
 
@@ -60,11 +60,11 @@ contract RankToken is LockableERC1155, OwnableUpgradeable, IRankToken, ERC7746Mi
         return getStorage()._contractURI;
     }
 
-    function setURI(string memory uri_) public layers(msg.sig, msg.sender, msg.data, 0) {
+    function setURI(string memory uri_) public ERC7746C(msg.sig, msg.sender, msg.data, 0) {
         _setURI(uri_);
     }
 
-    function setContractURI(string memory uri_) public layers(msg.sig, msg.sender, msg.data, 0) {
+    function setContractURI(string memory uri_) public ERC7746C(msg.sig, msg.sender, msg.data, 0) {
         getStorage()._contractURI = uri_;
     }
 
@@ -79,7 +79,7 @@ contract RankToken is LockableERC1155, OwnableUpgradeable, IRankToken, ERC7746Mi
         _mint(to, level, amount, data);
     }
 
-    function mint(address to, uint256 amount, uint256 level, bytes memory data) public layers(msg.sig, msg.sender, msg.data, 0) {
+    function mint(address to, uint256 amount, uint256 level, bytes memory data) public ERC7746C(msg.sig, msg.sender, msg.data, 0) {
         _mintRank(to, amount, level, data);
     }
 
@@ -93,7 +93,7 @@ contract RankToken is LockableERC1155, OwnableUpgradeable, IRankToken, ERC7746Mi
         address account,
         uint256 id,
         uint256 amount
-    ) public override(LockableERC1155, ILockableERC1155) layers(msg.sig, msg.sender, msg.data, 0) {
+    ) public override(LockableERC1155, ILockableERC1155) ERC7746C(msg.sig, msg.sender, msg.data, 0) {
         super.lock(account, id, amount);
     }
 
@@ -101,7 +101,7 @@ contract RankToken is LockableERC1155, OwnableUpgradeable, IRankToken, ERC7746Mi
         address account,
         uint256 id,
         uint256 amount
-    ) public override(LockableERC1155, ILockableERC1155) layers(msg.sig, msg.sender, msg.data, 0) {
+    ) public override(LockableERC1155, ILockableERC1155) ERC7746C(msg.sig, msg.sender, msg.data, 0) {
         super.unlock(account, id, amount);
     }
 
@@ -110,7 +110,7 @@ contract RankToken is LockableERC1155, OwnableUpgradeable, IRankToken, ERC7746Mi
         uint256[] memory ids,
         uint256[] memory amounts,
         bytes memory data
-    ) public layers(msg.sig, msg.sender, msg.data, 0) {
+    ) public ERC7746C(msg.sig, msg.sender, msg.data, 0) {
         require(to != address(0), "RankToken->mint: Address not specified");
         require(amounts.length != 0, "RankToken->mint: amount not specified");
         require(ids.length != 0, "RankToken->mint: pool id not specified");

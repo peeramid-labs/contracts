@@ -57,20 +57,7 @@ contract RankifyInstanceMainFacet is
         emit gameCreated(gameId, gameMaster, msg.sender, gameRank);
     }
 
-    function createGame(address gameMaster, uint256 gameId, uint256 gameRank, address[] memory additionalRanks) public {
-        createGame(gameMaster, gameId, gameRank);
-        RInstance storage game = gameId.getGameStorage();
-        // if (additionalRanks.length != 0) {
-        //     for (uint256 i = 0; i < additionalRanks.length; i++) {
-        //         IRankToken additonalRank = IRankToken(additionalRanks[i]);
-        //         require(additonalRank.supportsInterface(type(IRankToken).interfaceId), "must support rank interface");
-        //         require(additonalRank.getRankingInstance() == address(this), "must be rankingInstance");
-        //         additonalRank.mint(address(this), 1, gameRank + 1, "");
-        //         additonalRank.mint(address(this), 3, gameRank, "");
-        //     }
-        //     game.additionalRanks = additionalRanks;
-        // }
-    }
+
 
     function createGame(address gameMaster, uint256 gameRank) public {
         LibRankify.enforceIsInitialized();
