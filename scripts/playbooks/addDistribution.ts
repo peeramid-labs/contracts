@@ -1,24 +1,43 @@
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { ethers } from 'hardhat';
+import { Signer } from '@ethersproject/abstract-signer';
+import { PeeramidLabsDistributor } from '../../types';
 
-export const addDistribution = (hre: HardhatRuntimeEnvironment) => async (distrId: string, initializer?: string) => {
-  const { deployments, getNamedAccounts } = hre;
-  const PeeramidLabsDistributor = await deployments.get('PeeramidLabsDistributor');
-  const { owner } = await getNamedAccounts();
-  const distributorContract = new ethers.Contract(
-    PeeramidLabsDistributor.address,
-    PeeramidLabsDistributor.abi,
-    hre.ethers.provider.getSigner(owner),
-  );
-  const distributionsLengthBefore = (await distributorContract.getDistributions()).length;
-  const tx = await distributorContract.addDistribution(distrId, initializer ?? ethers.constants.AddressZero);
-  await tx.wait();
-  const distributorsId = await distributorContract.getDistributions();
-  if (distributorsId.length !== distributionsLengthBefore + 1)
-    throw new Error(
-      `Unexpected distribution id increment: got ${distributorsId.length}, expected ${distributionsLengthBefore + 1}`,
+export const addDistributionNoChecks =
+  (hre: HardhatRuntimeEnvironment) => async (distrId: string, signer: Signer, initializer?: string) => {
+    const { deployments } = hre;
+    const PeeramidLabsDistributor = await deployments.get('PeeramidLabsDistributor');
+    const distributorContract = new ethers.Contract(
+      PeeramidLabsDistributor.address,
+      PeeramidLabsDistributor.abi,
+      signer,
     );
-  return { distributor: distributorContract, distributorsId };
-};
+    return distributorContract.addDistribution(distrId, initializer ?? ethers.constants.AddressZero);
+  };
+
+export const addDistribution =
+  (hre: HardhatRuntimeEnvironment) => async (distrId: string, signer: Signer, initializer?: string) => {
+    const { deployments } = hre;
+    const PeeramidLabsDistributor = await deployments.get('PeeramidLabsDistributor');
+    const distributorContract = new ethers.Contract(
+      PeeramidLabsDistributor.address,
+      PeeramidLabsDistributor.abi,
+      signer,
+    ) as PeeramidLabsDistributor;
+    const distributionsLengthBefore = (await distributorContract.getDistributions()).length;
+    const receipt = await distributorContract.addDistribution(distrId, initializer ?? ethers.constants.AddressZero);
+
+    const distributorsId = await distributorContract.getDistributions();
+    if (distributorsId.length !== distributionsLengthBefore + 1)
+      throw new Error(
+        `Unexpected distribution id increment: got ${distributorsId.length}, expected ${distributionsLengthBefore + 1}`,
+      );
+    console.log('distributorsId', distributorsId);
+    return {
+      receipt,
+      distributor: distributorContract,
+      distributorsId,
+    };
+  };
 
 export default addDistribution;

@@ -155,14 +155,10 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     ],
   });
   await codeIndexContract.register(result.address);
-  const maoCode = await hre.ethers.provider.getCode(result.address);
-  const maoCodeId = ethers.utils.keccak256(maoCode);
-
-  const pDistributor = await deployments.get('PeeramidLabsDistributor');
-  const pdContract = (await ethers.getContractAt('PeeramidLabsDistributor', pDistributor.address)).connect(
-    await hre.ethers.getSigner(owner),
-  ) as PeeramidLabsDistributor;
-  await pdContract.addDistribution(maoCodeId, ethers.constants.AddressZero);
+  const code = await hre.ethers.provider.getCode(result.address);
+  const codeId = ethers.utils.keccak256(code);
+  console.log('MAO deployed at', result.address, 'codeId', codeId);
+  return;
 };
 
 export default func;
