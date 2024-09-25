@@ -363,41 +363,22 @@ contract MAODistribution is IDistribution, CodeIndexer {
         return (returnValue, ACIDDistributionname, ACIDDistributionVersion);
     }
 
-    address[] public DAOInstancesStorage;
-    address[] public ACIDInstancesStorage;
     // DistributorArguments args;
 
     function instantiate(bytes memory data) public override returns (address[] memory instances, bytes32, uint256) {
-        console.log("MAODistribution.instantiate");
-        // delete args;
         DistributorArguments memory args = abi.decode(data, (DistributorArguments));
-        console.log("MAODistribution args decoded");
 
-        {
             (address[] memory DAOInstances, , ) = createOSxDAO(args.DAOSEttings);
-            console.log("DAO instantiated");
             (address[] memory ACIDInstances, , ) = createACID(args.ACIDSettings, DAOInstances[0]);
-            console.log("ACID instantiated");
 
-            // Store intermediate results in storage
-            delete DAOInstancesStorage;
-            delete ACIDInstancesStorage;
 
-            for (uint256 i = 0; i < DAOInstances.length; i++) {
-                DAOInstancesStorage.push(DAOInstances[i]);
-            }
-            for (uint256 i = 0; i < ACIDInstances.length; i++) {
-                ACIDInstancesStorage.push(ACIDInstances[i]);
-            }
+        address[] memory returnValue = new address[](DAOInstances.length + ACIDInstances.length);
+
+        for (uint256 i; i < DAOInstances.length; i++) {
+            returnValue[i] = DAOInstances[i];
         }
-
-        address[] memory returnValue = new address[](DAOInstancesStorage.length + ACIDInstancesStorage.length);
-
-        for (uint256 i; i < DAOInstancesStorage.length; i++) {
-            returnValue[i] = DAOInstancesStorage[i];
-        }
-        for (uint256 i; i < ACIDInstancesStorage.length; i++) {
-            returnValue[DAOInstancesStorage.length + i] = ACIDInstancesStorage[i];
+        for (uint256 i; i < ACIDInstances.length; i++) {
+            returnValue[DAOInstances.length + i] = ACIDInstances[i];
         }
         return (returnValue, distributionName, distributionVersion);
     }
