@@ -98,7 +98,7 @@ describe(scriptName, () => {
       name: ethers.utils.formatBytes32String(adr.player1.name),
       id: ethers.utils.formatBytes32String(adr.player1.id),
       domainName: ethers.utils.formatBytes32String(NEW_DOMAIN_NAME1),
-      deadline: ethers.BigNumber.from(9999),
+      deadline: ethers.BigNumber.from(257223284 + 9999),
       nonce: ethers.BigNumber.from(0),
     };
 
@@ -327,7 +327,7 @@ describe(scriptName, () => {
           name: ethers.utils.formatBytes32String(adr.player1.name),
           id: ethers.utils.formatBytes32String(adr.player1.id),
           domainName: ethers.utils.formatBytes32String(NEW_DOMAIN_NAME1),
-          deadline: ethers.BigNumber.from(9999),
+          deadline: ethers.BigNumber.from(257223284 + 9999),
           nonce: ethers.BigNumber.from(0),
         };
 
@@ -360,7 +360,7 @@ describe(scriptName, () => {
           name: ethers.utils.formatBytes32String(adr.player1.name),
           id: ethers.utils.formatBytes32String(adr.player1.id),
           domainName: ethers.utils.formatBytes32String(NEW_DOMAIN_NAME1),
-          deadline: ethers.BigNumber.from(9999),
+          deadline: ethers.BigNumber.from(257223284 + 9999),
           nonce: ethers.BigNumber.from(0),
         };
 
@@ -436,7 +436,7 @@ describe(scriptName, () => {
             players[i],
             adr.registrar1,
             NEW_DOMAIN_NAME1,
-            99999,
+            257223284 + 99999,
             env.multipass.address,
           );
           await expect(
@@ -456,7 +456,7 @@ describe(scriptName, () => {
           players[i],
           adr.registrar1,
           NEW_DOMAIN_NAME1,
-          99999,
+          257223284 + 99999,
           env.multipass.address,
         );
         await expect(
@@ -480,7 +480,7 @@ describe(scriptName, () => {
             adr.player1,
             adr.registrar1,
             NEW_DOMAIN_NAME1,
-            99999,
+            257223284 + 99999,
             env.multipass.address,
           );
 
@@ -561,7 +561,7 @@ describe(scriptName, () => {
             adr.player1,
             adr.registrar1,
             NEW_DOMAIN_NAME1,
-            99999,
+            257223284 + 99999,
             env.multipass.address,
           );
           await expect(
@@ -608,7 +608,7 @@ describe(scriptName, () => {
             adr.player2,
             adr.registrar1,
             NEW_DOMAIN_NAME1,
-            99999,
+            257223284 + 99999,
             env.multipass.address,
             adr.player1,
           );
@@ -630,7 +630,7 @@ describe(scriptName, () => {
             name: ethers.utils.formatBytes32String(adr.player1.name + `.` + NEW_DOMAIN_NAME1 + `new`),
             id: ethers.utils.formatBytes32String(adr.player1.id + `.` + NEW_DOMAIN_NAME1),
             domainName: ethers.utils.formatBytes32String(NEW_DOMAIN_NAME1),
-            deadline: ethers.BigNumber.from(99999),
+            deadline: ethers.BigNumber.from(257223284 + 99999),
             nonce: ethers.BigNumber.from(1),
           };
 
@@ -708,7 +708,7 @@ describe(scriptName, () => {
               adr.player2,
               adr.registrar1,
               NEW_DOMAIN_NAME1,
-              99999,
+              257223284 + 99999,
               env.multipass.address,
             );
             await env.multipass
@@ -725,7 +725,7 @@ describe(scriptName, () => {
               adr.player2,
               adr.registrar1,
               NEW_DOMAIN_NAME2,
-              99999,
+              257223284 + 99999,
               env.multipass.address,
               adr.player2,
               NEW_DOMAIN_NAME1,
@@ -734,7 +734,7 @@ describe(scriptName, () => {
               adr.player2,
               adr.registrar1,
               NEW_DOMAIN_NAME1,
-              99999,
+              257223284 + 99999,
               env.multipass.address,
               adr.player2,
             );
@@ -757,7 +757,7 @@ describe(scriptName, () => {
               adr.player1,
               adr.registrar1,
               NEW_DOMAIN_NAME2,
-              99999,
+              257223284 + 99999,
               env.multipass.address,
             );
             await expect(
@@ -802,7 +802,7 @@ describe(scriptName, () => {
             adr.player1,
             adr.registrar1,
             NEW_DOMAIN_NAME1,
-            99999,
+            257223284 + 99999,
             env.multipass.address,
           );
           await expect(
@@ -824,7 +824,7 @@ describe(scriptName, () => {
             adr.player1,
             adr.registrar1,
             NEW_DOMAIN_NAME1,
-            99999,
+            257223284 + 99999,
             env.multipass.address,
           );
           await expect(
@@ -849,7 +849,7 @@ describe(scriptName, () => {
             adr.player1,
             adr.registrar1,
             NEW_DOMAIN_NAME1,
-            99999,
+            257223284 + 99999,
             env.multipass.address,
           );
           await expect(
