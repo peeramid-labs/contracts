@@ -39,7 +39,6 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const SACMDeployment = await deployments.get('SimpleAccessManager');
   const accessManagerCode = await hre.ethers.provider.getCode(SACMDeployment.address);
   const accessManagerId = ethers.utils.keccak256(accessManagerCode);
-  console.log('accessManagerId:', accessManagerId);
 
   const rankTokenDeployment = await deployments.deploy('RankToken', {
     from: deployer,
@@ -50,7 +49,6 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       ethers.constants.AddressZero,
     ],
   });
-  console.log('RankToken deployed at', rankTokenDeployment.address);
   await codeIndexContract.register(rankTokenDeployment.address);
   const rankTokenCode = await hre.ethers.provider.getCode(rankTokenDeployment.address);
   const rankTokenCodeId = ethers.utils.keccak256(rankTokenCode);
@@ -59,18 +57,9 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     from: deployer,
     skipIfAlreadyDeployed: true,
   });
-  console.log('RankifyInstanceInit deployed at', initializerDeployment.address);
   await (await codeIndexContract.register(initializerDeployment.address)).wait(1);
-
-  const initializerCode = await hre.ethers.provider.getCode(initializerDeployment.address);
   const initializerAdr = initializerDeployment.address;
-
-  console.log('initializerId', initializerAdr);
-  const testInitAddr = ethers.constants.AddressZero;
-
-  console.log('testInitAddr', testInitAddr);
   const initializerSelector = '0x00000000';
-  console.log('initializerSelector', initializerSelector);
 
   const distributionName = ethers.utils.formatBytes32String('ArguableVotingTournament');
   const version = {
@@ -78,49 +67,41 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     minor: 0,
     patch: 0,
   };
-  console.log('deploying ArguableVotingTournament');
   const loupeFacetDeployment = await deploy('DiamondLoupeFacet', {
     from: deployer,
     skipIfAlreadyDeployed: true,
     gasLimit: 8000000,
   });
-  console.log('LoupeFacet deployed at', loupeFacetDeployment.address);
 
   const inspectorFacetDeployment = await deploy('EIP712InspectorFacet', {
     from: deployer,
     skipIfAlreadyDeployed: true,
   });
-  console.log('InspectorFacet deployed at', inspectorFacetDeployment.address);
 
   const RankifyMainFacetDeployment = await deploy('RankifyInstanceMainFacet', {
     from: deployer,
     skipIfAlreadyDeployed: true,
   });
-  console.log('RankifyMainFacet deployed at', RankifyMainFacetDeployment.address);
 
   const RankifyReqsFacetDeployment = await deploy('RankifyInstanceRequirementsFacet', {
     from: deployer,
     skipIfAlreadyDeployed: true,
   });
-  console.log('RankifyReqsFacet deployed at', RankifyReqsFacetDeployment.address);
 
   const RankifyGMFacetDeployment = await deploy('RankifyInstanceGameMastersFacet', {
     from: deployer,
     skipIfAlreadyDeployed: true,
   });
-  console.log('RankifyGMFacet deployed at', RankifyGMFacetDeployment.address);
 
   const RankifyOwnerFacetDeployment = await deploy('RankifyInstanceGameOwnersFacet', {
     from: deployer,
     skipIfAlreadyDeployed: true,
   });
-  console.log('RankifyOwnerFacet deployed at', RankifyOwnerFacetDeployment.address);
 
   const OwnershipFacetDeployment = await deploy('OwnershipFacet', {
     from: deployer,
     skipIfAlreadyDeployed: true,
   });
-  console.log('OwnershipFacet deployed at', OwnershipFacetDeployment.address);
 
   const arguableVotingTournamentDeployment = await deploy('ArguableVotingTournament', {
     from: deployer,
@@ -141,7 +122,6 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       OwnershipFacetDeployment.address,
     ],
   });
-  console.log('ArguableVotingTournament deployed at', arguableVotingTournamentDeployment.address);
   await codeIndexContract.register(arguableVotingTournamentDeployment.address);
   const arguableVotingTournamentCode = await hre.ethers.provider.getCode(arguableVotingTournamentDeployment.address);
   const arguableVotingTournamentCodeId = ethers.utils.keccak256(arguableVotingTournamentCode);
@@ -155,7 +135,6 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     skipIfAlreadyDeployed: true,
     args: [ethers.constants.AddressZero, 'TokenName', 'tkn', mintSettings, ethers.constants.AddressZero],
   });
-  console.log('DistributableGovernanceERC20 deployed at', govTokenDeployment.address);
   await codeIndexContract.register(govTokenDeployment.address);
   const govTokenCode = await hre.ethers.provider.getCode(govTokenDeployment.address);
   const govTokenCodeId = ethers.utils.keccak256(govTokenCode);
@@ -175,7 +154,6 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       _distributionVersion,
     ],
   });
-  console.log('MAODistribution deployed at', result.address);
   await codeIndexContract.register(result.address);
   const maoCode = await hre.ethers.provider.getCode(result.address);
   const maoCodeId = ethers.utils.keccak256(maoCode);
@@ -185,8 +163,6 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     await hre.ethers.getSigner(owner),
   ) as PeeramidLabsDistributor;
   await pdContract.addDistribution(maoCodeId, ethers.constants.AddressZero);
-
-  console.log('MAODistribution deployed at', result.address);
 };
 
 export default func;
