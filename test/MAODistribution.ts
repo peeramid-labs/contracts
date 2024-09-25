@@ -5,29 +5,21 @@ import hre from 'hardhat';
 import { expect } from 'chai';
 import { MAODistribution, PeeramidLabsDistributor, Rankify } from '../types';
 import { DistributorArgumentsStruct } from '../types/src/distributions/MAODistribution.sol/MAODistribution';
+import utils, { setupTest } from './utils';
 describe('MAODistribution', async function () {
   let contract: MAODistribution;
   let distributorContract: PeeramidLabsDistributor;
   let maoId: string;
   let rankify: Rankify;
   beforeEach(async function () {
-    hre.tracer.enabled = true;
-    await deployments.fixture(['MAO']);
-    const mao = await deployments.get('MAODistribution');
-    const maoCode = await hre.ethers.provider.getCode(mao.address);
+    const setup = await setupTest();
+    contract = setup.env.maoDistribution;
+    const maoCode = await hre.ethers.provider.getCode(contract.address);
     maoId = ethers.utils.keccak256(maoCode);
-    contract = (await ethers.getContractAt('MAODistribution', mao.address)) as MAODistribution;
-    const distributor = await deployments.get('PeeramidLabsDistributor');
-    distributorContract = (await ethers.getContractAt(
-      'PeeramidLabsDistributor',
-      distributor.address,
-    )) as PeeramidLabsDistributor;
-    const _rankify = await deployments.get('Rankify');
-    rankify = (await ethers.getContractAt('Rankify', _rankify.address)) as Rankify;
-
-    // contract
+    distributorContract = setup.env.distributor;
+    rankify = setup.env.rankifyToken;
   });
-  it('emits fire all events', async () => {
+  it('Can instantiate a distribution', async () => {
     // Define the arguments for the instantiate function
     const distributorArguments: DistributorArgumentsStruct = {
       DAOSEttings: {
@@ -65,6 +57,28 @@ describe('MAODistribution', async function () {
       ethers.utils.defaultAbiCoder.encode(['bytes32', 'address'], [maoId, ethers.constants.AddressZero]),
     );
     const tx = distributorContract.instantiate(distributorsDistId, data);
+    const receipt = await (await tx).wait(1);
     await expect(tx).not.reverted;
+    expect((await distributorContract.functions.getDistributions()).length).to.equal(1);
+
+    const superInterface = utils.getSuperInterface();
+    const knownTopicHashes = new Set<string>();
+    for (const fragment of Object.values(superInterface.fragments)) {
+      if (fragment.type === 'event') {
+        knownTopicHashes.add(superInterface.getEventTopic(fragment as any));
+      }
+    }
+    const parsed = receipt.logs
+      .filter(log => knownTopicHashes.has(log.topics[0]))
+      .map(log => ({
+        rawLog: log,
+        ...superInterface.parseLog(log),
+      }));
+    console.log(parsed);
+
+    // const x = await distributorContract.functions.
+  });
+  describe('when distribution is instantiated', async () => {
+    it('');
   });
 });
