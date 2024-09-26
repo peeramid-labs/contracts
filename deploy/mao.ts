@@ -10,12 +10,13 @@ import CodeIndexAbi from '@peeramid-labs/eds/abi/src/CodeIndex.sol/CodeIndex.jso
 import { MintSettingsStruct } from '../types/src/tokens/DistributableGovernanceERC20.sol/DistributableGovernanceERC20';
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   hre.tracer.enabled = true;
-  console.log('deploying MAO');
   const { deployments, getNamedAccounts } = hre;
   const { deploy } = deployments;
   const network: keyof typeof activeContractsList =
     process.env.NODE_ENV === 'TEST' ? 'arbitrum' : (hardhatArguments.network as keyof typeof activeContractsList);
-  console.log('network', network, process.env.NODE_ENV);
+  if (process.env.NODE_ENV !== 'TEST') {
+    console.log('network', network, process.env.NODE_ENV);
+  }
   if (!network) throw new Error('Network not provided');
   const { deployer, owner } = await getNamedAccounts();
 
@@ -156,7 +157,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   await codeIndexContract.register(result.address);
   const code = await hre.ethers.provider.getCode(result.address);
   const codeId = ethers.utils.keccak256(code);
-  console.log('MAO deployed at', result.address, 'codeId', codeId);
+//   console.log('MAO deployed at', result.address, 'codeId', codeId);
   return;
 };
 

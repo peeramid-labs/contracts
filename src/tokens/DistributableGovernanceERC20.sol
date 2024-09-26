@@ -10,7 +10,6 @@ import {ERC20VotesUpgradeable} from "@openzeppelin/contracts-upgradeable/token/E
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {ERC165Upgradeable} from "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/governance/utils/VotesUpgradeable.sol";
-import "hardhat/console.sol";
 import {DaoAuthorizableUpgradeable} from "@aragon/osx/core/plugin/dao-authorizable/DaoAuthorizableUpgradeable.sol";
 import "@peeramid-labs/eds/src/abstracts/ERC7746Middleware.sol";
 import "@peeramid-labs/eds/src/libraries/LibMiddleware.sol";
@@ -59,7 +58,6 @@ contract DistributableGovernanceERC20 is
     /// @param _symbol The symbol of the [ERC-20](https://eips.ethereum.org/EIPS/eip-20) governance token.
     /// @param _mintSettings The token mint settings struct containing the `receivers` and `amounts`.
     constructor(IDAO _dao, string memory _name, string memory _symbol, MintSettings memory _mintSettings, address _accessManager) {
-        console.log("constructor");
         initialize(_dao, _name, _symbol, _mintSettings, _accessManager);
     }
 
@@ -76,7 +74,6 @@ contract DistributableGovernanceERC20 is
         address accessManager
 
     ) public initializer {
-        console.log("initialize");
         LibMiddleware.LayerStruct[] memory layers = new LibMiddleware.LayerStruct[](1);
 
         // Set the layer for the sender

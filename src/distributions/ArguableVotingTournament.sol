@@ -10,11 +10,9 @@ import "../facets/RankifyInstanceRequirementsFacet.sol";
 import "../facets/RankifyInstanceGameMastersFacet.sol";
 import "../facets/RankifyInstanceGameOwnersFacet.sol";
 import "../initializers/RankifyInstanceInit.sol";
-// import "../vendor/diamond/facets/OwnershipFacet.sol";
 import "../vendor/diamond/interfaces/IDiamondCut.sol";
 import "../vendor/diamond/interfaces/IDiamondLoupe.sol";
 import "@peeramid-labs/eds/src/libraries/LibSemver.sol";
-import "hardhat/console.sol";
 
 contract ArguableVotingTournament is InitializedDiamondDistribution {
     DiamondLoupeFacet immutable _loupeFacet;
@@ -62,7 +60,6 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
     function instantiate(bytes memory) public override returns (address[] memory instances, bytes32, uint256) {
         (address[] memory _instances, , ) = super.instantiate("");
         address diamond = _instances[0];
-    console.log('ArguableVotingTournament 1');
         IDiamondCut.FacetCut[] memory facetCuts = new IDiamondCut.FacetCut[](8);
 
         bytes4[] memory loupeSelectors = new bytes4[](4);
@@ -70,7 +67,6 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
         loupeSelectors[1] = DiamondLoupeFacet.facetFunctionSelectors.selector;
         loupeSelectors[2] = DiamondLoupeFacet.facetAddresses.selector;
         loupeSelectors[3] = DiamondLoupeFacet.facetAddress.selector;
-    console.log('ArguableVotingTournament 2');
         facetCuts[0] = IDiamondCut.FacetCut({
             facetAddress: address(_loupeFacet),
             action: IDiamondCut.FacetCutAction.Add,
@@ -86,7 +82,6 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
             action: IDiamondCut.FacetCutAction.Add,
             functionSelectors: EIP712InspectorFacetSelectors
         });
-    console.log('ArguableVotingTournament 3');
         bytes4[] memory RankifyInstanceMainFacetSelectors = new bytes4[](28);
         RankifyInstanceMainFacetSelectors[0] = RankifyInstanceMainFacet.cancelGame.selector;
         RankifyInstanceMainFacetSelectors[1] = RankifyInstanceMainFacet.gameCreator.selector;
@@ -122,7 +117,6 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
             action: IDiamondCut.FacetCutAction.Add,
             functionSelectors: RankifyInstanceMainFacetSelectors
         });
-    console.log('ArguableVotingTournament 4');
         bytes4[] memory RankifyInstanceRequirementsFacetSelectors = new bytes4[](3);
         RankifyInstanceRequirementsFacetSelectors[0] = RankifyInstanceRequirementsFacet.setJoinRequirements.selector;
         RankifyInstanceRequirementsFacetSelectors[1] = RankifyInstanceRequirementsFacet.getJoinRequirements.selector;
@@ -157,7 +151,6 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
         RankifyInstanceGameOwnersFacetSelectors[5] = RankifyInstanceGameOwnersFacet.setMinPlayersSize.selector;
         RankifyInstanceGameOwnersFacetSelectors[6] = RankifyInstanceGameOwnersFacet.setTimeToJoin.selector;
         RankifyInstanceGameOwnersFacetSelectors[7] = RankifyInstanceGameOwnersFacet.setMaxTurns.selector;
-    console.log('ArguableVotingTournament 5');
         facetCuts[5] = IDiamondCut.FacetCut({
             facetAddress: address(_RankifyOwnerFacet),
             action: IDiamondCut.FacetCutAction.Add,
@@ -173,8 +166,6 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
             action: IDiamondCut.FacetCutAction.Add,
             functionSelectors: OwnershipFacetSelectors
         });
-    console.log('ArguableVotingTournament 6');
-
         bytes4[] memory initializerSelectors = new bytes4[](1);
         initializerSelectors[0] = RankifyInstanceInit.init.selector;
         facetCuts[7] = IDiamondCut.FacetCut({

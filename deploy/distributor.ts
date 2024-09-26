@@ -1,7 +1,6 @@
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
-import { activeContractsList, DAOFactory, DAOFactory__factory } from '@aragon/osx-ethers';
-import { ethers, hardhatArguments } from 'hardhat';
+import { activeContractsList } from '@aragon/osx-ethers';
 
 activeContractsList.baseMainnet.DAOFactory;
 activeContractsList.baseMainnet.TokenVotingSetup;
@@ -12,7 +11,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
   const { deploy } = deployments;
 
-  const result = await deploy('PeeramidLabsDistributor', {
+  await deploy('PeeramidLabsDistributor', {
     from: deployer,
     args: [owner],
     skipIfAlreadyDeployed: true,

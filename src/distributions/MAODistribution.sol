@@ -17,14 +17,12 @@ import "@peeramid-labs/eds/src/interfaces/IDistribution.sol";
 import {IPluginSetup} from "@aragon/osx/framework/plugin/setup/IPluginSetup.sol";
 import "@peeramid-labs/eds/src/libraries/LibSemver.sol";
 import {DistributableGovernanceERC20, MintSettings, IDAO} from "../tokens/DistributableGovernanceERC20.sol";
-import "hardhat/console.sol";
 import {IERC7746} from "@peeramid-labs/eds/src/interfaces/IERC7746.sol";
 import {SimpleAccessManager} from "@peeramid-labs/eds/src/managers/SimpleAccessManager.sol";
 import {IDistributor} from "@peeramid-labs/eds/src/interfaces/IDistributor.sol";
 import {RankToken} from "../tokens/RankToken.sol";
 import "../initializers/RankifyInstanceInit.sol";
 import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
-import "hardhat/console.sol";
 
     struct UserACIDSettings {
         uint256 timePerTurn;
@@ -170,7 +168,6 @@ contract MAODistribution is IDistribution, CodeIndexer {
         bytes32 _distributionName,
         LibSemver.Version memory _distributionVersion
     ) {
-        console.log("MAODistribution.constructor");
         governanceERC20Base = getContractsIndex().get(_governanceERC20BaseId);
         tokenVotingPluginRepo = IPluginRepo(_tokenVotingPluginRepo);
         daoFactory = IDAOFactory(_daoFactory);
@@ -178,7 +175,6 @@ contract MAODistribution is IDistribution, CodeIndexer {
         distributionName = _distributionName;
         distributionVersion = LibSemver.toUint256(_distributionVersion);
         rankTokenBase = getContractsIndex().get(_rankTokenCodeId);
-        console.log("MAODistribution.rankTokenBase", rankTokenBase);
         if (rankTokenBase == address(0)) {
             revert("Rank token base not found");
         }
@@ -206,7 +202,6 @@ contract MAODistribution is IDistribution, CodeIndexer {
         mintSettings.receivers[0] = address(this);
         mintSettings.amounts[0] = 0;
         address token = governanceERC20Base.clone();
-        console.log("token", token);
         TokenSettings memory tokenSettings = TokenSettings(token, args.tokenName, args.tokenSymbol);
         VotingSettings memory votingSettings = VotingSettings({
             votingMode: VotingMode.Standard,
@@ -222,10 +217,6 @@ contract MAODistribution is IDistribution, CodeIndexer {
             args.subdomain,
             args.metadata
         );
-        console.log("daoSettings.trustedForwarder", daoSettings.trustedForwarder);
-        console.log("daoSettings.daoURI", daoSettings.daoURI);
-        console.log("daoSettings.subdomain", daoSettings.subdomain);
-        console.logBytes(daoSettings.metadata);
 
         IDAOFactory.PluginSettings memory tokenVotingPluginSetup = IDAOFactory.PluginSettings(
             IDAOFactory.PluginSetupRef(
@@ -234,15 +225,10 @@ contract MAODistribution is IDistribution, CodeIndexer {
             ),
             abi.encode(votingSettings, tokenSettings, mintSettings)
         );
-        console.log(
-            "tokenVotingPluginSetup.pluginSetupRef.versionTag.release",
-            tokenVotingPluginSetup.pluginSetupRef.versionTag.release
-        );
 
         IDAOFactory.PluginSettings[] memory pluginSettings = new IDAOFactory.PluginSettings[](1);
         pluginSettings[0] = tokenVotingPluginSetup;
         address createdDao = daoFactory.createDao(daoSettings, pluginSettings);
-        console.log("createdDao", createdDao);
 
         SimpleAccessManager.SimpleAccessManagerInitializer[]
             memory govTokenAccessSettings = new SimpleAccessManager.SimpleAccessManagerInitializer[](1);
@@ -252,7 +238,6 @@ contract MAODistribution is IDistribution, CodeIndexer {
         govTokenAccessSettings[0].distributionComponentsOnly = true;
 
         SimpleAccessManager govTokenAccessManager = SimpleAccessManager(accessManagerBase.clone());
-        console.log("govTokenAccessManager initialized");
 
         govTokenAccessManager.initialize(govTokenAccessSettings, tokenSettings.addr, IDistributor(msg.sender)); // msg.sender must be IDistributor or it will revert
         DistributableGovernanceERC20(tokenSettings.addr).initialize(
@@ -262,7 +247,6 @@ contract MAODistribution is IDistribution, CodeIndexer {
             mintSettings,
             address(govTokenAccessManager)
         );
-        console.log("DistributableGovernanceERC20 initialized");
 
         address[] memory returnValue = new address[](3);
         returnValue[0] = createdDao;
@@ -322,13 +306,11 @@ contract MAODistribution is IDistribution, CodeIndexer {
         rankTokenAccessManager.initialize(RankTokenAccessSettings, rankToken, IDistributor(msg.sender)); // msg.sender must be IDistributor or it will revert
 
         RankToken(rankToken).initialize(args.rankTokenURI, args.RankTokenContractURI, address(rankTokenAccessManager));
-        // console.log(ACIDDistrAddresses.length);
         (
             address[] memory ACIDDistrAddresses,
             bytes32 ACIDDistributionname,
             uint256 ACIDDistributionVersion
         ) = ACIDDistributionBase.instantiate(abi.encode(dao, rankToken, args.metadata));
-     console.log("debugga");
 
 
 
@@ -353,12 +335,12 @@ contract MAODistribution is IDistribution, CodeIndexer {
             LibSemver.toString(LibSemver.parse(ACIDDistributionVersion)),
             ACIDInit
         );
-        console.log("ACID initialized");
-        address[] memory returnValue = new address[](ACIDDistrAddresses.length + 1);
+        address[] memory returnValue = new address[](ACIDDistrAddresses.length + 2);
         for (uint256 i; i < ACIDDistrAddresses.length; i++) {
             returnValue[i] = ACIDDistrAddresses[i];
         }
         returnValue[ACIDDistrAddresses.length] = address(rankTokenAccessManager);
+        returnValue[ACIDDistrAddresses.length + 1] = rankToken;
 
         return (returnValue, ACIDDistributionname, ACIDDistributionVersion);
     }

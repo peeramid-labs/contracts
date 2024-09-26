@@ -26,7 +26,8 @@ export const instantiateMAO = async ({
     govToken: instances[1],
     govTokenAccessManager: instances[2],
     ACIDInstance: instances[3],
-    ACIDAccessManager: instances[11],
+    ACIDAccessManager: instances[12],
+    rankToken: instances[13],
     instanceId: evts[0].args.instanceId,
   };
 };

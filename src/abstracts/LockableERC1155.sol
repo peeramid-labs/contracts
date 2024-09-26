@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import "../libraries/LibReentrancyGuard.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import {ILockableERC1155} from "../interfaces/ILockableERC1155.sol";
-error insufficient(uint256 id, uint256 balance, uint256 required);
+
 
 /**
  * @title LockableERC1155
@@ -38,7 +38,7 @@ abstract contract LockableERC1155 is ERC1155Upgradeable, ILockableERC1155 {
     function lock(address account, uint256 id, uint256 amount) public virtual {
         LockableERC1155Storage storage s = getLockableERC1155Storage();
         if (balanceOf(account, id) < s.lockedAmounts[account][id] + amount)
-        // revert insufficient(id, lockedAmounts[account][id], amount);
+        revert insufficient(id, s.lockedAmounts[account][id], amount);
         s.lockedAmounts[account][id] += amount;
         emit TokensLocked(account, id, amount);
     }

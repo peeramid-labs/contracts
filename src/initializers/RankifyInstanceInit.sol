@@ -22,7 +22,6 @@ import {LibQuadraticVoting} from "../libraries/LibQuadraticVoting.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 // import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
-import "hardhat/console.sol";
 
 // It is expected that this contract is customized if you want to deploy your diamond
 // with data from a deployment script. Use the init function to initialize state variables
@@ -61,7 +60,6 @@ contract RankifyInstanceInit is Initializable {
     // You can add parameters to this function in order to pass in
     // data to set your own state variables
     function init(string memory name, string memory version, contractInitializer memory initData) initializer external {
-        console.log("RankifyInstanceInit->init");
         // adding ERC165 data
         // LibDiamond.enforceIsContractOwner();
         LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();

@@ -27,7 +27,6 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   )) as CodeIndex;
 
   await codeIndexContract.connect(await hre.ethers.getSigner(deployer)).register(sacmDeployment.address);
-  console.log('deployed SimpleAccessManager at', sacmDeployment.address);
 };
 
 export default func;

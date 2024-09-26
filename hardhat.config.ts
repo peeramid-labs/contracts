@@ -109,6 +109,7 @@ export default {
       }, // ONLY LOCAL
       forking: {
         url: process.env.FORK_RPC_URL ?? '',
+        blockNumber: 257223284, // works for arbitrum, change for others
       },
     },
     mumbai: {

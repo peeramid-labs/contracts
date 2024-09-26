@@ -32,7 +32,6 @@ export const addDistribution =
       throw new Error(
         `Unexpected distribution id increment: got ${distributorsId.length}, expected ${distributionsLengthBefore + 1}`,
       );
-    console.log('distributorsId', distributorsId);
     return {
       receipt,
       distributor: distributorContract,

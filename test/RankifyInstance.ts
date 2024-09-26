@@ -1,22 +1,16 @@
 import {
-  AdrSetupResult,
-  RInstance_MAX_PLAYERS,
-  RInstance_MIN_PLAYERS,
-  EnvSetupResult,
-  getTurnSalt,
-  mockVote,
-  MockVotes,
-  ProposalSubmittion,
-  setupTest,
-  SignerIdentity,
-  ProposalParams,
-  RInstance_MAX_TURNS,
-  RInstance_TIME_PER_TURN,
+    AdrSetupResult,
+    RInstance_MAX_PLAYERS,
+    RInstance_MIN_PLAYERS,
+    EnvSetupResult, MockVotes,
+    ProposalSubmittion,
+    setupTest,
+    SignerIdentity, RInstance_MAX_TURNS
 } from './utils';
 import { RInstanceSettings, mineBlocks, mockProposals, mockVotes, getPlayers } from './utils';
 import { expect } from 'chai';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
-import { RankifyDiamondInstance } from '../types/';
+import { RankifyDiamondInstance, RankToken } from '../types/';
 import { LibCoinVending } from '../types/src/facets/RankifyInstanceRequirementsFacet';
 import { IRankifyInstanceCommons } from '../types/src/facets/RankifyInstanceMainFacet';
 import { ethers } from 'hardhat';
@@ -24,15 +18,21 @@ const path = require('path');
 // import { TokenMust, TokenTypes } from "../types/enums";
 import { BigNumber, BigNumberish } from 'ethers';
 import { assert } from 'console';
-const scriptName = path.basename(__filename);
 import { solidityKeccak256 } from 'ethers/lib/utils';
+import addDistribution from '../scripts/playbooks/addDistribution';
+import hre from 'hardhat';
+import { network } from 'hardhat';
+const scriptName = path.basename(__filename);
 
+import { getCodeIdFromArtifact } from '../scripts/getCodeId';
+import { DistributorArgumentsStruct } from '../types/src/distributions/MAODistribution.sol/MAODistribution';
 let votes: MockVotes;
 let proposalsStruct: ProposalSubmittion[];
 let adr: AdrSetupResult;
 let votersAddresses: string[];
 let env: EnvSetupResult;
 let rankifyInstance: RankifyDiamondInstance;
+let rankToken: RankToken;
 
 const createGame = async (
   gameContract: RankifyDiamondInstance,
@@ -41,6 +41,7 @@ const createGame = async (
   gameRank: BigNumberish,
   openNow?: boolean,
 ) => {
+  await env.rankifyToken.connect(signer.wallet).approve(gameContract.address, ethers.constants.MaxUint256);
   await gameContract.connect(signer.wallet)['createGame(address,uint256)'](gameMaster, gameRank);
   const gameId = await gameContract
     .getContractState()
@@ -258,8 +259,8 @@ const fillParty = async (
 ) => {
   for (let i = 0; i < players.length; i++) {
     // let name = `player${i}` as any as keyof AdrSetupResult;
-    if (!env.rankToken.address) throw new Error('Rank token undefined or undeployed');
-    await env.rankToken.connect(players[i].wallet).setApprovalForAll(rankifyInstance.address, true);
+    if (!env.rankTokenBase.address) throw new Error('Rank token undefined or undeployed');
+    await rankToken.connect(players[i].wallet).setApprovalForAll(rankifyInstance.address, true);
     await gameContract.connect(players[i].wallet).joinGame(gameId, { value: ethers.utils.parseEther('0.4') });
   }
   if (shiftTime) {
@@ -287,7 +288,73 @@ describe(scriptName, () => {
     const setup = await setupTest();
     adr = setup.adr;
     env = setup.env;
-    
+    await addDistribution(hre)(await getCodeIdFromArtifact(hre)('MAODistribution'), adr.gameOwner.wallet);
+    const distributorArguments: DistributorArgumentsStruct = {
+      DAOSEttings: {
+        daoURI: 'https://example.com/dao',
+        subdomain: 'example',
+        metadata: ethers.utils.hexlify(ethers.utils.toUtf8Bytes('metadata')),
+        tokenName: 'tokenName',
+        tokenSymbol: 'tokenSymbol',
+      },
+      ACIDSettings: {
+        RankTokenContractURI: 'https://example.com/rank',
+        gamePrice: RInstanceSettings.RInstance_GAME_PRICE,
+        joinGamePrice: RInstanceSettings.RInstance_JOIN_GAME_PRICE,
+        maxPlayersSize: RInstanceSettings.RInstance_MAX_PLAYERS,
+        maxTurns: RInstanceSettings.RInstance_MAX_TURNS,
+        metadata: ethers.utils.hexlify(ethers.utils.toUtf8Bytes('metadata')),
+        minPlayersSize: RInstanceSettings.RInstance_MIN_PLAYERS,
+        paymentToken: env.rankifyToken.address,
+        rankTokenURI: 'https://example.com/rank',
+        timePerTurn: RInstanceSettings.RInstance_TIME_PER_TURN,
+        timeToJoin: RInstanceSettings.RInstance_TIME_TO_JOIN,
+        voteCredits: RInstanceSettings.RInstance_VOTE_CREDITS,
+      },
+    };
+    // const abi = import('../abi/src/distributions/MAODistribution.sol/MAODistribution.json');
+    // Encode the arguments
+    const data = ethers.utils.defaultAbiCoder.encode(
+      [
+        'tuple(tuple(string daoURI, string subdomain, bytes metadata, string tokenName, string tokenSymbol) DAOSEttings, tuple(uint256 timePerTurn, uint256 maxPlayersSize, uint256 minPlayersSize, uint256 timeToJoin, uint256 maxTurns, uint256 voteCredits, uint256 gamePrice, address paymentToken, uint256 joinGamePrice, string metadata, string rankTokenURI, string RankTokenContractURI) ACIDSettings)',
+      ],
+      [distributorArguments],
+    );
+    const maoCode = await hre.ethers.provider.getCode(env.maoDistribution.address);
+    const maoId = ethers.utils.keccak256(maoCode);
+    const distributorsDistId = ethers.utils.keccak256(
+      ethers.utils.defaultAbiCoder.encode(['bytes32', 'address'], [maoId, ethers.constants.AddressZero]),
+    );
+    await env.distributor.instantiate(distributorsDistId, data);
+    const filter = env.distributor.filters.Instantiated();
+    const evts = await env.distributor.queryFilter(filter);
+    rankifyInstance = (await ethers.getContractAt(
+      'RankifyDiamondInstance',
+      evts[0].args.instances[3],
+    )) as RankifyDiamondInstance;
+
+    await env.rankifyToken
+      .connect(adr.gameCreator1.wallet)
+      .approve(rankifyInstance.address, ethers.constants.MaxUint256);
+    await env.rankifyToken
+      .connect(adr.gameCreator2.wallet)
+      .approve(rankifyInstance.address, ethers.constants.MaxUint256);
+    await env.rankifyToken
+      .connect(adr.gameCreator3.wallet)
+      .approve(rankifyInstance.address, ethers.constants.MaxUint256);
+    await env.rankifyToken.connect(adr.player1.wallet).approve(rankifyInstance.address, ethers.constants.MaxUint256);
+    await env.rankifyToken.connect(adr.player2.wallet).approve(rankifyInstance.address, ethers.constants.MaxUint256);
+    await env.rankifyToken.connect(adr.player3.wallet).approve(rankifyInstance.address, ethers.constants.MaxUint256);
+    await env.rankifyToken.connect(adr.player4.wallet).approve(rankifyInstance.address, ethers.constants.MaxUint256);
+    await env.rankifyToken.connect(adr.player5.wallet).approve(rankifyInstance.address, ethers.constants.MaxUint256);
+    await env.rankifyToken.connect(adr.player6.wallet).approve(rankifyInstance.address, ethers.constants.MaxUint256);
+    await env.rankifyToken.connect(adr.player7.wallet).approve(rankifyInstance.address, ethers.constants.MaxUint256);
+    await env.rankifyToken.connect(adr.player8.wallet).approve(rankifyInstance.address, ethers.constants.MaxUint256);
+    await env.rankifyToken.connect(adr.player9.wallet).approve(rankifyInstance.address, ethers.constants.MaxUint256);
+    await env.rankifyToken.connect(adr.player10.wallet).approve(rankifyInstance.address, ethers.constants.MaxUint256);
+
+    rankToken = (await ethers.getContractAt('RankToken', evts[0].args.instances[13])) as RankToken;
+
     requirement.contracts = [];
     requirement.contracts.push({
       contractAddress: env.mockERC20.address,
@@ -327,15 +394,15 @@ describe(scriptName, () => {
       },
     });
   });
-  it('Is Owned by contract owner', async () => {
-    expect(await rankifyInstance.owner()).to.be.equal(adr.gameOwner.wallet.address);
+  it('Is by distributor contract', async () => {
+    expect(await rankifyInstance.owner()).to.be.equal(env.arguableVotingTournamentDistribution.address);
   });
   it('Has correct initial settings', async () => {
     const state = await rankifyInstance.connect(adr.gameCreator1.wallet).getContractState();
     expect(state.BestOfState.gamePrice).to.be.equal(RInstanceSettings.RInstance_GAME_PRICE);
     expect(state.BestOfState.joinGamePrice).to.be.equal(RInstanceSettings.RInstance_JOIN_GAME_PRICE);
     expect(state.BestOfState.numGames).to.be.equal(0);
-    expect(state.BestOfState.rankTokenAddress).to.be.equal(env.rankToken.address);
+    expect(state.BestOfState.rankTokenAddress).to.be.equal(rankToken.address);
     expect(state.TBGSEttings.maxTurns).to.be.equal(RInstanceSettings.RInstance_MAX_TURNS);
     expect(state.TBGSEttings.timePerTurn).to.be.equal(RInstanceSettings.RInstance_TIME_PER_TURN);
     expect(state.TBGSEttings.minPlayersSize).to.be.equal(RInstanceSettings.RInstance_MIN_PLAYERS);
@@ -343,8 +410,11 @@ describe(scriptName, () => {
     expect(state.TBGSEttings.maxTurns).to.be.equal(RInstanceSettings.RInstance_MAX_TURNS);
   });
   it('Transfer ownership can be done only by contract owner', async () => {
+    const impersonatedSigner = await ethers.getImpersonatedSigner(env.arguableVotingTournamentDistribution.address);
+    await network.provider.send('hardhat_setBalance', [impersonatedSigner.address, '0x9000000000000000000']);
+
     await expect(
-      rankifyInstance.connect(adr.gameOwner.wallet).transferOwnership(adr.gameCreator1.wallet.address),
+      rankifyInstance.connect(impersonatedSigner).transferOwnership(adr.gameCreator1.wallet.address),
     ).to.emit(rankifyInstance, 'OwnershipTransferred(address,address)');
 
     await expect(
@@ -353,9 +423,7 @@ describe(scriptName, () => {
   });
   it('has rank token assigned', async () => {
     const state = await rankifyInstance.getContractState();
-    expect(state.BestOfState.rankTokenAddress).to.be.equal(env.rankToken.address);
-    // expect(await env.rankToken.getRankingInstance()).to.be.equal(rankifyInstance.address);
-    // expect(await env.rankToken.owner()).to.be.equal(adr.contractDeployer.wallet.address);
+    expect(state.BestOfState.rankTokenAddress).to.be.equal(rankToken.address);
   });
   it('Can create game only with valid payments', async () => {
     await env.rankifyToken.connect(adr.gameCreator1.wallet).approve(rankifyInstance.address, 0);
@@ -404,9 +472,7 @@ describe(scriptName, () => {
       distribution: 'semiUniform',
     });
     await expect(
-      rankifyInstance
-        .connect(adr.gameMaster1.wallet)
-        .submitVote(1, votes[0].voteHidden, adr.player1.wallet.address),
+      rankifyInstance.connect(adr.gameMaster1.wallet).submitVote(1, votes[0].voteHidden, adr.player1.wallet.address),
     ).to.be.revertedWith('no game found');
     await expect(rankifyInstance.connect(adr.gameMaster1.wallet).openRegistration(1)).to.be.revertedWith(
       'no game found',
@@ -467,6 +533,7 @@ describe(scriptName, () => {
       expect(state.BestOfState.numGames).to.be.equal(1);
     });
     it('Players cannot join until registration is open', async () => {
+      await env.rankifyToken.connect(adr.player1.wallet).approve(rankifyInstance.address, ethers.constants.MaxUint256);
       await expect(rankifyInstance.connect(adr.player1.wallet).joinGame(1)).to.be.revertedWith(
         'addPlayer->cant join now',
       );
@@ -507,17 +574,16 @@ describe(scriptName, () => {
           'PlayerJoined',
         );
       });
-      it('Game cannot be started until join blocktime has passed unless game is full', async () => {
-        rankifyInstance.connect(adr.player1.wallet).joinGame(1);
-
+      it('Game cannot be started until join block time has passed unless game is full', async () => {
+        await rankifyInstance.connect(adr.player1.wallet).joinGame(1);
         await expect(rankifyInstance.connect(adr.player1.wallet).startGame(1)).to.be.revertedWith(
           'startGame->Not enough players',
         );
-        rankifyInstance.connect(adr.player2.wallet).joinGame(1);
-        rankifyInstance.connect(adr.player3.wallet).joinGame(1);
-        rankifyInstance.connect(adr.player4.wallet).joinGame(1);
-        rankifyInstance.connect(adr.player5.wallet).joinGame(1);
-        rankifyInstance.connect(adr.player6.wallet).joinGame(1);
+        await rankifyInstance.connect(adr.player2.wallet).joinGame(1);
+        await rankifyInstance.connect(adr.player3.wallet).joinGame(1);
+        await rankifyInstance.connect(adr.player4.wallet).joinGame(1);
+        await rankifyInstance.connect(adr.player5.wallet).joinGame(1);
+        await rankifyInstance.connect(adr.player6.wallet).joinGame(1);
         await expect(rankifyInstance.connect(adr.player1.wallet).startGame(1)).to.be.emit(
           rankifyInstance,
           'GameStarted',
@@ -526,8 +592,11 @@ describe(scriptName, () => {
       it('No more than max players can join', async () => {
         for (let i = 1; i < RInstanceSettings.RInstance_MAX_PLAYERS + 1; i++) {
           let name = `player${i}` as any as keyof AdrSetupResult;
-          rankifyInstance.connect(adr[`${name}`].wallet).joinGame(1);
+          await rankifyInstance.connect(adr[`${name}`].wallet).joinGame(1);
         }
+        await env.rankifyToken
+          .connect(adr.maliciousActor1.wallet)
+          .approve(rankifyInstance.address, ethers.constants.MaxUint256);
         await expect(rankifyInstance.connect(adr.maliciousActor1.wallet).joinGame(1)).to.be.revertedWith(
           'addPlayer->party full',
         );
@@ -682,9 +751,7 @@ describe(scriptName, () => {
             );
 
             await expect(
-              rankifyInstance
-                .connect(adr.gameMaster1.wallet)
-                .submitVote(1, votes[0].voteHidden, votersAddresses[0]),
+              rankifyInstance.connect(adr.gameMaster1.wallet).submitVote(1, votes[0].voteHidden, votersAddresses[0]),
             ).to.be.revertedWith('No proposals exist at turn 1: cannot vote');
           });
           it('Processes only proposals only from game master', async () => {
@@ -968,9 +1035,7 @@ describe(scriptName, () => {
                       votesShuffled[i][proposerIndex[votedForIdx]] = points;
                     });
                   });
-                  await rankifyInstance
-                    .connect(adr.gameMaster1.wallet)
-                    .endTurn(1, votesShuffled, [], proposerIndex);
+                  await rankifyInstance.connect(adr.gameMaster1.wallet).endTurn(1, votesShuffled, [], proposerIndex);
                   const scores = await rankifyInstance.getScores(1).then(v => v[1].map(i => i.toNumber()));
                   expect(expectedScores).to.be.eql(scores);
                 });
@@ -1033,10 +1098,7 @@ describe(scriptName, () => {
           );
         });
         it('Allows player to leave the game', async () => {
-          await expect(rankifyInstance.connect(adr.player1.wallet).leaveGame(1)).to.emit(
-            rankifyInstance,
-            'PlayerLeft',
-          );
+          await expect(rankifyInstance.connect(adr.player1.wallet).leaveGame(1)).to.emit(rankifyInstance, 'PlayerLeft');
         });
       });
     });
@@ -1283,11 +1345,11 @@ describe(scriptName, () => {
           ).to.be.revertedWith('Game over');
         });
         it('Gave rewards to winners', async () => {
-          expect(await env.rankToken.balanceOf(adr.player1.wallet.address, 2)).to.be.equal(1);
-          expect(await env.rankToken.balanceOf(adr.player2.wallet.address, 1)).to.be.equal(2);
-          expect(await env.rankToken.balanceOf(adr.player2.wallet.address, 2)).to.be.equal(0);
-          expect(await env.rankToken.balanceOf(adr.player3.wallet.address, 1)).to.be.equal(1);
-          expect(await env.rankToken.balanceOf(adr.player3.wallet.address, 2)).to.be.equal(0);
+          expect(await rankToken.balanceOf(adr.player2.wallet.address, 1)).to.be.equal(2);
+          expect(await rankToken.balanceOf(adr.player2.wallet.address, 2)).to.be.equal(0);
+          expect(await rankToken.balanceOf(adr.player1.wallet.address, 2)).to.be.equal(1);
+          expect(await rankToken.balanceOf(adr.player3.wallet.address, 1)).to.be.equal(1);
+          expect(await rankToken.balanceOf(adr.player3.wallet.address, 2)).to.be.equal(0);
         });
         it('Allows winner to create game of next rank', async () => {
           await expect(
@@ -1304,13 +1366,14 @@ describe(scriptName, () => {
             await rankifyInstance.connect(adr.player1.wallet).openRegistration(2);
           });
           it('Can be joined only by rank token bearers', async () => {
-            expect(await env.rankToken.balanceOf(adr.player1.wallet.address, 2)).to.be.equal(1);
-            await env.rankToken.connect(adr.player1.wallet).setApprovalForAll(rankifyInstance.address, true);
-            await env.rankToken.connect(adr.player2.wallet).setApprovalForAll(rankifyInstance.address, true);
+            expect(await rankToken.balanceOf(adr.player1.wallet.address, 2)).to.be.equal(1);
+            await rankToken.connect(adr.player1.wallet).setApprovalForAll(rankifyInstance.address, true);
+            await rankToken.connect(adr.player2.wallet).setApprovalForAll(rankifyInstance.address, true);
             await expect(rankifyInstance.connect(adr.player1.wallet).joinGame(2))
               .to.emit(rankifyInstance, 'PlayerJoined')
               .withArgs(2, adr.player1.wallet.address);
-            await expect(rankifyInstance.connect(adr.player2.wallet).joinGame(2)).to.be.revertedWith(
+            await expect(rankifyInstance.connect(adr.player2.wallet).joinGame(2)).to.be.revertedWithCustomError(
+              rankToken,
               'insufficient',
             );
           });
@@ -1345,11 +1408,8 @@ describe(scriptName, () => {
         const currentT = await time.latest();
         await time.setNextBlockTimestamp(currentT + Number(RInstanceSettings.RInstance_TIME_TO_JOIN) + 1);
         const openRegistration = await rankifyInstance.connect(adr.gameCreator1.wallet).openRegistration(10);
-        await env.rankToken.connect(adr.player1.wallet).setApprovalForAll(rankifyInstance.address, true);
-        await expect(rankifyInstance.connect(adr.player1.wallet).joinGame(10)).to.emit(
-          rankifyInstance,
-          'PlayerJoined',
-        );
+        await rankToken.connect(adr.player1.wallet).setApprovalForAll(rankifyInstance.address, true);
+        await expect(rankifyInstance.connect(adr.player1.wallet).joinGame(10)).to.emit(rankifyInstance, 'PlayerJoined');
       });
     });
   });
@@ -1375,16 +1435,16 @@ describe(scriptName, () => {
     });
     it('Winners have reward tokens', async () => {
       const balances: number[] = [];
-      balances[0] = await env.rankToken
+      balances[0] = await rankToken
         .balanceOf(adr.player1.wallet.address, 2)
         .then(balance => balances.push(balance.toNumber()));
-      expect(await env.rankToken.balanceOf(adr.player1.wallet.address, 2)).to.be.equal(1);
-      expect(await env.rankToken.balanceOf(adr.player2.wallet.address, 2)).to.be.equal(1);
-      expect(await env.rankToken.balanceOf(adr.player3.wallet.address, 2)).to.be.equal(1);
-      expect(await env.rankToken.balanceOf(adr.player4.wallet.address, 2)).to.be.equal(1);
-      expect(await env.rankToken.balanceOf(adr.player5.wallet.address, 2)).to.be.equal(1);
-      expect(await env.rankToken.balanceOf(adr.player6.wallet.address, 2)).to.be.equal(1);
-      expect(await env.rankToken.balanceOf(adr.player7.wallet.address, 2)).to.be.equal(0);
+      expect(await rankToken.balanceOf(adr.player1.wallet.address, 2)).to.be.equal(1);
+      expect(await rankToken.balanceOf(adr.player2.wallet.address, 2)).to.be.equal(1);
+      expect(await rankToken.balanceOf(adr.player3.wallet.address, 2)).to.be.equal(1);
+      expect(await rankToken.balanceOf(adr.player4.wallet.address, 2)).to.be.equal(1);
+      expect(await rankToken.balanceOf(adr.player5.wallet.address, 2)).to.be.equal(1);
+      expect(await rankToken.balanceOf(adr.player6.wallet.address, 2)).to.be.equal(1);
+      expect(await rankToken.balanceOf(adr.player7.wallet.address, 2)).to.be.equal(0);
       assert(RInstanceSettings.RInstance_MAX_PLAYERS == 6);
     });
     describe('When game of next rank is created', () => {
@@ -1393,48 +1453,46 @@ describe(scriptName, () => {
       });
       it('Can be joined only by bearers of rank token', async () => {
         const lastCreatedGameId = await rankifyInstance.getContractState().then(r => r.BestOfState.numGames);
-        await env.rankToken.connect(adr.player2.wallet).setApprovalForAll(rankifyInstance.address, true);
+        await rankToken.connect(adr.player2.wallet).setApprovalForAll(rankifyInstance.address, true);
         await expect(rankifyInstance.connect(adr.player2.wallet).joinGame(lastCreatedGameId)).to.emit(
           rankifyInstance,
           'PlayerJoined',
         );
-        await env.rankToken.connect(adr.maliciousActor1.wallet).setApprovalForAll(rankifyInstance.address, true);
+        await rankToken.connect(adr.maliciousActor1.wallet).setApprovalForAll(rankifyInstance.address, true);
         await expect(
           rankifyInstance.connect(adr.maliciousActor1.wallet).joinGame(lastCreatedGameId),
-        ).to.be.revertedWith('insufficient');
+        ).to.be.revertedWithCustomError(rankToken, 'insufficient');
       });
       it('Locks rank tokens when player joins', async () => {
-        const balance = await env.rankToken.balanceOf(adr.player1.wallet.address, 2);
+        const balance = await rankToken.balanceOf(adr.player1.wallet.address, 2);
         const lastCreatedGameId = await rankifyInstance.getContractState().then(r => r.BestOfState.numGames);
-        await env.rankToken.connect(adr.player1.wallet).setApprovalForAll(rankifyInstance.address, true);
+        await rankToken.connect(adr.player1.wallet).setApprovalForAll(rankifyInstance.address, true);
         await rankifyInstance.connect(adr.player1.wallet).joinGame(lastCreatedGameId);
-        const balance2 = await env.rankToken.balanceOf(adr.player1.wallet.address, 2);
-        expect(await env.rankToken.unlockedBalanceOf(adr.player1.wallet.address, 2)).to.be.equal(
-          balance.toNumber() - 1,
-        );
+        const balance2 = await rankToken.balanceOf(adr.player1.wallet.address, 2);
+        expect(await rankToken.unlockedBalanceOf(adr.player1.wallet.address, 2)).to.be.equal(balance.toNumber() - 1);
       });
       it('Returns rank token if player leaves game', async () => {
         const lastCreatedGameId = await rankifyInstance.getContractState().then(r => r.BestOfState.numGames);
-        await env.rankToken.connect(adr.player1.wallet).setApprovalForAll(rankifyInstance.address, true);
+        await rankToken.connect(adr.player1.wallet).setApprovalForAll(rankifyInstance.address, true);
         await rankifyInstance.connect(adr.player1.wallet).joinGame(lastCreatedGameId);
-        expect(await env.rankToken.unlockedBalanceOf(adr.player1.wallet.address, 2)).to.be.equal(0);
+        expect(await rankToken.unlockedBalanceOf(adr.player1.wallet.address, 2)).to.be.equal(0);
         await rankifyInstance.connect(adr.player1.wallet).leaveGame(lastCreatedGameId);
-        expect(await env.rankToken.unlockedBalanceOf(adr.player1.wallet.address, 2)).to.be.equal(1);
+        expect(await rankToken.unlockedBalanceOf(adr.player1.wallet.address, 2)).to.be.equal(1);
       });
       it('Returns rank token if was game closed', async () => {
         const lastCreatedGameId = await rankifyInstance.getContractState().then(r => r.BestOfState.numGames);
-        await env.rankToken.connect(adr.player1.wallet).setApprovalForAll(rankifyInstance.address, true);
-        await env.rankToken.connect(adr.player2.wallet).setApprovalForAll(rankifyInstance.address, true);
+        await rankToken.connect(adr.player1.wallet).setApprovalForAll(rankifyInstance.address, true);
+        await rankToken.connect(adr.player2.wallet).setApprovalForAll(rankifyInstance.address, true);
         await rankifyInstance.connect(adr.player1.wallet).joinGame(lastCreatedGameId);
         await rankifyInstance.connect(adr.player2.wallet).joinGame(lastCreatedGameId);
-        let p1balance = await env.rankToken.unlockedBalanceOf(adr.player1.wallet.address, 2);
+        let p1balance = await rankToken.unlockedBalanceOf(adr.player1.wallet.address, 2);
         p1balance = p1balance.add(1);
 
-        let p2balance = await env.rankToken.unlockedBalanceOf(adr.player2.wallet.address, 2);
+        let p2balance = await rankToken.unlockedBalanceOf(adr.player2.wallet.address, 2);
         p2balance = p2balance.add(1);
         await rankifyInstance.connect(adr.player1.wallet).cancelGame(lastCreatedGameId);
-        expect(await env.rankToken.unlockedBalanceOf(adr.player1.wallet.address, 2)).to.be.equal(p1balance);
-        expect(await env.rankToken.unlockedBalanceOf(adr.player2.wallet.address, 2)).to.be.equal(p2balance);
+        expect(await rankToken.unlockedBalanceOf(adr.player1.wallet.address, 2)).to.be.equal(p1balance);
+        expect(await rankToken.unlockedBalanceOf(adr.player2.wallet.address, 2)).to.be.equal(p2balance);
       });
       describe('when this game is over', () => {
         const balancesBeforeJoined: BigNumber[] = [];
@@ -1442,7 +1500,7 @@ describe(scriptName, () => {
           const players = getPlayers(adr, RInstanceSettings.RInstance_MIN_PLAYERS, 0);
           const lastCreatedGameId = await rankifyInstance.getContractState().then(r => r.BestOfState.numGames);
           for (let i = 0; i < players.length; i++) {
-            balancesBeforeJoined[i] = await env.rankToken.unlockedBalanceOf(players[i].wallet.address, 2);
+            balancesBeforeJoined[i] = await rankToken.unlockedBalanceOf(players[i].wallet.address, 2);
           }
           await fillParty(players, rankifyInstance, lastCreatedGameId, true, true, adr.gameMaster1);
 
@@ -1458,7 +1516,7 @@ describe(scriptName, () => {
           const balances: number[] = [];
           const players = getPlayers(adr, RInstanceSettings.RInstance_MIN_PLAYERS, 0);
           for (let i = 0; i < players.length; i++) {
-            balances[i] = await env.rankToken.balanceOf(players[i].wallet.address, 3).then(bn => bn.toNumber());
+            balances[i] = await rankToken.balanceOf(players[i].wallet.address, 3).then(bn => bn.toNumber());
           }
           expect(balances[0]).to.be.equal(1);
           expect(balances[1]).to.be.equal(0);
@@ -1468,7 +1526,7 @@ describe(scriptName, () => {
           const balances: BigNumberish[] = [];
           const players = getPlayers(adr, RInstanceSettings.RInstance_MIN_PLAYERS, 0);
           for (let i = 0; i < players.length; i++) {
-            balances[i] = await env.rankToken.balanceOf(players[i].wallet.address, 2);
+            balances[i] = await rankToken.balanceOf(players[i].wallet.address, 2);
           }
 
           expect(balances[0]).to.be.equal(balancesBeforeJoined[0]);
