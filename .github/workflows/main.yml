@@ -5,6 +5,7 @@ on:
     types: [opened, reopened, labeled, synchronize]
 env:
     FORK_RPC_URL: ${{ secrets.FORK_RPC_URL }}
+    NODE_ENV: 'TEST'
 jobs:
   lint:
     runs-on: ubuntu-latest
