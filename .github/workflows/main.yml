@@ -3,6 +3,8 @@ on:
   pull_request:
     branches: [main,staging]
     types: [opened, reopened, labeled, synchronize]
+env:
+    FORK_RPC_URL: ${{ secrets.FORK_RPC_URL }}
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -22,6 +24,4 @@ jobs:
 
       - name: Running tests
         run: pnpm test:parallel
-    env:
-        FORK_RPC_URL: ${{ secrets.FORK_RPC_URL }}
 
