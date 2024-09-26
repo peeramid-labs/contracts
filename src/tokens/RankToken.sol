@@ -17,9 +17,8 @@ import "hardhat/console.sol";
  * @notice RankToken is a composite ERC1155 token that is used to track user ranks
  */
 contract RankToken is LockableERC1155, IRankToken, ERC7746Middleware {
-
-        struct Storage {
-        string  _contractURI;
+    struct Storage {
+        string _contractURI;
     }
 
     bytes32 constant RANK_TOKEN_STORAGE_POSITION = keccak256("rank.token.storage.position");
@@ -31,16 +30,11 @@ contract RankToken is LockableERC1155, IRankToken, ERC7746Middleware {
         }
     }
 
-    constructor(
-        string memory uri_,
-        string memory cURI,
-        address accessLayer
-    )  {
-       initialize(uri_, cURI, accessLayer);
+    constructor(string memory uri_, string memory cURI, address accessLayer) {
+        initialize(uri_, cURI, accessLayer);
     }
 
-    function initialize( string memory uri_, string memory cURI, address accessLayer) public initializer
-    {
+    function initialize(string memory uri_, string memory cURI, address accessLayer) public initializer {
         // __Ownable_init(owner_);
         _setURI(uri_);
         getStorage()._contractURI = cURI;
@@ -50,7 +44,6 @@ contract RankToken is LockableERC1155, IRankToken, ERC7746Middleware {
         layers[0] = LibMiddleware.LayerStruct({layerAddess: accessLayer, layerConfigData: ""});
         LibMiddleware.setLayers(layers);
     }
-
 
     // function getRankingInstance() public view returns (address) {
     //     return getStorage().rankingInstance;
@@ -79,7 +72,12 @@ contract RankToken is LockableERC1155, IRankToken, ERC7746Middleware {
         _mint(to, level, amount, data);
     }
 
-    function mint(address to, uint256 amount, uint256 level, bytes memory data) public ERC7746C(msg.sig, msg.sender, msg.data, 0) {
+    function mint(
+        address to,
+        uint256 amount,
+        uint256 level,
+        bytes memory data
+    ) public ERC7746C(msg.sig, msg.sender, msg.data, 0) {
         _mintRank(to, amount, level, data);
     }
 
@@ -117,12 +115,13 @@ contract RankToken is LockableERC1155, IRankToken, ERC7746Middleware {
         _mintBatch(to, ids, amounts, data);
     }
 
-
     function _update(address from, address to, uint256[] memory ids, uint256[] memory values) internal override {
         super._update(from, to, ids, values);
     }
 
-    function supportsInterface(bytes4 interfaceId) public view virtual override(IERC165, ERC1155Upgradeable) returns (bool) {
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view virtual override(IERC165, ERC1155Upgradeable) returns (bool) {
         return interfaceId == type(IRankToken).interfaceId || super.supportsInterface(interfaceId);
     }
 }

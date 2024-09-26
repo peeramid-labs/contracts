@@ -7,6 +7,7 @@ import "../vendor/diamond/facets/DiamondCutFacet.sol";
 
 contract DiamondDistribution is CloneDistribution {
     address immutable _reference;
+
     constructor(address owner) {
         address diamondCutFacet = address(new DiamondCutFacet());
         // Deploy the diamond proxy contract

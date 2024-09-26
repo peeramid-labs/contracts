@@ -57,8 +57,6 @@ contract RankifyInstanceMainFacet is
         emit gameCreated(gameId, gameMaster, msg.sender, gameRank);
     }
 
-
-
     function createGame(address gameMaster, uint256 gameRank) public {
         LibRankify.enforceIsInitialized();
         RInstanceSettings storage settings = RInstanceStorage();

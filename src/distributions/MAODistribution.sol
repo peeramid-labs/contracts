@@ -24,34 +24,34 @@ import {RankToken} from "../tokens/RankToken.sol";
 import "../initializers/RankifyInstanceInit.sol";
 import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 
-    struct UserACIDSettings {
-        uint256 timePerTurn;
-        uint256 maxPlayersSize;
-        uint256 minPlayersSize;
-        uint256 timeToJoin;
-        uint256 maxTurns;
-        uint256 voteCredits;
-        uint256 gamePrice;
-        address paymentToken;
-        uint256 joinGamePrice;
-        string metadata;
-        string rankTokenURI;
-        string RankTokenContractURI;
-    }
+struct UserACIDSettings {
+    uint256 timePerTurn;
+    uint256 maxPlayersSize;
+    uint256 minPlayersSize;
+    uint256 timeToJoin;
+    uint256 maxTurns;
+    uint256 voteCredits;
+    uint256 gamePrice;
+    address paymentToken;
+    uint256 joinGamePrice;
+    string metadata;
+    string rankTokenURI;
+    string RankTokenContractURI;
+}
 
-    struct TokenSettings {
-        address addr;
-        string name;
-        string symbol;
-    }
+struct TokenSettings {
+    address addr;
+    string name;
+    string symbol;
+}
 
-    struct OSxDistributionArguments {
-        string daoURI;
-        string subdomain;
-        bytes metadata;
-        string tokenName;
-        string tokenSymbol;
-    }
+struct OSxDistributionArguments {
+    string daoURI;
+    string subdomain;
+    bytes metadata;
+    string tokenName;
+    string tokenSymbol;
+}
 
 struct DistributorArguments {
     OSxDistributionArguments DAOSEttings;
@@ -102,6 +102,7 @@ interface IPluginRepo {
     ) external;
 
     function latestRelease() external view returns (uint8);
+
     function getLatestVersion(uint8 _release) external view returns (Version memory);
 }
 
@@ -192,8 +193,6 @@ contract MAODistribution is IDistribution, CodeIndexer {
             "Access manager does not support IERC7746"
         );
     }
-
-
 
     function createOSxDAO(
         OSxDistributionArguments memory args
@@ -312,9 +311,6 @@ contract MAODistribution is IDistribution, CodeIndexer {
             uint256 ACIDDistributionVersion
         ) = ACIDDistributionBase.instantiate(abi.encode(dao, rankToken, args.metadata));
 
-
-
-
         RankifyInstanceInit.contractInitializer memory ACIDInit = RankifyInstanceInit.contractInitializer({
             timePerTurn: args.timePerTurn,
             maxPlayersSize: args.maxPlayersSize,
@@ -328,7 +324,6 @@ contract MAODistribution is IDistribution, CodeIndexer {
             voteCredits: args.voteCredits,
             paymentToken: args.paymentToken
         });
-
 
         RankifyInstanceInit(ACIDDistrAddresses[0]).init(
             string(abi.encodePacked(ACIDDistributionname)),
@@ -350,9 +345,8 @@ contract MAODistribution is IDistribution, CodeIndexer {
     function instantiate(bytes memory data) public override returns (address[] memory instances, bytes32, uint256) {
         DistributorArguments memory args = abi.decode(data, (DistributorArguments));
 
-            (address[] memory DAOInstances, , ) = createOSxDAO(args.DAOSEttings);
-            (address[] memory ACIDInstances, , ) = createACID(args.ACIDSettings, DAOInstances[0]);
-
+        (address[] memory DAOInstances, , ) = createOSxDAO(args.DAOSEttings);
+        (address[] memory ACIDInstances, , ) = createACID(args.ACIDSettings, DAOInstances[0]);
 
         address[] memory returnValue = new address[](DAOInstances.length + ACIDInstances.length);
 
@@ -377,10 +371,11 @@ contract MAODistribution is IDistribution, CodeIndexer {
         return (srcs, distributionName, distributionVersion);
     }
 
-    function distributionSchema () external pure returns (DistributorArguments memory) {
-        return DistributorArguments({
-            DAOSEttings: OSxDistributionArguments("", "", "", "", ""),
-            ACIDSettings: UserACIDSettings(0, 0, 0, 0, 0, 0, 0, address(0), 0, "", "", "")
-        });
+    function distributionSchema() external pure returns (DistributorArguments memory) {
+        return
+            DistributorArguments({
+                DAOSEttings: OSxDistributionArguments("", "", "", "", ""),
+                ACIDSettings: UserACIDSettings(0, 0, 0, 0, 0, 0, 0, address(0), 0, "", "", "")
+            });
     }
 }

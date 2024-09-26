@@ -5,22 +5,22 @@ import "@peeramid-labs/eds/src/interfaces/IInitializer.sol";
 import "../initializers/RankifyInstanceInit.sol";
 import "@peeramid-labs/eds/src/abstracts/CodeIndexer.sol";
 import "@peeramid-labs/eds/src/libraries/LibSemver.sol";
+
 contract TournamentDistributionInitializer is IInitializer, CodeIndexer {
+    address immutable paymentToken;
+    address immutable rewardToken;
 
-        address immutable paymentToken;
-        address immutable rewardToken;
+    uint256 immutable gamePrice;
+    uint256 immutable joinGamePrice;
 
-        uint256 immutable gamePrice;
-        uint256 immutable joinGamePrice;
+    constructor(address _paymentToken, address _rewardToken, uint256 _gamePrice, uint256 _joinGamePrice) {
+        paymentToken = _paymentToken;
+        rewardToken = _rewardToken;
+        gamePrice = _gamePrice;
+        joinGamePrice = _joinGamePrice;
+    }
 
-        constructor(address _paymentToken, address _rewardToken, uint256 _gamePrice, uint256 _joinGamePrice) {
-            paymentToken = _paymentToken;
-            rewardToken = _rewardToken;
-            gamePrice = _gamePrice;
-            joinGamePrice = _joinGamePrice;
-        }
-
-        struct userSettings {
+    struct userSettings {
         uint256 timePerTurn;
         uint256 maxPlayersSize;
         uint256 minPlayersSize;
@@ -29,8 +29,13 @@ contract TournamentDistributionInitializer is IInitializer, CodeIndexer {
         uint256 voteCredits;
     }
 
-    function initialize(bytes32, address[] memory instances,bytes32 distributionName, uint256 distributionVersion, bytes calldata args) external override {
-
+    function initialize(
+        bytes32,
+        address[] memory instances,
+        bytes32 distributionName,
+        uint256 distributionVersion,
+        bytes calldata args
+    ) external override {
         if (instances.length < 3) {
             revert("This initializer needs an instance, payment and rank tokens in order to work");
         }
@@ -50,7 +55,10 @@ contract TournamentDistributionInitializer is IInitializer, CodeIndexer {
             voteCredits: userConfig.voteCredits,
             paymentToken: paymentToken
         });
-        initializerFacet.init(string(abi.encodePacked(distributionName)), LibSemver.toString(LibSemver.parse(distributionVersion)), initializer);
+        initializerFacet.init(
+            string(abi.encodePacked(distributionName)),
+            LibSemver.toString(LibSemver.parse(distributionVersion)),
+            initializer
+        );
     }
-
 }

@@ -85,6 +85,7 @@ contract RankifyInstanceGameOwnersFacet {
         IRankifyInstanceCommons.RInstanceSettings storage _RInstance = RInstanceStorage();
         _RInstance.rankTokenAddress = newRankToken;
     }
+
     /**
      *
      * @dev Sets the payment token address.
@@ -94,7 +95,7 @@ contract RankifyInstanceGameOwnersFacet {
      * - `newPaymentToken` must not be the zero address.
      * - `newRankToken` must support the ERC20 interface.
      */
-    function setPaymentTokenAddress (address newPaymentToken) external {
+    function setPaymentTokenAddress(address newPaymentToken) external {
         LibDiamond.enforceIsContractOwner();
         if (newPaymentToken == address(0)) {
             require(false, "zerovalue"); //revert ZeroValue();

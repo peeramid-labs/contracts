@@ -6,14 +6,15 @@ import "../vendor/diamond/facets/DiamondCutFacet.sol";
 import "../distributions/DiamondDistribution.sol";
 import "../vendor/diamond/libraries/LibDiamond.sol";
 import "../vendor/diamond/interfaces/IDiamondCut.sol";
+
 abstract contract InitializedDiamondDistribution is DiamondDistribution {
     address immutable initializer;
     bytes4 immutable initializerSelector;
 
-        constructor(address owner, bytes32 _initializerId, bytes4 _initializerSelector) DiamondDistribution(owner) {
-            initializer = getContractsIndex().get(_initializerId);
-            initializerSelector = _initializerSelector;
-        }
+    constructor(address owner, bytes32 _initializerId, bytes4 _initializerSelector) DiamondDistribution(owner) {
+        initializer = getContractsIndex().get(_initializerId);
+        initializerSelector = _initializerSelector;
+    }
 
     function initialize(
         DiamondCutFacet instance,
@@ -25,7 +26,7 @@ abstract contract InitializedDiamondDistribution is DiamondDistribution {
     }
 
     function get() public view virtual override returns (address[] memory, bytes32 name, uint256 version) {
-        (address[] memory srcs,,) = super.sources();
+        (address[] memory srcs, , ) = super.sources();
         address[] memory _sources = new address[](2);
         assert(srcs.length == 1);
         _sources[0] = srcs[0];

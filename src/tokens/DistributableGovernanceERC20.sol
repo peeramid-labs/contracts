@@ -57,7 +57,13 @@ contract DistributableGovernanceERC20 is
     /// @param _name The name of the [ERC-20](https://eips.ethereum.org/EIPS/eip-20) governance token.
     /// @param _symbol The symbol of the [ERC-20](https://eips.ethereum.org/EIPS/eip-20) governance token.
     /// @param _mintSettings The token mint settings struct containing the `receivers` and `amounts`.
-    constructor(IDAO _dao, string memory _name, string memory _symbol, MintSettings memory _mintSettings, address _accessManager) {
+    constructor(
+        IDAO _dao,
+        string memory _name,
+        string memory _symbol,
+        MintSettings memory _mintSettings,
+        address _accessManager
+    ) {
         initialize(_dao, _name, _symbol, _mintSettings, _accessManager);
     }
 
@@ -72,7 +78,6 @@ contract DistributableGovernanceERC20 is
         string memory _symbol,
         MintSettings memory _mintSettings,
         address accessManager
-
     ) public initializer {
         LibMiddleware.LayerStruct[] memory layers = new LibMiddleware.LayerStruct[](1);
 

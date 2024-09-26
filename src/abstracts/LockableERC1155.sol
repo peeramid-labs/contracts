@@ -5,14 +5,12 @@ import "../libraries/LibReentrancyGuard.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import {ILockableERC1155} from "../interfaces/ILockableERC1155.sol";
 
-
 /**
  * @title LockableERC1155
  * @dev This is an abstract contract that extends the ERC1155 token contract and implements the ILockableERC1155 interface.
  *      It provides functionality to lock and unlock token amounts for specific accounts and IDs.
  */
 abstract contract LockableERC1155 is ERC1155Upgradeable, ILockableERC1155 {
-
     struct LockableERC1155Storage {
         mapping(address => mapping(uint256 => uint256)) lockedAmounts;
     }
@@ -38,7 +36,7 @@ abstract contract LockableERC1155 is ERC1155Upgradeable, ILockableERC1155 {
     function lock(address account, uint256 id, uint256 amount) public virtual {
         LockableERC1155Storage storage s = getLockableERC1155Storage();
         if (balanceOf(account, id) < s.lockedAmounts[account][id] + amount)
-        revert insufficient(id, s.lockedAmounts[account][id], amount);
+            revert insufficient(id, s.lockedAmounts[account][id], amount);
         s.lockedAmounts[account][id] += amount;
         emit TokensLocked(account, id, amount);
     }
@@ -88,7 +86,11 @@ abstract contract LockableERC1155 is ERC1155Upgradeable, ILockableERC1155 {
         for (uint256 i = 0; i < ids.length; i++) {
             if (from != address(0)) {
                 if (getLockableERC1155Storage().lockedAmounts[from][ids[i]] + values[i] > balanceOf(from, ids[i])) {
-                    revert insufficient(ids[i], balanceOf(from, ids[i]), getLockableERC1155Storage().lockedAmounts[from][ids[i]] + values[i]);
+                    revert insufficient(
+                        ids[i],
+                        balanceOf(from, ids[i]),
+                        getLockableERC1155Storage().lockedAmounts[from][ids[i]] + values[i]
+                    );
                 }
             }
         }

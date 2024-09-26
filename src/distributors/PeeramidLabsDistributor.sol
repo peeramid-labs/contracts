@@ -11,7 +11,10 @@ contract PeeramidLabsDistributor is Distributor, AccessControlDefaultAdminRules 
         _addDistribution(id, initializer);
     }
 
-    function instantiate(bytes32 id, bytes calldata args) external returns (address[] memory srcs, bytes32 name, uint256 version) {
+    function instantiate(
+        bytes32 id,
+        bytes calldata args
+    ) external returns (address[] memory srcs, bytes32 name, uint256 version) {
         return _instantiate(id, args);
     }
 
@@ -19,7 +22,10 @@ contract PeeramidLabsDistributor is Distributor, AccessControlDefaultAdminRules 
         _removeDistribution(id);
     }
 
-    function supportsInterface(bytes4 interfaceId) public view virtual override(AccessControlDefaultAdminRules, Distributor) returns (bool) {
-        return AccessControlDefaultAdminRules.supportsInterface(interfaceId) || Distributor.supportsInterface(interfaceId);
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view virtual override(AccessControlDefaultAdminRules, Distributor) returns (bool) {
+        return
+            AccessControlDefaultAdminRules.supportsInterface(interfaceId) || Distributor.supportsInterface(interfaceId);
     }
 }
