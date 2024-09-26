@@ -14,7 +14,6 @@ const setupTest = deployments.createFixture(async ({ deployments, getNamedAccoun
 describe('DiamondTest', async function () {
   let contract: any;
   beforeEach(async function () {
-    console.log('before');
     contract = await setupTest();
   });
   it('emits fire all events', async () => {

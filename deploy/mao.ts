@@ -8,7 +8,6 @@ import { activeContractsList } from '@aragon/osx-ethers';
 import { CodeIndex } from '@peeramid-labs/eds/types';
 import CodeIndexAbi from '@peeramid-labs/eds/abi/src/CodeIndex.sol/CodeIndex.json';
 import { MintSettingsStruct } from '../types/src/tokens/DistributableGovernanceERC20.sol/DistributableGovernanceERC20';
-console.log('network', hardhatArguments);
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   hre.tracer.enabled = true;
   console.log('deploying MAO');
