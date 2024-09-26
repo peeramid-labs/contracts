@@ -22,6 +22,9 @@ import { Deployment } from 'hardhat-deploy/types';
 import { HardhatEthersHelpers } from '@nomiclabs/hardhat-ethers/types';
 import { MultipassJs } from '../utils/multipass';
 import { LibMultipass } from '../types/src/facets/DNSFacet';
+import { JsonFragment } from '@ethersproject/abi';
+import fs from 'fs';
+import path from 'path';
 
 export const MULTIPASS_CONTRACT_NAME = 'MultipassDNS';
 export const MULTIPASS_CONTRACT_VERSION = '0.0.1';
@@ -922,10 +925,36 @@ export const signRegistrarMessage = async (
   return await multipassJs.signRegistrarMessage(message, verifierAddress, signer.wallet);
 };
 
+const getSuperInterface = () => {
+    let mergedArray: JsonFragment[] = [];
+    function readDirectory(directory: string) {
+      const files = fs.readdirSync(directory);
+
+      files.forEach(file => {
+        const fullPath = path.join(directory, file);
+        if (fs.statSync(fullPath).isDirectory()) {
+          readDirectory(fullPath); // Recurse into subdirectories
+        } else if (path.extname(file) === '.json') {
+          const fileContents = require('../' + fullPath); // Load the JSON file
+          if (Array.isArray(fileContents)) {
+            mergedArray = mergedArray.concat(fileContents); // Merge the array from the JSON file
+          }
+        }
+      });
+    }
+    const originalConsoleLog = console.log;
+    readDirectory('./abi');
+    console.log = () => {}; // avoid noisy output
+    const result = new ethers.utils.Interface(mergedArray);
+    console.log = originalConsoleLog;
+    return result;
+  };
+
 export default {
   setupAddresses,
   setupEnvironment,
   addPlayerNameId,
   baseFee,
   signMessage: signRegistrarMessage,
+  getSuperInterface
 };

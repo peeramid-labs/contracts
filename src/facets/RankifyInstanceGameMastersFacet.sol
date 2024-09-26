@@ -13,7 +13,7 @@ import {RankToken} from "../tokens/RankToken.sol";
 import {LibCoinVending} from "../libraries/LibCoinVending.sol";
 import "hardhat/console.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
-import "../vendor/libraries/LibDiamond.sol";
+import "../vendor/diamond/libraries/LibDiamond.sol";
 
 contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
     using LibTBG for uint256;
