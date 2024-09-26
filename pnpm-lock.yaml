@@ -78,6 +78,9 @@ importers:
       '@openzeppelin/test-helpers':
         specifier: ^0.5.10
         version: 0.5.16(bn.js@5.2.1)(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+      '@peeramid-labs/eds':
+        specifier: ^1.0.0
+        version: 1.0.0(bufferutil@4.0.8)(hardhat@2.18.2(bufferutil@4.0.8)(ts-node@10.9.1(@types/node@17.0.45)(typescript@5.2.2))(typescript@5.2.2)(utf-8-validate@5.0.10))(utf-8-validate@5.0.10)
       '@shopify/eslint-plugin':
         specifier: ^43.0.0
         version: 43.0.0(@babel/core@7.23.2)(eslint@8.52.0)(prettier@3.0.3)(typescript@5.2.2)
@@ -803,6 +806,9 @@ packages:
 
   '@openzeppelin/test-helpers@0.5.16':
     resolution: {integrity: sha512-T1EvspSfH1qQO/sgGlskLfYVBbqzJR23SZzYl/6B2JnT4EhThcI85UpvDk0BkLWKaDScQTabGHt4GzHW+3SfZg==}
+
+  '@peeramid-labs/eds@1.0.0':
+    resolution: {integrity: sha512-Alm/iTPlQErvv6BBXn4Tn+1dcpwMa7uDVh7KuwdAafwXp/YwKxEWKKxYvotBfS1crrcmelkk38qwW5O/t5wPwg==}
 
   '@pkgr/utils@2.4.2':
     resolution: {integrity: sha512-POgTXhjrTfbTV63DiFXav4lBHiICLKKwDeaKn9Nphwj7WH6m0hMMCaJkMyRWjgtPFyRKRVoMXXjczsTQRDEhYw==}
@@ -7093,6 +7099,28 @@ snapshots:
       - bufferutil
       - encoding
       - supports-color
+      - utf-8-validate
+
+  '@peeramid-labs/eds@1.0.0(bufferutil@4.0.8)(hardhat@2.18.2(bufferutil@4.0.8)(ts-node@10.9.1(@types/node@17.0.45)(typescript@5.2.2))(typescript@5.2.2)(utf-8-validate@5.0.10))(utf-8-validate@5.0.10)':
+    dependencies:
+      '@ethersproject/abi': 5.7.0
+      '@openzeppelin/contracts': 5.0.2
+      '@openzeppelin/contracts-upgradeable': 5.0.2(@openzeppelin/contracts@5.0.2)
+      '@types/chai': 4.3.9
+      '@types/mocha': 9.1.1
+      '@types/node': 17.0.45
+      chalk: 4.1.2
+      cli-table: 0.3.11
+      hardhat-gas-reporter: 1.0.9(bufferutil@4.0.8)(hardhat@2.18.2(bufferutil@4.0.8)(ts-node@10.9.1(@types/node@17.0.45)(typescript@5.2.2))(typescript@5.2.2)(utf-8-validate@5.0.10))(utf-8-validate@5.0.10)
+      ts-node: 10.9.1(@types/node@17.0.45)(typescript@5.2.2)
+      typescript: 5.2.2
+    transitivePeerDependencies:
+      - '@codechecks/client'
+      - '@swc/core'
+      - '@swc/wasm'
+      - bufferutil
+      - debug
+      - hardhat
       - utf-8-validate
 
   '@pkgr/utils@2.4.2':
