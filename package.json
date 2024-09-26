@@ -52,7 +52,7 @@
     "eslint-plugin-promise": "^6.1.1",
     "eth-create2-calculator": "^1.1.5",
     "ethers": "^5.6.6",
-    "hardhat": "^2.18.2",
+    "hardhat": "^2.22.5",
     "hardhat-abi-exporter": "^2.9.0",
     "hardhat-contract-sizer": "^2.6.1",
     "hardhat-deploy": "^0.12.2",
