@@ -1,9 +1,6 @@
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
-import { activeContractsList } from '@aragon/osx-ethers';
 
-activeContractsList.baseMainnet.DAOFactory;
-activeContractsList.baseMainnet.TokenVotingSetup;
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployments, getNamedAccounts } = hre;
