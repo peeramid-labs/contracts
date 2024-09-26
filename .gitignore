@@ -273,3 +273,5 @@ types
 bin/
 /deployments/localhost/
 /deployments/hardhat/
+
+abi/
