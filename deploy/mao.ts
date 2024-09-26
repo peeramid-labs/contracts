@@ -1,15 +1,13 @@
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
 import { ethers, hardhatArguments } from 'hardhat';
-import { ArguableVotingTournament, LibSemver__factory, PeeramidLabsDistributor } from '../types';
-import { MAODistribution } from '../types';
 import { LibSemver } from '../types/src/distributions/MAO.sol/MAODistribution';
 import { activeContractsList } from '@aragon/osx-ethers';
 import { CodeIndex } from '@peeramid-labs/eds/types';
 import CodeIndexAbi from '@peeramid-labs/eds/abi/src/CodeIndex.sol/CodeIndex.json';
 import { MintSettingsStruct } from '../types/src/tokens/DistributableGovernanceERC20.sol/DistributableGovernanceERC20';
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
-  hre.tracer.enabled = true;
+
   const { deployments, getNamedAccounts } = hre;
   const { deploy } = deployments;
   const network: keyof typeof activeContractsList =
@@ -18,7 +16,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     console.log('network', network, process.env.NODE_ENV);
   }
   if (!network) throw new Error('Network not provided');
-  const { deployer, owner } = await getNamedAccounts();
+  const { deployer } = await getNamedAccounts();
 
   const codeIndexContract = (await ethers.getContractAt(
     CodeIndexAbi,

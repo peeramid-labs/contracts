@@ -6,7 +6,7 @@ import { ethers } from 'hardhat';
 import { MultipassDiamond } from '../types';
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployments, getNamedAccounts } = hre;
-  const { deploy, diamond } = deployments;
+  const {  diamond } = deployments;
   const { deployer, owner } = await getNamedAccounts();
 
   const deployment = await diamond.deploy('Multipass', {
