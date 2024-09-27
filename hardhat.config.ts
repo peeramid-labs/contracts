@@ -1,5 +1,4 @@
 import { task } from 'hardhat/config';
-import { ethers } from 'hardhat';
 import '@nomicfoundation/hardhat-chai-matchers';
 import 'hardhat-diamond-abi';
 import '@nomicfoundation/hardhat-toolbox';
@@ -100,6 +99,9 @@ export default {
     defaultPlayer: {
       localhost: '0xF52E5dF676f51E410c456CC34360cA6F27959420',
     },
+  },
+  mocha: {
+    timeout: 400000,
   },
   defaultNetwork: 'hardhat',
   networks: {
