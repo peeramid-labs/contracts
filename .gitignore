@@ -275,3 +275,4 @@ bin/
 /deployments/hardhat/
 
 abi/
+docs/contracts/
