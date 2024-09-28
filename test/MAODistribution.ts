@@ -4,7 +4,6 @@ import { deployments, ethers } from 'hardhat';
 import hre from 'hardhat';
 import { expect } from 'chai';
 import { IDAO, MAODistribution, PeeramidLabsDistributor, Rankify, RankifyDiamondInstance } from '../types';
-import { DistributorArgumentsStruct } from '../types/src/distributions/MAODistribution.sol/MAODistribution';
 import utils, { AdrSetupResult, setupTest } from './utils';
 import { getCodeIdFromArtifact } from '../scripts/getCodeId';
 import addDistribution from '../scripts/playbooks/addDistribution';
@@ -42,7 +41,7 @@ describe('MAODistribution', async function () {
     });
     it('Can instantiate a distribution', async () => {
       // Define the arguments for the instantiate function
-      const distributorArguments: DistributorArgumentsStruct = {
+      const distributorArguments: MAODistribution.DistributorArgumentsStruct = {
         DAOSEttings: {
           daoURI: 'https://example.com/dao',
           subdomain: 'example',
