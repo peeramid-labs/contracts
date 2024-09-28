@@ -114,3 +114,11 @@ export function transformDev(comment: string): string {
 export const isVisible = (type: string) => {
   return type !== 'internal' && type !== 'private';
 };
+
+export const substituteAnchors = (text: string) => {
+  if (typeof text === 'string') {
+    return text.replace(/{(\w+)}/g, (match: string, p1: string) => {
+      return `[${p1}](#${p1.toLocaleLowerCase()})`;
+    });
+  }
+};

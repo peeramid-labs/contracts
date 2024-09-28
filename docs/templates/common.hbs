@@ -2,7 +2,7 @@
 {{#if (isVisible visibility)}}
 {{h 2}}  {{name}}
 
-{{natspec.notice}}
+{{substituteAnchors natspec.notice}}
 
 {{#if signature}}
 ```solidity
@@ -15,12 +15,12 @@
 | Input | Type | Description |
 |:----- | ---- | ----------- |
 {{#each params}}
-| `{{{name}}}` | `{{{type}}}` | {{{joinLines natspec}}} |
+| `{{{name}}}` | `{{{type}}}` | {{{joinLines (substituteAnchors natspec)}}} |
 {{/each}}
 {{#if natspec.returns}}
 | **Output** | |
 {{#each returns}}
-| {{#if name}} `{{name}}` {{else}} `{{@index}}` {{/if}} | `{{type}}` | {{{joinLines natspec}}} |
+| {{#if name}} `{{name}}` {{else}} `{{@index}}` {{/if}} | `{{type}}` | {{{joinLines (substituteAnchors natspec)}}} |
 {{/each}}
 {{/if}}
 {{else}}
@@ -28,12 +28,12 @@
 | Output | Type | Description |
 | ------ | ---- | ----------- |
 {{#each returns}}
-| {{#if name}} `{{{name}}}` {{else}} `{{{@index}}}` {{/if}} | `{{type}}` | {{{joinLines natspec}}} |
+| {{#if name}} `{{{name}}}` {{else}} `{{{@index}}}` {{/if}} | `{{type}}` | {{{joinLines (substituteAnchors natspec)}}} |
 {{/each}}
 {{/if}}
 {{/if}}
 
 {{#if natspec.dev}}
-{{{transformDev natspec.dev}}}
+{{{transformDev (substituteAnchors natspec.dev)}}}
 {{/if}}
 
