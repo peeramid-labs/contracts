@@ -61,3 +61,56 @@ export function joinLines(text?: string) {
     return text.replace(/\n+/g, ' ');
   }
 }
+
+export function transformDev(comment: string): string {
+  // Split the comment into lines
+  const lines = comment.split('\n');
+
+  // Initialize variables to store the transformed text
+  let transformedText = '';
+  let isWarning = false;
+  let isFirstNotice = true;
+  let noticeBlock = '';
+
+  // Iterate over each line
+  lines.forEach(line => {
+    const trimmedLine = line.trim();
+
+    // Check if the line starts with WARNING:
+    if (trimmedLine.startsWith('WARNING:')) {
+      // Add the WARNING prefix
+      if (noticeBlock) {
+        transformedText += `\n\n!!! NOTICE\n\n\t${noticeBlock.trim().replace(/\n/g, '\n\t')}`;
+        noticeBlock = '';
+      }
+      transformedText += `\n\n!!! WARNING\n\n\t${trimmedLine.replace('WARNING:', '').trim()}`;
+      isWarning = true;
+    } else if (trimmedLine) {
+      // Add the line to the NOTICE block
+      if (isWarning) {
+        transformedText += `\n\t${trimmedLine}`;
+      } else {
+        noticeBlock += `\n${trimmedLine}`;
+      }
+    } else {
+      // Handle empty lines
+      if (noticeBlock) {
+        transformedText += `\n\n!!! NOTICE\n\n\t${noticeBlock.trim().replace(/\n/g, '\n\t')}`;
+        noticeBlock = '';
+      }
+      isWarning = false;
+    }
+  });
+
+  // Add any remaining notice block
+  if (noticeBlock) {
+    transformedText += `\n\n!!! NOTICE\n\n\t${noticeBlock.trim().replace(/\n/g, '\n\t')}`;
+  }
+
+  // Return the transformed text
+  return transformedText.trim();
+}
+
+export const isVisible = (type: string) => {
+  return type !== 'internal' && type !== 'private';
+};
