@@ -182,7 +182,7 @@ contract RankifyInstanceMainFacet is
         uint256,
         uint256,
         bytes calldata
-    ) public view override returns (bytes4) {
+    ) public override returns (bytes4) {
         LibRankify.enforceIsInitialized();
         if (operator == address(this)) {
             return bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"));
@@ -192,11 +192,11 @@ contract RankifyInstanceMainFacet is
 
     function onERC1155BatchReceived(
         address operator,
-        address,
+        address from,
         uint256[] calldata,
         uint256[] calldata,
         bytes calldata
-    ) external view override returns (bytes4) {
+    ) external override returns (bytes4) {
         LibRankify.enforceIsInitialized();
         if (operator == address(this)) {
             return bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"));
@@ -206,8 +206,8 @@ contract RankifyInstanceMainFacet is
 
     function onERC721Received(
         address operator,
-        address,
-        uint256,
+        address from,
+        uint256 tokenId,
         bytes calldata
     ) external view override returns (bytes4) {
         LibRankify.enforceIsInitialized();
