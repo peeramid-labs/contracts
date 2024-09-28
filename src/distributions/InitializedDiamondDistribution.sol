@@ -7,6 +7,12 @@ import "../distributions/DiamondDistribution.sol";
 import "../vendor/diamond/libraries/LibDiamond.sol";
 import "../vendor/diamond/interfaces/IDiamondCut.sol";
 
+/**
+ * @title Initialized Diamond Proxy Distribution
+ * @notice This contract is EDS compatible factory for diamond proxies
+ * @dev This allows to store immutable initializer logic for a cloned diamond proxy
+ * @author Peeramid Labs, 2024
+ */
 abstract contract InitializedDiamondDistribution is DiamondDistribution {
     address immutable initializer;
     bytes4 immutable initializerSelector;

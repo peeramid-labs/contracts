@@ -1,20 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "./InitializedDiamondDistribution.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
-import "../vendor/diamond/facets/DiamondLoupeFacet.sol";
-import "../facets/EIP712InspectorFacet.sol";
-import "../vendor/diamond/facets/OwnershipFacet.sol";
-import "../facets/RankifyInstanceMainFacet.sol";
-import "../facets/RankifyInstanceRequirementsFacet.sol";
-import "../facets/RankifyInstanceGameMastersFacet.sol";
-import "../facets/RankifyInstanceGameOwnersFacet.sol";
-import "../vendor/diamond/interfaces/IDiamondCut.sol";
-import "../vendor/diamond/interfaces/IDiamondLoupe.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20VotesUpgradeable.sol";
 import "@peeramid-labs/eds/src/interfaces/IDistribution.sol";
-import {IPluginSetup} from "@aragon/osx/framework/plugin/setup/IPluginSetup.sol";
 import "@peeramid-labs/eds/src/libraries/LibSemver.sol";
 import {DistributableGovernanceERC20, MintSettings, IDAO} from "../tokens/DistributableGovernanceERC20.sol";
 import {IERC7746} from "@peeramid-labs/eds/src/interfaces/IERC7746.sol";
@@ -23,173 +11,112 @@ import {IDistributor} from "@peeramid-labs/eds/src/interfaces/IDistributor.sol";
 import {RankToken} from "../tokens/RankToken.sol";
 import "../initializers/RankifyInstanceInit.sol";
 import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
+import "@peeramid-labs/eds/src/abstracts/CodeIndexer.sol";
 
-struct UserACIDSettings {
-    uint256 timePerTurn;
-    uint256 maxPlayersSize;
-    uint256 minPlayersSize;
-    uint256 timeToJoin;
-    uint256 maxTurns;
-    uint256 voteCredits;
-    uint256 gamePrice;
-    address paymentToken;
-    uint256 joinGamePrice;
-    string metadata;
-    string rankTokenURI;
-    string RankTokenContractURI;
-}
+import {TokenSettings, Tag, VotingMode, VotingSettings, Version, IPluginRepo, IDAOFactory} from "../vendor/aragon/interfaces.sol";
 
-struct TokenSettings {
-    address addr;
-    string name;
-    string symbol;
-}
-
-struct OSxDistributionArguments {
-    string daoURI;
-    string subdomain;
-    bytes metadata;
-    string tokenName;
-    string tokenSymbol;
-}
-
-struct DistributorArguments {
-    OSxDistributionArguments DAOSEttings;
-    UserACIDSettings ACIDSettings;
-}
-
-struct Tag {
-    uint8 release;
-    uint16 build;
-}
-
-enum VotingMode {
-    Standard,
-    EarlyExecution,
-    VoteReplacement
-}
-
-struct VotingSettings {
-    VotingMode votingMode;
-    uint32 supportThreshold;
-    uint32 minParticipation;
-    uint64 minDuration;
-    uint256 minProposerVotingPower;
-}
-
-struct Version {
-    Tag tag;
-    address pluginSetup;
-    bytes buildMetadata;
-}
-
-interface IPluginRepo {
-    /// @notice Updates the metadata for release with content `@fromHex(_releaseMetadata)`.
-    /// @param _release The release number.
-    /// @param _releaseMetadata The release metadata URI.
-    function updateReleaseMetadata(uint8 _release, bytes calldata _releaseMetadata) external;
-
-    /// @notice Creates a new plugin version as the latest build for an existing release number or the first build for a new release number for the provided `PluginSetup` contract address and metadata.
-    /// @param _release The release number.
-    /// @param _pluginSetupAddress The address of the plugin setup contract.
-    /// @param _buildMetadata The build metadata URI.
-    /// @param _releaseMetadata The release metadata URI.
-    function createVersion(
-        uint8 _release,
-        address _pluginSetupAddress,
-        bytes calldata _buildMetadata,
-        bytes calldata _releaseMetadata
-    ) external;
-
-    function latestRelease() external view returns (uint8);
-
-    function getLatestVersion(uint8 _release) external view returns (Version memory);
-}
-
-interface IDAOFactory {
-    struct PluginSetupRef {
-        Tag versionTag;
-        IPluginRepo pluginSetupRepo;
+/**
+ * @title MAODistribution
+ * @dev This contract implements the IDistribution and CodeIndexer interfaces. It uses the Clones library for address cloning.
+ *
+ * @notice The contract is responsible for creating and managing DAOs and ACID distributions.
+ * @author Peeramid Labs, 2024
+ */
+contract MAODistribution is IDistribution, CodeIndexer {
+    struct UserACIDSettings {
+        uint256 timePerTurn;
+        uint256 maxPlayersSize;
+        uint256 minPlayersSize;
+        uint256 timeToJoin;
+        uint256 maxTurns;
+        uint256 voteCredits;
+        uint256 gamePrice;
+        address paymentToken;
+        uint256 joinGamePrice;
+        string metadata;
+        string rankTokenURI;
+        string RankTokenContractURI;
     }
 
-    /// @notice The container for the DAO settings to be set during the DAO initialization.
-    /// @param trustedForwarder The address of the trusted forwarder required for meta transactions.
-    /// @param daoURI The DAO uri used with [EIP-4824](https://eips.ethereum.org/EIPS/eip-4824).
-    /// @param subdomain The ENS subdomain to be registered for the DAO contract.
-    /// @param metadata The metadata of the DAO.
-    struct DAOSettings {
-        address trustedForwarder;
+    struct OSxDistributionArguments {
         string daoURI;
         string subdomain;
         bytes metadata;
+        string tokenName;
+        string tokenSymbol;
     }
 
-    /// @notice The container with the information required to install a plugin on the DAO.
-    /// @param pluginSetupRef The `PluginSetupRepo` address of the plugin and the version tag.
-    /// @param data The bytes-encoded data containing the input parameters for the installation as specified in the plugin's build metadata JSON file.
-    struct PluginSettings {
-        PluginSetupRef pluginSetupRef;
-        bytes data;
+    struct DistributorArguments {
+        OSxDistributionArguments DAOSEttings;
+        UserACIDSettings ACIDSettings;
     }
 
-    function createDao(
-        DAOSettings memory daoSettings,
-        PluginSettings[] memory pluginSettings
-    ) external returns (address);
-}
-
-interface ITokenVotingSetup {
-    function governanceERC20Base() external view returns (address);
-}
-
-contract MAODistribution is IDistribution, CodeIndexer {
     using Clones for address;
-    IPluginRepo immutable tokenVotingPluginRepo;
-    IDAOFactory immutable daoFactory;
-    address immutable trustedForwarder;
-    bytes32 immutable distributionName;
-    uint256 immutable distributionVersion;
-    address immutable rankTokenBase;
-    IDistribution immutable ACIDDistributionBase;
-    address immutable governanceERC20Base;
-    address immutable accessManagerBase;
+    IPluginRepo immutable _tokenVotingPluginRepo;
+    IDAOFactory immutable _daoFactory;
+    address immutable _trustedForwarder;
+    bytes32 immutable _distributionName;
+    uint256 immutable _distributionVersion;
+    address immutable _rankTokenBase;
+    IDistribution immutable _ACIDDistributionBase;
+    address immutable _governanceERC20Base;
+    address immutable _accessManagerBase;
 
     function stringToSelector(string memory signature) private pure returns (bytes4) {
         return bytes4(keccak256(bytes(signature)));
     }
 
+    /**
+     * @notice Initializes the contract with the provided parameters and performs necessary checks.
+     * @dev - retrieves contract addresses from a contract index using the provided identifiers.
+     * - checks if the access manager supports the ERC7746 interface.
+     * - EIP712 compatible name/version can be extracted with use of LibSemver
+     *
+     *
+     * WARNING: _trustedForwarder functionality hasn't been yet reviewed nor implemented for ACID distribution and if set will affect only OSx DAO setup.
+     *
+     * @param tokenVotingPluginRepo Address of the token voting plugin repository.
+     * @param daoFactory Address of the Aragons DAO factory.
+     * @param trustedForwarder Address of the trusted forwarder.
+     * @param rankTokenCodeId Identifier for the rank token code.
+     * @param ACIDDIistributionId Identifier for the ACID distribution.
+     * @param accessManagerId Identifier for the access manager.
+     * @param governanceERC20BaseId Identifier for the governance ERC20 base.
+     * @param distributionName Name of the distribution.
+     * @param distributionVersion Version of the distribution as a `LibSemver.Version` struct.
+     */
     constructor(
-        address _tokenVotingPluginRepo,
-        address _daoFactory,
-        address _trustedForwarder,
-        bytes32 _rankTokenCodeId,
-        bytes32 _ACIDDIistributionId,
+        address tokenVotingPluginRepo,
+        address daoFactory,
+        address trustedForwarder,
+        bytes32 rankTokenCodeId,
+        bytes32 ACIDDIistributionId,
         bytes32 accessManagerId,
-        bytes32 _governanceERC20BaseId,
-        bytes32 _distributionName,
-        LibSemver.Version memory _distributionVersion
+        bytes32 governanceERC20BaseId,
+        bytes32 distributionName,
+        LibSemver.Version memory distributionVersion
     ) {
-        governanceERC20Base = getContractsIndex().get(_governanceERC20BaseId);
-        tokenVotingPluginRepo = IPluginRepo(_tokenVotingPluginRepo);
-        daoFactory = IDAOFactory(_daoFactory);
-        trustedForwarder = _trustedForwarder;
-        distributionName = _distributionName;
-        distributionVersion = LibSemver.toUint256(_distributionVersion);
-        rankTokenBase = getContractsIndex().get(_rankTokenCodeId);
-        if (rankTokenBase == address(0)) {
+        _governanceERC20Base = getContractsIndex().get(governanceERC20BaseId);
+        _tokenVotingPluginRepo = IPluginRepo(tokenVotingPluginRepo);
+        _daoFactory = IDAOFactory(daoFactory);
+        _trustedForwarder = trustedForwarder;
+        _distributionName = distributionName;
+        _distributionVersion = LibSemver.toUint256(distributionVersion);
+        _rankTokenBase = getContractsIndex().get(rankTokenCodeId);
+        if (_rankTokenBase == address(0)) {
             revert("Rank token base not found");
         }
-        ACIDDistributionBase = IDistribution(getContractsIndex().get(_ACIDDIistributionId));
-        if (address(ACIDDistributionBase) == address(0)) {
+        _ACIDDistributionBase = IDistribution(getContractsIndex().get(ACIDDIistributionId));
+        if (address(_ACIDDistributionBase) == address(0)) {
             revert("ACID distribution base not found");
         }
 
-        accessManagerBase = getContractsIndex().get(accessManagerId);
-        if (accessManagerBase == address(0)) {
+        _accessManagerBase = getContractsIndex().get(accessManagerId);
+        if (_accessManagerBase == address(0)) {
             revert("Access manager base not found");
         }
         require(
-            ERC165Checker.supportsInterface(accessManagerBase, type(IERC7746).interfaceId),
+            ERC165Checker.supportsInterface(_accessManagerBase, type(IERC7746).interfaceId),
             "Access manager does not support IERC7746"
         );
     }
@@ -200,7 +127,7 @@ contract MAODistribution is IDistribution, CodeIndexer {
         MintSettings memory mintSettings = MintSettings(new address[](1), new uint256[](1));
         mintSettings.receivers[0] = address(this);
         mintSettings.amounts[0] = 0;
-        address token = governanceERC20Base.clone();
+        address token = _governanceERC20Base.clone();
         TokenSettings memory tokenSettings = TokenSettings(token, args.tokenName, args.tokenSymbol);
         VotingSettings memory votingSettings = VotingSettings({
             votingMode: VotingMode.Standard,
@@ -211,7 +138,7 @@ contract MAODistribution is IDistribution, CodeIndexer {
         });
 
         IDAOFactory.DAOSettings memory daoSettings = IDAOFactory.DAOSettings(
-            trustedForwarder,
+            _trustedForwarder,
             args.daoURI,
             args.subdomain,
             args.metadata
@@ -219,15 +146,15 @@ contract MAODistribution is IDistribution, CodeIndexer {
 
         IDAOFactory.PluginSettings memory tokenVotingPluginSetup = IDAOFactory.PluginSettings(
             IDAOFactory.PluginSetupRef(
-                tokenVotingPluginRepo.getLatestVersion(tokenVotingPluginRepo.latestRelease()).tag,
-                tokenVotingPluginRepo
+                _tokenVotingPluginRepo.getLatestVersion(_tokenVotingPluginRepo.latestRelease()).tag,
+                _tokenVotingPluginRepo
             ),
             abi.encode(votingSettings, tokenSettings, mintSettings)
         );
 
         IDAOFactory.PluginSettings[] memory pluginSettings = new IDAOFactory.PluginSettings[](1);
         pluginSettings[0] = tokenVotingPluginSetup;
-        address createdDao = daoFactory.createDao(daoSettings, pluginSettings);
+        address createdDao = _daoFactory.createDao(daoSettings, pluginSettings);
 
         SimpleAccessManager.SimpleAccessManagerInitializer[]
             memory govTokenAccessSettings = new SimpleAccessManager.SimpleAccessManagerInitializer[](1);
@@ -236,7 +163,7 @@ contract MAODistribution is IDistribution, CodeIndexer {
         govTokenAccessSettings[0].dissallowedAddresses[0] = createdDao;
         govTokenAccessSettings[0].distributionComponentsOnly = true;
 
-        SimpleAccessManager govTokenAccessManager = SimpleAccessManager(accessManagerBase.clone());
+        SimpleAccessManager govTokenAccessManager = SimpleAccessManager(_accessManagerBase.clone());
 
         govTokenAccessManager.initialize(govTokenAccessSettings, tokenSettings.addr, IDistributor(msg.sender)); // msg.sender must be IDistributor or it will revert
         DistributableGovernanceERC20(tokenSettings.addr).initialize(
@@ -259,9 +186,7 @@ contract MAODistribution is IDistribution, CodeIndexer {
         UserACIDSettings memory args,
         address dao
     ) internal returns (address[] memory instances, bytes32, uint256) {
-        address rankToken = rankTokenBase.clone();
-
-        // address[] memory returnValue = new address[](1);
+        address rankToken = _rankTokenBase.clone();
 
         bytes4[] memory rankTokenSelectors = new bytes4[](6);
         rankTokenSelectors[0] = RankToken.mint.selector;
@@ -300,7 +225,7 @@ contract MAODistribution is IDistribution, CodeIndexer {
         RankTokenAccessSettings[5].selector = RankToken.setContractURI.selector;
         RankTokenAccessSettings[5].distributionComponentsOnly = true;
 
-        SimpleAccessManager rankTokenAccessManager = SimpleAccessManager(accessManagerBase.clone());
+        SimpleAccessManager rankTokenAccessManager = SimpleAccessManager(_accessManagerBase.clone());
 
         rankTokenAccessManager.initialize(RankTokenAccessSettings, rankToken, IDistributor(msg.sender)); // msg.sender must be IDistributor or it will revert
 
@@ -309,7 +234,7 @@ contract MAODistribution is IDistribution, CodeIndexer {
             address[] memory ACIDDistrAddresses,
             bytes32 ACIDDistributionname,
             uint256 ACIDDistributionVersion
-        ) = ACIDDistributionBase.instantiate(abi.encode(dao, rankToken, args.metadata));
+        ) = _ACIDDistributionBase.instantiate(abi.encode(dao, rankToken, args.metadata));
 
         RankifyInstanceInit.contractInitializer memory ACIDInit = RankifyInstanceInit.contractInitializer({
             timePerTurn: args.timePerTurn,
@@ -340,9 +265,17 @@ contract MAODistribution is IDistribution, CodeIndexer {
         return (returnValue, ACIDDistributionname, ACIDDistributionVersion);
     }
 
-    // DistributorArguments args;
 
-    function instantiate(bytes memory data) public override returns (address[] memory instances, bytes32, uint256) {
+
+    /**
+     * @notice Instantiates a new instance with the provided data.
+     * @param data The initialization data for the new instance, typeof {DistributorArguments}.
+     * @return instances An array of addresses representing the new instances.
+     * @return distributionName A bytes32 value representing the name of the distribution.
+     * @return distributionVersion A uint256 value representing the version of the distribution.
+     * @dev `instances` array contents: DAO, GovernanceToken, Gov Token AccessManager, ACID Diamond, 8x ACID Diamond facets, RankTokenAccessManager, RankToken
+     */
+    function instantiate(bytes memory data) public override returns (address[] memory instances, bytes32 distributionName, uint256 distributionVersion) {
         DistributorArguments memory args = abi.decode(data, (DistributorArguments));
 
         (address[] memory DAOInstances, , ) = createOSxDAO(args.DAOSEttings);
@@ -356,7 +289,7 @@ contract MAODistribution is IDistribution, CodeIndexer {
         for (uint256 i; i < ACIDInstances.length; i++) {
             returnValue[DAOInstances.length + i] = ACIDInstances[i];
         }
-        return (returnValue, distributionName, distributionVersion);
+        return (returnValue, _distributionName, _distributionVersion);
     }
 
     function getMetadata() public pure virtual override returns (string memory) {
@@ -364,13 +297,22 @@ contract MAODistribution is IDistribution, CodeIndexer {
     }
 
     function get() external view returns (address[] memory sources, bytes32, uint256) {
-        address[] memory srcs = new address[](3);
-        srcs[0] = address(tokenVotingPluginRepo);
-        srcs[1] = address(daoFactory);
-        srcs[3] = address(trustedForwarder);
-        return (srcs, distributionName, distributionVersion);
+        address[] memory srcs = new address[](8);
+        srcs[0] = address(_tokenVotingPluginRepo);
+        srcs[1] = address(_daoFactory);
+        srcs[2] = address(_trustedForwarder);
+        srcs[3] = address(_rankTokenBase);
+        srcs[4] = address(_ACIDDistributionBase);
+        srcs[6] = address(_governanceERC20Base);
+        srcs[7] = address(_accessManagerBase);
+        return (srcs, _distributionName, _distributionVersion);
     }
 
+    /**
+     * @notice Returns the schema of the distribution.
+     * @dev This is only needed to ensure `DistributorArguments` are provided in ABI, as it would be internal otherwise.
+     * @return DistributorArguments The schema of the distribution.
+     */
     function distributionSchema() external pure returns (DistributorArguments memory) {
         return
             DistributorArguments({

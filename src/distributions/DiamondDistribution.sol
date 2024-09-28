@@ -5,6 +5,12 @@ import "@peeramid-labs/eds/src/abstracts/CloneDistribution.sol";
 import "../vendor/diamond/DiamondCloneable.sol";
 import "../vendor/diamond/facets/DiamondCutFacet.sol";
 
+/**
+ * @title Diamond Proxy Distribution
+ * @notice This contract is EDS compatible factory for diamond proxies
+ * @dev This uses modified version of Diamond Proxy, which allows proxy itself to cloned
+ * @author Peeramid Labs, 2024
+ */
 contract DiamondDistribution is CloneDistribution {
     address immutable _reference;
 

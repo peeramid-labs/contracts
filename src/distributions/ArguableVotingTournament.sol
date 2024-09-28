@@ -14,6 +14,12 @@ import "../vendor/diamond/interfaces/IDiamondCut.sol";
 import "../vendor/diamond/interfaces/IDiamondLoupe.sol";
 import "@peeramid-labs/eds/src/libraries/LibSemver.sol";
 
+/**
+ * @title ArguableVotingTournament Distribution
+ * @notice This contract implements a diamond distribution for Ethereum Distribution System. It is reponsible to create new instance of ArguableVotingTournament.
+ * @dev It is expected to be used ONLY by the Distributor contract.
+ * @author Peeramid Labs, 2024
+ */
 contract ArguableVotingTournament is InitializedDiamondDistribution {
     DiamondLoupeFacet immutable _loupeFacet;
     EIP712InspectorFacet immutable _inspectorFacet;
@@ -31,6 +37,14 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
         return bytes4(keccak256(bytes(signature)));
     }
 
+
+    /**
+     * @dev Constructor for the ArguableVotingTournament contract.
+     *
+     * Note Initializer function will be added as a regular facet to the Diamond Proxy,
+     * Since it is expected that initialization is done by distributor contract, the initializer will not be run, hence
+     * it is up for distributor to remove this facet upon succesfull initialization.
+     */
     constructor(
         address initializer,
         bytes4 initializerSelector,
@@ -57,6 +71,12 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
         distributionVersion = LibSemver.toUint256(version);
     }
 
+    /**
+     * @dev see Ethereum Distribution System IDistribute for interface specification.
+     * @return instances Array[9]: [diamond proxy, 8x diamond facets..]
+     * @return distributionName: bytes32 encoded name to be used in EIP712 signing flow
+     * @return distributionVersion: uint256 encoded distribution version. Can be parsed to eip712 signature with EDS LibSemver
+     */
     function instantiate(bytes memory) public override returns (address[] memory instances, bytes32, uint256) {
         (address[] memory _instances, , ) = super.instantiate("");
         address diamond = _instances[0];
@@ -177,14 +197,14 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
         super.initialize(DiamondCutFacet(diamond), facetCuts, "");
         address[] memory returnValue = new address[](9);
         returnValue[0] = diamond;
-        returnValue[1] = facetCuts[0].facetAddress;
-        returnValue[2] = facetCuts[1].facetAddress;
-        returnValue[3] = facetCuts[2].facetAddress;
-        returnValue[4] = facetCuts[3].facetAddress;
-        returnValue[5] = facetCuts[4].facetAddress;
-        returnValue[6] = facetCuts[5].facetAddress;
-        returnValue[7] = facetCuts[6].facetAddress;
-        returnValue[8] = facetCuts[7].facetAddress;
+            returnValue[1] = facetCuts[0].facetAddress;
+            returnValue[2] = facetCuts[1].facetAddress;
+            returnValue[3] = facetCuts[2].facetAddress;
+            returnValue[4] = facetCuts[3].facetAddress;
+            returnValue[5] = facetCuts[4].facetAddress;
+            returnValue[6] = facetCuts[5].facetAddress;
+            returnValue[7] = facetCuts[6].facetAddress;
+            returnValue[8] = facetCuts[7].facetAddress;
 
         return (returnValue, distributionName, distributionVersion);
     }
