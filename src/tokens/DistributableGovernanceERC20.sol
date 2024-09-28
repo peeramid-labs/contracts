@@ -102,16 +102,16 @@ contract DistributableGovernanceERC20 is
     }
 
     /// @notice Checks if this or the parent contract supports an interface by its ID.
-    /// @param _interfaceId The ID of the interface.
+    /// @param interfaceId The ID of the interface.
     /// @return Returns `true` if the interface is supported.
     function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
         return
-            _interfaceId == type(ERC20Upgradeable).interfaceId ||
-            // _interfaceId == type(ERC20PermitUpgradeable).interfaceId ||
-            _interfaceId == type(IERC20Metadata).interfaceId ||
-            _interfaceId == type(VotesUpgradeable).interfaceId ||
-            _interfaceId == type(IERC20MintableUpgradeable).interfaceId ||
-            super.supportsInterface(_interfaceId);
+            interfaceId == type(ERC20Upgradeable).interfaceId ||
+            // interfaceId == type(ERC20PermitUpgradeable).interfaceId ||
+            interfaceId == type(IERC20Metadata).interfaceId ||
+            interfaceId == type(VotesUpgradeable).interfaceId ||
+            interfaceId == type(IERC20MintableUpgradeable).interfaceId ||
+            super.supportsInterface(interfaceId);
     }
 
     /// @notice Mints tokens to an address.
