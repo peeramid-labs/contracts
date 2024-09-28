@@ -265,8 +265,6 @@ contract MAODistribution is IDistribution, CodeIndexer {
         return (returnValue, ACIDDistributionname, ACIDDistributionVersion);
     }
 
-
-
     /**
      * @notice Instantiates a new instance with the provided data.
      * @param data The initialization data for the new instance, typeof {DistributorArguments}.
@@ -275,7 +273,9 @@ contract MAODistribution is IDistribution, CodeIndexer {
      * @return distributionVersion A uint256 value representing the version of the distribution.
      * @dev `instances` array contents: DAO, GovernanceToken, Gov Token AccessManager, ACID Diamond, 8x ACID Diamond facets, RankTokenAccessManager, RankToken
      */
-    function instantiate(bytes memory data) public override returns (address[] memory instances, bytes32 distributionName, uint256 distributionVersion) {
+    function instantiate(
+        bytes memory data
+    ) public override returns (address[] memory instances, bytes32 distributionName, uint256 distributionVersion) {
         DistributorArguments memory args = abi.decode(data, (DistributorArguments));
 
         (address[] memory DAOInstances, , ) = createOSxDAO(args.DAOSEttings);

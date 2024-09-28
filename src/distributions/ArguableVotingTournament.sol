@@ -37,7 +37,6 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
         return bytes4(keccak256(bytes(signature)));
     }
 
-
     /**
      * @dev Constructor for the ArguableVotingTournament contract.
      *
@@ -197,14 +196,14 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
         super.initialize(DiamondCutFacet(diamond), facetCuts, "");
         address[] memory returnValue = new address[](9);
         returnValue[0] = diamond;
-            returnValue[1] = facetCuts[0].facetAddress;
-            returnValue[2] = facetCuts[1].facetAddress;
-            returnValue[3] = facetCuts[2].facetAddress;
-            returnValue[4] = facetCuts[3].facetAddress;
-            returnValue[5] = facetCuts[4].facetAddress;
-            returnValue[6] = facetCuts[5].facetAddress;
-            returnValue[7] = facetCuts[6].facetAddress;
-            returnValue[8] = facetCuts[7].facetAddress;
+        returnValue[1] = facetCuts[0].facetAddress;
+        returnValue[2] = facetCuts[1].facetAddress;
+        returnValue[3] = facetCuts[2].facetAddress;
+        returnValue[4] = facetCuts[3].facetAddress;
+        returnValue[5] = facetCuts[4].facetAddress;
+        returnValue[6] = facetCuts[5].facetAddress;
+        returnValue[7] = facetCuts[6].facetAddress;
+        returnValue[8] = facetCuts[7].facetAddress;
 
         return (returnValue, distributionName, distributionVersion);
     }

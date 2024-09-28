@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-
 // This is a copy of interfaces and structs from @aragon/osx package
 // This had to be done to accomodate difference in solidity version requirements
 
@@ -10,7 +9,6 @@ struct TokenSettings {
     string name;
     string symbol;
 }
-
 
 struct Tag {
     uint8 release;
