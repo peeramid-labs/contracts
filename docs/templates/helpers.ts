@@ -64,7 +64,7 @@ export function joinLines(text?: string) {
 
 export function transformDev(comment: string): string {
   // Split the comment into lines
-  const lines = comment.split('\n');
+  const lines = comment?.split('\n') ?? [];
 
   // Initialize variables to store the transformed text
   let transformedText = '';
@@ -117,8 +117,18 @@ export const isVisible = (type: string) => {
 
 export const substituteAnchors = (text: string) => {
   if (typeof text === 'string') {
-    return text.replace(/{(\w+)}/g, (match: string, p1: string) => {
-      return `[${p1}](#${p1.toLocaleLowerCase()})`;
+    return text.replace(/{([^}]+)}/g, (match: string, p1: string) => {
+      // Split the reference into parts
+      const parts = p1.split('.');
+      const anchor = parts.length > 1 ? `#${parts.slice(1).join('.').toLocaleLowerCase()}` : '';
+      const reference = parts[0];
+      const displayText = reference.charAt(0).toUpperCase() + reference.slice(1);
+
+      // Handle different depth levels
+      const path = reference.startsWith('../') ? reference : `./${reference}`;
+
+      return `[${displayText}${anchor}](../${path}${anchor})`;
     });
   }
+  return text;
 };

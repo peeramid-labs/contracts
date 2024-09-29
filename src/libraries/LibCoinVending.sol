@@ -343,7 +343,7 @@ library LibCoinVending {
                 position.ethValues.burn;
             require(msg.value >= VLReq, "msg.value too low");
         }
-        for (uint256 i = 0; i < position.contractAddresses.length; i++) {
+        for (uint256 i = 0; i < position.contractAddresses.length; ++i) {
             address contractAddress = position.contractAddresses[i];
             uint256 id = position.contractIds[i];
             ContractTypes contractType = position.contractTypes[i];
@@ -419,7 +419,7 @@ library LibCoinVending {
      */
     function batchRefund(bytes32 position, address[] memory returnAddresses) internal {
         Condition storage reqPos = coinVendingPosition(position);
-        for (uint256 i = 0; i < returnAddresses.length; i++) {
+        for (uint256 i = 0; i < returnAddresses.length; ++i) {
             _refund(reqPos, returnAddresses[i]);
         }
     }
@@ -466,7 +466,7 @@ library LibCoinVending {
         address[] memory returnAddresses
     ) internal {
         Condition storage reqPos = coinVendingPosition(position);
-        for (uint256 i = 0; i < returnAddresses.length; i++) {
+        for (uint256 i = 0; i < returnAddresses.length; ++i) {
             {
                 _release(reqPos, payee, beneficiary, returnAddresses[i]);
             }
@@ -517,7 +517,7 @@ library LibCoinVending {
         delete mustDo.contractAddresses;
         delete mustDo.contractIds;
         delete mustDo.contractTypes;
-        for (uint256 i = 0; i < configuration.contracts.length; i++) {
+        for (uint256 i = 0; i < configuration.contracts.length; ++i) {
             mustDo.contractAddresses.push(configuration.contracts[i].contractAddress);
             mustDo.contractIds.push(configuration.contracts[i].contractId);
             mustDo.contractTypes.push(configuration.contracts[i].contractType);

@@ -6,7 +6,6 @@ import {IRankifyInstanceCommons} from "../interfaces/IRankifyInstanceCommons.sol
 
 import {IERC1155Receiver} from "../interfaces/IERC1155Receiver.sol";
 import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
-import {IRankToken} from "../interfaces/IRankToken.sol";
 import "../abstracts/DiamondReentrancyGuard.sol";
 import {LibRankify} from "../libraries/LibRankify.sol";
 import {LibCoinVending} from "../libraries/LibCoinVending.sol";
@@ -182,7 +181,7 @@ contract RankifyInstanceMainFacet is
         uint256,
         uint256,
         bytes calldata
-    ) public override returns (bytes4) {
+    ) public override view returns (bytes4) {
         LibRankify.enforceIsInitialized();
         if (operator == address(this)) {
             return bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"));
@@ -192,11 +191,11 @@ contract RankifyInstanceMainFacet is
 
     function onERC1155BatchReceived(
         address operator,
-        address from,
+        address,
         uint256[] calldata,
         uint256[] calldata,
         bytes calldata
-    ) external override returns (bytes4) {
+    ) external override view returns (bytes4) {
         LibRankify.enforceIsInitialized();
         if (operator == address(this)) {
             return bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"));
@@ -206,8 +205,8 @@ contract RankifyInstanceMainFacet is
 
     function onERC721Received(
         address operator,
-        address from,
-        uint256 tokenId,
+        address,
+        uint256,
         bytes calldata
     ) external view override returns (bytes4) {
         LibRankify.enforceIsInitialized();
@@ -283,7 +282,7 @@ contract RankifyInstanceMainFacet is
         IRankifyInstanceCommons.RInstance storage game = gameId.getGameStorage();
         address[] memory players = gameId.getPlayers();
         bool[] memory playerVoted = new bool[](players.length);
-        for (uint256 i = 0; i < players.length; i++) {
+        for (uint256 i = 0; i < players.length; ++i) {
             playerVoted[i] = game.playerVoted[players[i]];
         }
         return playerVoted;
@@ -293,7 +292,7 @@ contract RankifyInstanceMainFacet is
         LibTBG.GameInstance storage game = gameId._getGame();
         address[] memory players = gameId.getPlayers();
         bool[] memory playersMoved = new bool[](players.length);
-        for (uint256 i = 0; i < players.length; i++) {
+        for (uint256 i = 0; i < players.length; ++i) {
             playersMoved[i] = game.madeMove[players[i]];
         }
         return (playersMoved, game.numPlayersMadeMove);

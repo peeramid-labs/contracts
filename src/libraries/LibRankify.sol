@@ -219,7 +219,7 @@ library LibRankify {
         emitRankRewards(gameId, gameId.getLeaderBoard());
         (, uint256[] memory finalScores) = gameId.getScores();
         address[] memory players = gameId.getPlayers();
-        for (uint256 i = 0; i < players.length; i++) {
+        for (uint256 i = 0; i < players.length; ++i) {
             removeAndUnlockPlayer(gameId, players[i]);
             playersGameEndedCallback(gameId, players[i]);
         }
@@ -283,7 +283,7 @@ library LibRankify {
     ) internal {
         // Cancel the game for each player
         address[] memory players = gameId.getPlayers();
-        for (uint256 i = 0; i < players.length; i++) {
+        for (uint256 i = 0; i < players.length; ++i) {
             quitGame(gameId, players[i], false, onPlayerLeftCallback); //this will throw if game has started or doesnt exist
         }
 
@@ -315,7 +315,7 @@ library LibRankify {
         IRankifyInstanceCommons.RInstance storage game = getGameStorage(gameId);
         if (game.rank > 1) {
             _fulfillRankRq(player, game.rank, settings.rankTokenAddress);
-            for (uint256 i = 0; i < game.additionalRanks.length; i++) {
+            for (uint256 i = 0; i < game.additionalRanks.length; ++i) {
                 _fulfillRankRq(player, game.rank, game.additionalRanks[i]);
             }
         }
@@ -347,7 +347,7 @@ library LibRankify {
         IRankifyInstanceCommons.RInstance storage game = getGameStorage(gameId);
         IRankifyInstanceCommons.RInstanceSettings storage settings = LibRankify.RInstanceStorage();
         emitRankReward(gameId, leaderboard, settings.rankTokenAddress);
-        for (uint256 i = 0; i < game.additionalRanks.length; i++) {
+        for (uint256 i = 0; i < game.additionalRanks.length; ++i) {
             emitRankReward(gameId, leaderboard, game.additionalRanks[i]);
         }
     }
@@ -383,7 +383,7 @@ library LibRankify {
         IRankifyInstanceCommons.RInstance storage game = getGameStorage(gameId);
         if (game.rank > 1) {
             _releaseRankToken(player, game.rank, settings.rankTokenAddress);
-            for (uint256 i = 0; i < game.additionalRanks.length; i++) {
+            for (uint256 i = 0; i < game.additionalRanks.length; ++i) {
                 _releaseRankToken(player, game.rank, game.additionalRanks[i]);
             }
         }
@@ -433,15 +433,14 @@ library LibRankify {
     ) internal returns (uint256[] memory, uint256[] memory) {
         address[] memory players = gameId.getPlayers();
         uint256[] memory scores = new uint256[](players.length);
-        uint256[] memory roundScores = new uint256[](players.length);
         bool[] memory playerVoted = new bool[](players.length);
         IRankifyInstanceCommons.RInstanceSettings storage settings = RInstanceStorage();
         IRankifyInstanceCommons.RInstance storage game = getGameStorage(gameId);
         // Convert mappiing to array to pass it to libQuadratic
-        for (uint256 i = 0; i < players.length; i++) {
+        for (uint256 i = 0; i < players.length; ++i) {
             playerVoted[i] = game.playerVoted[players[i]];
         }
-        roundScores = settings.voting.computeScoresByVPIndex(
+        uint256[] memory roundScores = settings.voting.computeScoresByVPIndex(
             votesRevealed,
             playerVoted,
             settings.voting.maxQuadraticPoints,

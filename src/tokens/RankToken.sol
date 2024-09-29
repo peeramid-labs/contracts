@@ -7,7 +7,6 @@ import "../abstracts/LockableERC1155.sol";
 import "@peeramid-labs/eds/src/abstracts/ERC7746Middleware.sol";
 import "@peeramid-labs/eds/src/libraries/LibMiddleware.sol";
 import {IERC1155} from "@openzeppelin/contracts/interfaces/IERC1155.sol";
-import "hardhat/console.sol";
 
 //ToDo: it was planned to make it track for highest token users hold (their rank), right now it's not implemented. Yet.
 

@@ -13,7 +13,7 @@ import "../initializers/RankifyInstanceInit.sol";
 import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 import "@peeramid-labs/eds/src/abstracts/CodeIndexer.sol";
 
-import {TokenSettings, Tag, VotingMode, VotingSettings, Version, IPluginRepo, IDAOFactory} from "../vendor/aragon/interfaces.sol";
+import {TokenSettings, VotingMode, VotingSettings, IPluginRepo, IDAOFactory} from "../vendor/aragon/interfaces.sol";
 
 /**
  * @title MAODistribution
@@ -52,19 +52,16 @@ contract MAODistribution is IDistribution, CodeIndexer {
     }
 
     using Clones for address;
-    IPluginRepo immutable _tokenVotingPluginRepo;
-    IDAOFactory immutable _daoFactory;
-    address immutable _trustedForwarder;
-    bytes32 immutable _distributionName;
-    uint256 immutable _distributionVersion;
-    address immutable _rankTokenBase;
-    IDistribution immutable _ACIDDistributionBase;
-    address immutable _governanceERC20Base;
-    address immutable _accessManagerBase;
+    IPluginRepo immutable private _tokenVotingPluginRepo;
+    IDAOFactory immutable private _daoFactory;
+    address immutable private _trustedForwarder;
+    bytes32 immutable private _distributionName;
+    uint256 immutable private _distributionVersion;
+    address immutable private _rankTokenBase;
+    IDistribution immutable private _ACIDDistributionBase;
+    address immutable private _governanceERC20Base;
+    address immutable private _accessManagerBase;
 
-    function stringToSelector(string memory signature) private pure returns (bytes4) {
-        return bytes4(keccak256(bytes(signature)));
-    }
 
     /**
      * @notice Initializes the contract with the provided parameters and performs necessary checks.
@@ -256,7 +253,7 @@ contract MAODistribution is IDistribution, CodeIndexer {
             ACIDInit
         );
         address[] memory returnValue = new address[](ACIDDistrAddresses.length + 2);
-        for (uint256 i; i < ACIDDistrAddresses.length; i++) {
+        for (uint256 i; i < ACIDDistrAddresses.length; ++i) {
             returnValue[i] = ACIDDistrAddresses[i];
         }
         returnValue[ACIDDistrAddresses.length] = address(rankTokenAccessManager);
@@ -283,10 +280,10 @@ contract MAODistribution is IDistribution, CodeIndexer {
 
         address[] memory returnValue = new address[](DAOInstances.length + ACIDInstances.length);
 
-        for (uint256 i; i < DAOInstances.length; i++) {
+        for (uint256 i; i < DAOInstances.length; ++i) {
             returnValue[i] = DAOInstances[i];
         }
-        for (uint256 i; i < ACIDInstances.length; i++) {
+        for (uint256 i; i < ACIDInstances.length; ++i) {
             returnValue[DAOInstances.length + i] = ACIDInstances[i];
         }
         return (returnValue, _distributionName, _distributionVersion);

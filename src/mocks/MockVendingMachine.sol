@@ -37,7 +37,7 @@ contract MockVendingMachine is ReentrancyGuard {
         LibCoinVending.batchRelease(_positionName, payee, beneficiary, participants);
     }
 
-    function onERC1155Received(address operator, address, uint256, uint256, bytes calldata) public returns (bytes4) {
+    function onERC1155Received(address operator, address, uint256, uint256, bytes calldata) public view returns (bytes4) {
         if (operator == address(this)) {
             return bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"));
         }
@@ -50,7 +50,7 @@ contract MockVendingMachine is ReentrancyGuard {
         uint256[] calldata,
         uint256[] calldata,
         bytes calldata
-    ) external returns (bytes4) {
+    ) external view returns (bytes4) {
         if (operator == address(this)) {
             return bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"));
         }

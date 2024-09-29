@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {LibArray} from "../libraries/LibArray.sol";
 import {LibTBG} from "../libraries/LibTurnBasedGame.sol";
 import {LibRankify} from "../libraries/LibRankify.sol";
 import {IRankifyInstanceCommons} from "../interfaces/IRankifyInstanceCommons.sol";
@@ -9,7 +8,6 @@ import "../abstracts/DiamondReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "../abstracts/draft-EIP712Diamond.sol";
-import {RankToken} from "../tokens/RankToken.sol";
 import {LibCoinVending} from "../libraries/LibCoinVending.sol";
 import "hardhat/console.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
@@ -139,7 +137,7 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
      */
     function _afterNextTurn(uint256 gameId, string[] memory newProposals) private {
         IRankifyInstanceCommons.RInstance storage game = gameId.getGameStorage();
-        for (uint256 i = 0; i < newProposals.length; i++) {
+        for (uint256 i = 0; i < newProposals.length; ++i) {
             game.ongoingProposals[i] = newProposals[i];
         }
     }
@@ -208,10 +206,10 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
         address[] memory players = gameId.getPlayers();
         if (turn != 1) {
             uint256[][] memory votesSorted = new uint256[][](players.length);
-            for (uint256 player = 0; player < players.length; player++) {
+            for (uint256 player = 0; player < players.length; ++player) {
                 votesSorted[player] = new uint256[](players.length);
             }
-            for (uint256 votee = 0; votee < players.length; votee++) {
+            for (uint256 votee = 0; votee < players.length; ++votee) {
                 uint256 voteesColumn = proposerIndicies[votee];
                 if (voteesColumn < players.length) {
                     // if index is above length of players array, it means the player did not propose
@@ -222,7 +220,7 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
             }
 
             (, uint256[] memory roundScores) = gameId.calculateScoresQuadratic(votesSorted, proposerIndicies);
-            for (uint256 i = 0; i < players.length; i++) {
+            for (uint256 i = 0; i < players.length; ++i) {
                 string memory proposal = game.ongoingProposals[proposerIndicies[i]];
                 emit ProposalScore(gameId, turn, proposal, proposal, roundScores[i]);
             }
@@ -232,7 +230,7 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
 
         // Clean up game instance for upcoming round
 
-        for (uint256 i = 0; i < players.length; i++) {
+        for (uint256 i = 0; i < players.length; ++i) {
             game.proposalCommitmentHashes[players[i]] = bytes32(0);
             game.ongoingProposals[i] = "";
             game.playerVoted[players[i]] = false;

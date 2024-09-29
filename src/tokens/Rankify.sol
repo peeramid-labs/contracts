@@ -4,7 +4,6 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract Rankify is ERC20Burnable, Ownable {
-    uint256 numTokens;
 
     constructor(address owner) ERC20("Rankify", "RFY") Ownable(owner) {
         require(owner != address(0), "must specify owner of the contract");

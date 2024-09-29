@@ -42,15 +42,15 @@ contract RankifyInstanceEventMock {
 
     constructor() {
         address[] memory players = new address[](5);
-        for (uint160 i = 0; i < 5; i++) {
+        for (uint160 i = 0; i < 5; ++i) {
             players[i] = (address(i));
         }
         uint256[] memory scores = new uint256[](5);
-        for (uint160 i = 0; i < 5; i++) {
+        for (uint160 i = 0; i < 5; ++i) {
             scores[i] = i;
         }
         string[] memory newProposals = new string[](5);
-        for (uint160 i = 0; i < 5; i++) {
+        for (uint160 i = 0; i < 5; ++i) {
             newProposals[i] = "https://www.youtube.com/watch?v=KaOC9danxNo";
         }
         emit TurnEnded(1, 1, players, scores, newProposals, scores, votes);
@@ -58,15 +58,15 @@ contract RankifyInstanceEventMock {
 
     function fireAll() public {
         address[] memory players = new address[](5);
-        for (uint160 i = 0; i < 5; i++) {
+        for (uint160 i = 0; i < 5; ++i) {
             players[i] = (address(i));
         }
         uint256[] memory scores = new uint256[](5);
-        for (uint160 i = 0; i < 5; i++) {
+        for (uint160 i = 0; i < 5; ++i) {
             scores[i] = i;
         }
         string[] memory newProposals = new string[](5);
-        for (uint160 i = 0; i < 5; i++) {
+        for (uint160 i = 0; i < 5; ++i) {
             newProposals[i] = "https://www.youtube.com/watch?v=KaOC9danxNo";
         }
 

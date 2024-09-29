@@ -11,7 +11,6 @@ import "../facets/RankifyInstanceGameMastersFacet.sol";
 import "../facets/RankifyInstanceGameOwnersFacet.sol";
 import "../initializers/RankifyInstanceInit.sol";
 import "../vendor/diamond/interfaces/IDiamondCut.sol";
-import "../vendor/diamond/interfaces/IDiamondLoupe.sol";
 import "@peeramid-labs/eds/src/libraries/LibSemver.sol";
 
 /**
@@ -21,17 +20,17 @@ import "@peeramid-labs/eds/src/libraries/LibSemver.sol";
  * @author Peeramid Labs, 2024
  */
 contract ArguableVotingTournament is InitializedDiamondDistribution {
-    DiamondLoupeFacet immutable _loupeFacet;
-    EIP712InspectorFacet immutable _inspectorFacet;
-    RankifyInstanceMainFacet immutable _RankifyMainFacet;
-    RankifyInstanceRequirementsFacet immutable _RankifyReqsFacet;
-    RankifyInstanceGameMastersFacet immutable _RankifyGMFacet;
-    RankifyInstanceGameOwnersFacet immutable _RankifyOwnerFacet;
-    OwnershipFacet immutable _OwnershipFacet;
-    address immutable _initializer;
+    DiamondLoupeFacet immutable private _loupeFacet;
+    EIP712InspectorFacet immutable private _inspectorFacet;
+    RankifyInstanceMainFacet immutable private _RankifyMainFacet;
+    RankifyInstanceRequirementsFacet immutable private _RankifyReqsFacet;
+    RankifyInstanceGameMastersFacet immutable private _RankifyGMFacet;
+    RankifyInstanceGameOwnersFacet immutable private _RankifyOwnerFacet;
+    OwnershipFacet immutable private _OwnershipFacet;
+    address immutable private _initializer;
 
-    bytes32 immutable distributionName;
-    uint256 immutable distributionVersion;
+    bytes32 immutable private distributionName;
+    uint256 immutable private distributionVersion;
 
     function stringToSelector(string memory signature) private pure returns (bytes4) {
         return bytes4(keccak256(bytes(signature)));

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 pragma solidity ^0.8.20;
-import "../libraries/LibReentrancyGuard.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import {ILockableERC1155} from "../interfaces/ILockableERC1155.sol";
 
@@ -12,7 +11,7 @@ import {ILockableERC1155} from "../interfaces/ILockableERC1155.sol";
  */
 abstract contract LockableERC1155 is ERC1155Upgradeable, ILockableERC1155 {
     struct LockableERC1155Storage {
-        mapping(address => mapping(uint256 => uint256)) lockedAmounts;
+        mapping(address => mapping(uint256 tokenId => uint256)) lockedAmounts;
     }
 
     bytes32 constant LOCKABLE_TOKEN_STORAGE_POSITION = keccak256("erc1155.lockable.storage.position");
@@ -83,7 +82,7 @@ abstract contract LockableERC1155 is ERC1155Upgradeable, ILockableERC1155 {
         uint256[] memory ids,
         uint256[] memory values
     ) internal virtual override {
-        for (uint256 i = 0; i < ids.length; i++) {
+        for (uint256 i = 0; i < ids.length; ++i) {
             if (from != address(0)) {
                 if (getLockableERC1155Storage().lockedAmounts[from][ids[i]] + values[i] > balanceOf(from, ids[i])) {
                     revert insufficient(

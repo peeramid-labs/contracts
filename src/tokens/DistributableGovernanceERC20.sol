@@ -96,7 +96,7 @@ contract DistributableGovernanceERC20 is
         __ERC20_init(_name, _symbol);
         __DaoAuthorizableUpgradeable_init(_dao);
 
-        for (uint256 i; i < _mintSettings.receivers.length; i++) {
+        for (uint256 i; i < _mintSettings.receivers.length; ++i) {
             _mint(_mintSettings.receivers[i], _mintSettings.amounts[i]);
         }
     }
