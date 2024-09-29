@@ -9,7 +9,7 @@ import {IDiamondCut} from "./interfaces/IDiamondCut.sol";
 
 contract DiamondCloneable {
     error fucntionDoesNotExist(bytes4 selector);
-    address immutable private cutFacet;
+    address private immutable cutFacet;
 
     constructor(address _contractOwner, address _diamondCutFacet) payable {
         cutFacet = _diamondCutFacet;

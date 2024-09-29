@@ -14,8 +14,8 @@ import "../vendor/diamond/interfaces/IDiamondCut.sol";
  * @author Peeramid Labs, 2024
  */
 abstract contract InitializedDiamondDistribution is DiamondDistribution {
-    address immutable private initializer;
-    bytes4 immutable private initializerSelector;
+    address private immutable initializer;
+    bytes4 private immutable initializerSelector;
 
     constructor(address owner, bytes32 _initializerId, bytes4 _initializerSelector) DiamondDistribution(owner) {
         initializer = getContractsIndex().get(_initializerId);

@@ -5,7 +5,6 @@ import {LibTBG} from "../libraries/LibTurnBasedGame.sol";
 import {LibQuadraticVoting} from "../libraries/LibQuadraticVoting.sol";
 
 interface IRankifyInstanceCommons {
-
     struct RInstanceSettings {
         uint256 gamePrice;
         address gamePaymentToken;

@@ -52,16 +52,15 @@ contract MAODistribution is IDistribution, CodeIndexer {
     }
 
     using Clones for address;
-    IPluginRepo immutable private _tokenVotingPluginRepo;
-    IDAOFactory immutable private _daoFactory;
-    address immutable private _trustedForwarder;
-    bytes32 immutable private _distributionName;
-    uint256 immutable private _distributionVersion;
-    address immutable private _rankTokenBase;
-    IDistribution immutable private _ACIDDistributionBase;
-    address immutable private _governanceERC20Base;
-    address immutable private _accessManagerBase;
-
+    IPluginRepo private immutable _tokenVotingPluginRepo;
+    IDAOFactory private immutable _daoFactory;
+    address private immutable _trustedForwarder;
+    bytes32 private immutable _distributionName;
+    uint256 private immutable _distributionVersion;
+    address private immutable _rankTokenBase;
+    IDistribution private immutable _ACIDDistributionBase;
+    address private immutable _governanceERC20Base;
+    address private immutable _accessManagerBase;
 
     /**
      * @notice Initializes the contract with the provided parameters and performs necessary checks.

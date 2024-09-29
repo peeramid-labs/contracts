@@ -7,11 +7,11 @@ import "@peeramid-labs/eds/src/abstracts/CodeIndexer.sol";
 import "@peeramid-labs/eds/src/libraries/LibSemver.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 contract TournamentDistributionInitializer is IInitializer, CodeIndexer, Initializable {
-    address immutable private paymentToken;
-    address immutable private rewardToken;
+    address private immutable paymentToken;
+    address private immutable rewardToken;
 
-    uint256 immutable private gamePrice;
-    uint256 immutable private joinGamePrice;
+    uint256 private immutable gamePrice;
+    uint256 private immutable joinGamePrice;
 
     constructor(address _paymentToken, address _rewardToken, uint256 _gamePrice, uint256 _joinGamePrice) {
         paymentToken = _paymentToken;

@@ -8,7 +8,6 @@ import "../interfaces/IMultipass.sol";
 import "../libraries/LibMultipass.sol";
 import "../modifiers/OnlyOwnerDiamond.sol";
 
-
 // Consider upgrade for https://eips.ethereum.org/EIPS/eip-4834
 
 contract DNSFacet is EIP712, IMultipass {

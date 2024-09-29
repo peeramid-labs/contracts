@@ -12,7 +12,7 @@ import "../vendor/diamond/facets/DiamondCutFacet.sol";
  * @author Peeramid Labs, 2024
  */
 contract DiamondDistribution is CloneDistribution {
-    address immutable private _reference;
+    address private immutable _reference;
 
     constructor(address owner) {
         address diamondCutFacet = address(new DiamondCutFacet());
