@@ -76,7 +76,7 @@ This distribution deploys the Diamond Proxy that contains the following facets:
 - [RankifyInstanceGameOwnersFacet](./src/facets/RankifyInstanceGameOwnersFacet.sol) - Facet that contains the ownable logic of the distribution. (NB this will be deprecated)
 - [RankifyInstanceRequirementsFacet](./src/facets/RankifyInstanceRequirementsFacet.sol) - Facet that contains the requirements logic of the distribution.
 
-To understand how it works please refer to [docs.rankify.it/distributions/mao](https://docs.rankify.it/distributions/mao).
+To understand how it works further please refer to [docs.rankify.it](https://docs.rankify.it/governance) or ask us a question in [Discord](https://discord.gg/EddGgGUuWC)
 
 
 ## Contributing
