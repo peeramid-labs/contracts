@@ -1,4 +1,3 @@
-{{h 2}} {{visibility}} {{toLowerCase type}} {{name}}
 
 {{#if (isVisible visibility)}}
 {{h 2}}  {{name}}
@@ -9,6 +8,7 @@
 ```solidity
 {{{signature}}}
 ```
+{{/if}}
 {{/if}}
 
 {{#if natspec.params}}
@@ -36,3 +36,4 @@
 {{#if natspec.dev}}
 {{{transformDev (substituteAnchors natspec.dev)}}}
 {{/if}}
+
