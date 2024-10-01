@@ -13,11 +13,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
   const sacmDeployment = await deploy('SimpleAccessManager', {
     from: deployer,
-    args: [
-      [], // methodSettings
-      '0x0000000000000000000000000000000000000000', // target
-      PeeramidLabsDistributor.address, // distributor
-    ],
+    args: [],
     skipIfAlreadyDeployed: true,
   });
 

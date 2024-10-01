@@ -62,4 +62,20 @@ contract PeeramidLabsDistributor is Distributor, AccessControlDefaultAdminRules 
         return
             AccessControlDefaultAdminRules.supportsInterface(interfaceId) || Distributor.supportsInterface(interfaceId);
     }
+
+    function changeVersion(
+        bytes32 distributionId,
+        LibSemver.VersionRequirement memory newRequirement
+    ) public override onlyRole(DEFAULT_ADMIN_ROLE) {
+        super._changeVersion(distributionId, newRequirement);
+    }
+
+    // @inheritdoc IDistributor
+    function addDistribution(
+        IRepository repository,
+        address initializer,
+        LibSemver.VersionRequirement memory requirement
+    ) external override onlyRole(DEFAULT_ADMIN_ROLE) {
+        super._addDistribution(address(repository), initializer, requirement);
+    }
 }

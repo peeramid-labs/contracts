@@ -40,7 +40,7 @@ abstract contract InitializedDiamondDistribution is DiamondDistribution {
         return (srcs, bytes32(abi.encodePacked("InitializedDiamondDistribution")), uint256(0));
     }
 
-    function getMetadata() public pure virtual override returns (string memory) {
-        return string(abi.encodePacked(super.getMetadata(), ";", "InitializedDiamondDistribution")); //ToDo: Add IPFS link with readme!
+    function contractURI() public pure virtual override returns (string memory) {
+        return string(abi.encodePacked(super.contractURI(), ";", "InitializedDiamondDistribution")); //ToDo: Add IPFS link with readme!
     }
 }

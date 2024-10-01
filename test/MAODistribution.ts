@@ -25,12 +25,13 @@ describe('MAODistribution', async function () {
     rankify = setup.env.rankifyToken;
   });
   it('only owner can add distribution', async () => {
-    await expect(distributorContract.addDistribution(maoId, ethers.constants.AddressZero)).to.revertedWithCustomError(
-      distributorContract,
-      'AccessControlUnauthorizedAccount',
-    );
     await expect(
-      distributorContract.connect(addr.gameOwner.wallet).addDistribution(maoId, ethers.constants.AddressZero),
+      distributorContract['addDistribution(bytes32,address)'](maoId, ethers.constants.AddressZero),
+    ).to.revertedWithCustomError(distributorContract, 'AccessControlUnauthorizedAccount');
+    await expect(
+      distributorContract
+        .connect(addr.gameOwner.wallet)
+        ['addDistribution(bytes32,address)'](maoId, ethers.constants.AddressZero),
     ).to.emit(distributorContract, 'DistributionAdded');
   });
   describe('when distribution was added', async () => {

@@ -25,7 +25,10 @@ export const addDistribution =
       signer,
     ) as PeeramidLabsDistributor;
     const distributionsLengthBefore = (await distributorContract.getDistributions()).length;
-    const receipt = await distributorContract.addDistribution(distrId, initializer ?? ethers.constants.AddressZero);
+    const receipt = await distributorContract['addDistribution(bytes32,address)'](
+      distrId,
+      initializer ?? ethers.constants.AddressZero,
+    );
 
     const distributorsId = await distributorContract.getDistributions();
     if (distributorsId.length !== distributionsLengthBefore + 1)

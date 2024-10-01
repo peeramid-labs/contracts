@@ -288,7 +288,7 @@ contract MAODistribution is IDistribution, CodeIndexer {
         return (returnValue, _distributionName, _distributionVersion);
     }
 
-    function getMetadata() public pure virtual override returns (string memory) {
+    function contractURI() public pure virtual override returns (string memory) {
         return "";
     }
 

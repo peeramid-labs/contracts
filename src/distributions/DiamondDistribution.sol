@@ -21,13 +21,17 @@ contract DiamondDistribution is CloneDistribution {
         _reference = diamondProxy;
     }
 
+    function instantiate(bytes memory) external virtual override returns (address[] memory, bytes32, uint256) {
+        return super._instantiate();
+    }
+
     function sources() internal view virtual override returns (address[] memory, bytes32 name, uint256 version) {
         address[] memory _sources = new address[](1);
         _sources[0] = _reference;
         return (_sources, bytes32(abi.encodePacked("DiamondDistribution")), uint256(0));
     }
 
-    function getMetadata() public pure virtual override returns (string memory) {
-        return "Diamond Distributor"; //ToDo: Add IPFS link with readme!
+    function contractURI() public pure virtual override returns (string memory) {
+        return "";
     }
 }

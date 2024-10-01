@@ -75,8 +75,8 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
      * @return distributionName: bytes32 encoded name to be used in EIP712 signing flow
      * @return distributionVersion: uint256 encoded distribution version. Can be parsed to eip712 signature with EDS LibSemver
      */
-    function instantiate(bytes memory) public override returns (address[] memory instances, bytes32, uint256) {
-        (address[] memory _instances, , ) = super.instantiate("");
+    function instantiate(bytes memory) external override returns (address[] memory instances, bytes32, uint256) {
+        (address[] memory _instances, , ) = super._instantiate();
         address diamond = _instances[0];
         IDiamondCut.FacetCut[] memory facetCuts = new IDiamondCut.FacetCut[](8);
 
@@ -207,8 +207,8 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
         return (returnValue, distributionName, distributionVersion);
     }
 
-    function getMetadata() public pure virtual override returns (string memory) {
-        return string(abi.encodePacked(super.getMetadata(), ";", "ArguableVotingTournament"));
+    function contractURI() public pure virtual override returns (string memory) {
+        return string(abi.encodePacked(super.contractURI(), ";", "ArguableVotingTournament"));
     }
 
     function sources() internal view virtual override returns (address[] memory, bytes32, uint256) {
