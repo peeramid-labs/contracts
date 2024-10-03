@@ -73,18 +73,21 @@ library LibQuadraticVoting {
             //For each proposal
             scores[proposalIdx] = 0;
             for (uint256 vi = 0; vi < VotersVotes.length; vi++) {
+                ///@dev In LibQuadraticVoting function  computeScoresByVPIndex should take in list of whether participant proposed or not (infer from is active or not). If is true, the Gives benefits to everyone but himself action must be bypassed.
+
                 // For each potential voter
                 uint256[] memory voterVotes = VotersVotes[vi];
+                //If voter voted
+                scores[proposalIdx] += voterVotes[proposalIdx];
+                creditsUsed[vi] += voterVotes[proposalIdx] ** 2;
+
                 if (!voterVoted[vi]) {
                     // Check if voter wasn't voting
                     scores[proposalIdx] += notVotedGivesEveyone; // Gives benefits to everyone but himself
                     creditsUsed[vi] = q.voteCredits;
-                } else {
-                    //If voter voted
-                    scores[proposalIdx] += voterVotes[proposalIdx];
-                    creditsUsed[vi] += voterVotes[proposalIdx] ** 2;
-                    if (creditsUsed[vi] > q.voteCredits) require(false, "quadraticVotingError"); // revert quadraticVotingError("Quadratic: vote credits overrun", q.voteCredits, creditsUsed[vi]);
                 }
+
+                if (creditsUsed[vi] > q.voteCredits) require(false, "quadraticVotingError"); // revert quadraticVotingError("Quadratic: vote credits overrun", q.voteCredits, creditsUsed[vi]);
             }
         }
         return scores;

@@ -46,6 +46,7 @@ library LibTBG {
         bool hasStarted;
         bool hasEnded;
         EnumerableSet.AddressSet players;
+        mapping(address => bool) playerFlags;
         mapping(address => bool) madeMove;
         uint256 numPlayersMadeMove;
         mapping(address => uint256) score;
@@ -159,6 +160,7 @@ library LibTBG {
         for (uint256 i = 0; i < players.length; ++i) {
             tbg.games[gameId].score[players[i]] = 0;
             tbg.games[gameId].madeMove[players[i]] = false;
+            tbg.games[gameId].playerFlags[players[i]] = false;
         }
         delete tbg.games[gameId].gameMaster;
         delete tbg.games[gameId].currentTurn;
@@ -213,6 +215,7 @@ library LibTBG {
         require(canBeJoined(gameId), "addPlayer->cant join now");
         _game.players.add(participant);
         _game.madeMove[participant] = false;
+        _game.playerFlags[participant] = true; ///@dev By default when game starts all players are flagged active
         tbg.playerInGame[participant] = gameId;
     }
 
@@ -327,6 +330,13 @@ library LibTBG {
     function canEndTurnEarly(uint256 gameId) internal view returns (bool) {
         GameInstance storage _game = _getGame(gameId);
         bool everyoneMadeMove = (_game.numPlayersMadeMove) == _game.players.length() ? true : false;
+
+        ///@dev Early turn ending is possible if all active members made their move.
+        for (uint256 i = 0; i < EnumerableSet.length(_game.players); i++) {
+            address player = EnumerableSet.at(_game.players, i);
+            if (_game.playerFlags[player] == true && _game.madeMove[player] == false) return false;
+        }
+
         if (!_game.hasStarted || isGameOver(gameId)) return false;
         if (everyoneMadeMove || canEndTurn(gameId)) return true;
         return false;
@@ -375,6 +385,7 @@ library LibTBG {
         for (uint256 i = 0; i < game.players.length(); ++i) {
             address player = game.players.at(i);
             game.madeMove[player] = false;
+            game.playerFlags[player] = true;
             game.score[player] = 0;
         }
     }
@@ -645,6 +656,7 @@ library LibTBG {
         TBGStorageStruct storage tbg = TBGStorage();
         require(gameId == tbg.playerInGame[player], "is not in the game");
         _game.madeMove[player] = true;
+        _game.playerFlags[player] = true; ///@dev If player made a move and playerMove is called, player must be set back to active
         _game.numPlayersMadeMove += 1;
     }
 
@@ -724,6 +736,23 @@ library LibTBG {
         _game.hasEnded = isGameOver(gameId);
 
         (_game.leaderboard, ) = sortByScore(gameId);
+
+        ///@dev If player did not made any activity previous round, he is flagged as idle
+        for (uint256 i = 0; i < _game.players.length(); ++i) {
+            address player = EnumerableSet.at(_game.players, i);
+            _game.playerFlags[player] = true;
+        }
+
+        if (_game.currentTurn > 1) {
+            GameInstance storage _beforegame = _getGame(gameId - 1);
+
+            for (uint256 j = 0; j < _beforegame.players.length(); ++j) {
+                address player = EnumerableSet.at(_beforegame.players, j);
+                if (_game.playerFlags[player] && _beforegame.madeMove[player] == false)
+                    _game.playerFlags[player] = false;
+            }
+        }
+
         return (_isLastTurn, _game.isOvertime, _game.hasEnded);
     }
 
