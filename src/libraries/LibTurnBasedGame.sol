@@ -46,6 +46,7 @@ library LibTBG {
         bool hasStarted;
         bool hasEnded;
         EnumerableSet.AddressSet players;
+        mapping(address => bool) playerFlags; // true => Active, false => Idle
         mapping(address => bool) madeMove;
         uint256 numPlayersMadeMove;
         mapping(address => uint256) score;
@@ -156,9 +157,10 @@ library LibTBG {
         TBGStorageStruct storage tbg = TBGStorage();
         GameInstance storage _game = _getGame(gameId);
         address[] memory players = _game.players.values();
-        for (uint256 i = 0; i < players.length; ++i) {
+        for (uint256 i = 0; i < players.length; i++) {
             tbg.games[gameId].score[players[i]] = 0;
             tbg.games[gameId].madeMove[players[i]] = false;
+            tbg.games[gameId].playerFlags[players[i]] = false;
         }
         delete tbg.games[gameId].gameMaster;
         delete tbg.games[gameId].currentTurn;
@@ -213,6 +215,7 @@ library LibTBG {
         require(canBeJoined(gameId), "addPlayer->cant join now");
         _game.players.add(participant);
         _game.madeMove[participant] = false;
+        _game.playerFlags[participant] = true; ///@dev By default when game starts all players are flagged active
         tbg.playerInGame[participant] = gameId;
     }
 
@@ -327,6 +330,13 @@ library LibTBG {
     function canEndTurnEarly(uint256 gameId) internal view returns (bool) {
         GameInstance storage _game = _getGame(gameId);
         bool everyoneMadeMove = (_game.numPlayersMadeMove) == _game.players.length() ? true : false;
+
+        ///@dev Early turn ending is possible if all active members made their move.
+        for (uint256 i = 0; i < EnumerableSet.length(_game.players); i++) {
+            address player = EnumerableSet.at(_game.players, i);
+            if (_game.playerFlags[player] == true && _game.madeMove[player] == false) return false;
+        }
+
         if (!_game.hasStarted || isGameOver(gameId)) return false;
         if (everyoneMadeMove || canEndTurn(gameId)) return true;
         return false;
@@ -357,7 +367,7 @@ library LibTBG {
      * - Sets the madeMove of each player in `game` to false.
      */
     function _clearCurrentMoves(GameInstance storage game) internal {
-        for (uint256 i = 0; i < game.players.length(); ++i) {
+        for (uint256 i = 0; i < game.players.length(); i++) {
             address player = game.players.at(i);
             game.madeMove[player] = false;
         }
@@ -372,9 +382,10 @@ library LibTBG {
      * - Sets the madeMove and score of each player in `game` to their initial values.
      */
     function _resetPlayerStates(GameInstance storage game) internal {
-        for (uint256 i = 0; i < game.players.length(); ++i) {
+        for (uint256 i = 0; i < game.players.length(); i++) {
             address player = game.players.at(i);
             game.madeMove[player] = false;
+            game.playerFlags[player] = true;
             game.score[player] = 0;
         }
     }
@@ -419,7 +430,7 @@ library LibTBG {
     function getScores(uint256 gameId) internal view returns (address[] memory, uint256[] memory) {
         address[] memory players = getPlayers(gameId);
         uint256[] memory scores = new uint256[](players.length);
-        for (uint256 i = 0; i < players.length; ++i) {
+        for (uint256 i = 0; i < players.length; i++) {
             scores[i] = getScore(gameId, players[i]);
         }
         return (players, scores);
@@ -522,6 +533,7 @@ library LibTBG {
                 (block.timestamp > _game.registrationOpenAt + tbg.settings.timeToJoin),
             "startGame->Not enough players"
         );
+
         _game.hasStarted = true;
         _game.hasEnded = false;
         _game.currentTurn = 1;
@@ -556,6 +568,23 @@ library LibTBG {
         _game.hasEnded = false;
         _game.currentTurn = 1;
         _game.turnStartedAt = block.timestamp;
+
+        for (uint256 i = 0; i < _game.players.length(); i++) {
+            address player = EnumerableSet.at(_game.players, i);
+            _game.playerFlags[player] = true;
+        }
+
+        ///@dev If player did not made any activity previous round, he is flagged as idle
+        if (_game.currentTurn > 1) {
+            GameInstance storage _beforegame = _getGame(gameId - 1);
+
+            for (uint256 j = 0; j < _beforegame.players.length(); j++) {
+                address player = EnumerableSet.at(_beforegame.players, j);
+                if (_game.playerFlags[player] && _beforegame.madeMove[player] == false)
+                    _game.playerFlags[player] = false;
+            }
+        }
+
         _resetPlayerStates(_game);
     }
 
@@ -645,6 +674,7 @@ library LibTBG {
         TBGStorageStruct storage tbg = TBGStorage();
         require(gameId == tbg.playerInGame[player], "is not in the game");
         _game.madeMove[player] = true;
+        _game.playerFlags[player] = true; ///@dev If player made a move and playerMove is called, player must be set back to active
         _game.numPlayersMadeMove += 1;
     }
 
@@ -848,7 +878,7 @@ library LibTBG {
         (address[] memory players, uint256[] memory scores) = getScores(gameId);
 
         LibArray.quickSort(scores, int256(0), int256(scores.length - 1));
-        for (uint256 i = 0; i < players.length - 1; ++i) {
+        for (uint256 i = 0; i < players.length - 1; i++) {
             if ((i <= tbg.settings.numWinners - 1)) {
                 if (scores[i] == scores[i + 1]) {
                     return (true);
@@ -886,12 +916,12 @@ library LibTBG {
         if (i == j) return;
         uint256 pivot = scores[uint256(left + (right - left) / 2)];
         while (i <= j) {
-            while (scores[uint256(i)] > pivot) ++i;
+            while (scores[uint256(i)] > pivot) i++;
             while (pivot > scores[uint256(j)]) j--;
             if (i <= j) {
                 (scores[uint256(i)], scores[uint256(j)]) = (scores[uint256(j)], scores[uint256(i)]);
                 (players[uint256(i)], players[uint256(j)]) = (players[uint256(j)], players[uint256(i)]);
-                ++i;
+                i++;
                 j--;
             }
         }
