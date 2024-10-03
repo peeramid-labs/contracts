@@ -1,5 +1,68 @@
 # rankify-contracts
 
+## 0.10.0
+
+### Minor Changes
+
+- [#57](https://github.com/peeramid-labs/contracts/pull/57) [`5360ba4fbc5029dc572b78fb330a69a6df903826`](https://github.com/peeramid-labs/contracts/commit/5360ba4fbc5029dc572b78fb330a69a6df903826) Thanks [@peersky](https://github.com/peersky)! - eslint major verison change
+
+- [#50](https://github.com/peeramid-labs/contracts/pull/50) [`80e2198289cf6fafae910d5a4f1d3442afabbbfb`](https://github.com/peeramid-labs/contracts/commit/80e2198289cf6fafae910d5a4f1d3442afabbbfb) Thanks [@peersky](https://github.com/peersky)! - Migration to v5
+
+- [#48](https://github.com/peeramid-labs/contracts/pull/48) [`d449bb2174c3959447d717bb0d0d64f617467a45`](https://github.com/peeramid-labs/contracts/commit/d449bb2174c3959447d717bb0d0d64f617467a45) Thanks [@peersky](https://github.com/peersky)! - changed documentation generation system to be more readable and per file separated
+
+- [#61](https://github.com/peeramid-labs/contracts/pull/61) [`db186f717e1babebf6c1653afb7862d2120e545e`](https://github.com/peeramid-labs/contracts/commit/db186f717e1babebf6c1653afb7862d2120e545e) Thanks [@peersky](https://github.com/peersky)! - Updated readme
+
+- [#53](https://github.com/peeramid-labs/contracts/pull/53) [`999e9339e318723137ddc2f9d640c54f157e67b9`](https://github.com/peeramid-labs/contracts/commit/999e9339e318723137ddc2f9d640c54f157e67b9) Thanks [@peersky](https://github.com/peersky)! - added playbook functionality to execute state emulation
+
+- [#66](https://github.com/peeramid-labs/contracts/pull/66) [`40e4f88c1b27d2d1e3c4f915337779f8cfb0ed35`](https://github.com/peeramid-labs/contracts/commit/40e4f88c1b27d2d1e3c4f915337779f8cfb0ed35) Thanks [@peersky](https://github.com/peersky)! - moved eds as dependency
+
+- [#50](https://github.com/peeramid-labs/contracts/pull/50) [`80e2198289cf6fafae910d5a4f1d3442afabbbfb`](https://github.com/peeramid-labs/contracts/commit/80e2198289cf6fafae910d5a4f1d3442afabbbfb) Thanks [@peersky](https://github.com/peersky)! - Migrated to oz contracts v5
+
+- [#55](https://github.com/peeramid-labs/contracts/pull/55) [`73ea44f3e83cd3eab3d8f9db1a605606cfcfed21`](https://github.com/peeramid-labs/contracts/commit/73ea44f3e83cd3eab3d8f9db1a605606cfcfed21) Thanks [@peersky](https://github.com/peersky)! - generic diamond factory implementation via Ethereum Distribution System
+
+- [#62](https://github.com/peeramid-labs/contracts/pull/62) [`0c4f23cca04fa78564877cbb971ade0a96603314`](https://github.com/peeramid-labs/contracts/commit/0c4f23cca04fa78564877cbb971ade0a96603314) Thanks [@peersky](https://github.com/peersky)! - ## Addition of Ethereum Distribution System (EDS)
+
+  - **Feature**: Integrated the Ethereum Distribution System (EDS) for distributing Rankify contracts.
+  - **Description**: Rankify contracts are now distributed via the Ethereum Distribution System, enhancing the efficiency and security of the distribution process.
+
+  ## Redesign of Contracts
+
+  - **Feature**: Redesigned contracts to work seamlessly as part of the Ethereum Distribution System.
+  - **Description**: The contracts have been restructured and optimized to ensure compatibility and smooth operation within the EDS framework. This redesign includes:
+    - Improved contract architecture for better integration with EDS.
+    - Enhanced security measures to protect against potential vulnerabilities.
+    - Optimized performance to handle the distribution process more efficiently.
+
+  ## Impact
+
+  - **Users**:
+    - Can create new subjects that are called Meritocratic Autonomous Organizations (MAOs).
+    - Will benefit from a more secure and efficient distribution process.
+  - **Developers**: Developers will need to familiarize themselves with the new contract architecture and EDS integration.
+  - **Operations**: The distribution process will be streamlined, reducing the potential for errors and improving overall system reliability.
+
+  ## Next Steps
+
+  - **Documentation**: Update the documentation to include details on the new EDS integration and contract redesign.
+  - **Testing**: Conduct thorough testing to ensure the new system operates as expected.
+  - **Deployment**: Plan and execute the deployment of the updated contracts and distribution system.
+
+- [#60](https://github.com/peeramid-labs/contracts/pull/60) [`55fc1a6ed9f1b7fc4520c3ec6fab5c7f7ae7a3b5`](https://github.com/peeramid-labs/contracts/commit/55fc1a6ed9f1b7fc4520c3ec6fab5c7f7ae7a3b5) Thanks [@theKosmoss](https://github.com/theKosmoss)! - Created new playbook scenario 'gameCreated' and some general playbooks refactors
+
+- [#31](https://github.com/peeramid-labs/contracts/pull/31) [`3da696b43f43af8b3130bf7aa2d93575b656d66f`](https://github.com/peeramid-labs/contracts/commit/3da696b43f43af8b3130bf7aa2d93575b656d66f) Thanks [@peersky](https://github.com/peersky)! - Introduced installer interfaces
+
+### Patch Changes
+
+- [#54](https://github.com/peeramid-labs/contracts/pull/54) [`569fb0f7cc0cd7a99065fae3873296378b8ffd1a`](https://github.com/peeramid-labs/contracts/commit/569fb0f7cc0cd7a99065fae3873296378b8ffd1a) Thanks [@peersky](https://github.com/peersky)! - corrected interface file names
+
+- [#67](https://github.com/peeramid-labs/contracts/pull/67) [`da9978ee38b136e5e7cf8a1f68fcb101ede9eae2`](https://github.com/peeramid-labs/contracts/commit/da9978ee38b136e5e7cf8a1f68fcb101ede9eae2) Thanks [@peersky](https://github.com/peersky)! - improved documentation generation for mkdocs compatible markdown outputs
+
+- [#49](https://github.com/peeramid-labs/contracts/pull/49) [`ae43df3f35fdcd49d33d76eaf9b452dbe453e202`](https://github.com/peeramid-labs/contracts/commit/ae43df3f35fdcd49d33d76eaf9b452dbe453e202) Thanks [@peersky](https://github.com/peersky)! - Fixed linter errors on docs templates directory
+
+- [#69](https://github.com/peeramid-labs/contracts/pull/69) [`be9d58a44f4d8f97aeae83e904d2d72a485ae169`](https://github.com/peeramid-labs/contracts/commit/be9d58a44f4d8f97aeae83e904d2d72a485ae169) Thanks [@peersky](https://github.com/peersky)! - doc generation template improvements
+
+- [#44](https://github.com/peeramid-labs/contracts/pull/44) [`55c3a8531a053905a94fc4626c0dd9c897ff46fe`](https://github.com/peeramid-labs/contracts/commit/55c3a8531a053905a94fc4626c0dd9c897ff46fe) Thanks [@peersky](https://github.com/peersky)! - moved to using newer pnpm version in ci and lockfile
+
 ## 0.9.4
 
 ### Patch Changes
