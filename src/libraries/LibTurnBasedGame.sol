@@ -388,6 +388,16 @@ library LibTBG {
             game.playerFlags[player] = true;
             game.score[player] = 0;
         }
+
+        ///@dev If player did not made any activity previous round, he is flagged as idle
+        if (game.currentTurn > 1) {
+            GameInstance storage _beforegame = _getGame(game.currentTurn - 1);
+
+            for (uint256 j = 0; j < _beforegame.players.length(); j++) {
+                address player = EnumerableSet.at(_beforegame.players, j);
+                if (game.playerFlags[player] && _beforegame.madeMove[player] == false) game.playerFlags[player] = false;
+            }
+        }
     }
 
     /**
@@ -736,23 +746,6 @@ library LibTBG {
         _game.hasEnded = isGameOver(gameId);
 
         (_game.leaderboard, ) = sortByScore(gameId);
-
-        ///@dev If player did not made any activity previous round, he is flagged as idle
-        for (uint256 i = 0; i < _game.players.length(); ++i) {
-            address player = EnumerableSet.at(_game.players, i);
-            _game.playerFlags[player] = true;
-        }
-
-        if (_game.currentTurn > 1) {
-            GameInstance storage _beforegame = _getGame(gameId - 1);
-
-            for (uint256 j = 0; j < _beforegame.players.length(); ++j) {
-                address player = EnumerableSet.at(_beforegame.players, j);
-                if (_game.playerFlags[player] && _beforegame.madeMove[player] == false)
-                    _game.playerFlags[player] = false;
-            }
-        }
-
         return (_isLastTurn, _game.isOvertime, _game.hasEnded);
     }
 
