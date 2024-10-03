@@ -6,7 +6,6 @@ import {IRankifyInstanceCommons} from "../interfaces/IRankifyInstanceCommons.sol
 
 import {IERC1155Receiver} from "../interfaces/IERC1155Receiver.sol";
 import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
-import {IRankToken} from "../interfaces/IRankToken.sol";
 import "../abstracts/DiamondReentrancyGuard.sol";
 import {LibRankify} from "../libraries/LibRankify.sol";
 import {LibCoinVending} from "../libraries/LibCoinVending.sol";
@@ -55,21 +54,6 @@ contract RankifyInstanceMainFacet is
         LibCoinVending.ConfigPosition memory emptyConfig;
         LibCoinVending.configure(bytes32(gameId), emptyConfig);
         emit gameCreated(gameId, gameMaster, msg.sender, gameRank);
-    }
-
-    function createGame(address gameMaster, uint256 gameId, uint256 gameRank, address[] memory additionalRanks) public {
-        createGame(gameMaster, gameId, gameRank);
-        RInstance storage game = gameId.getGameStorage();
-        if (additionalRanks.length != 0) {
-            for (uint256 i = 0; i < additionalRanks.length; i++) {
-                IRankToken additonalRank = IRankToken(additionalRanks[i]);
-                require(additonalRank.supportsInterface(type(IRankToken).interfaceId), "must support rank interface");
-                require(additonalRank.getRankingInstance() == address(this), "must be rankingInstance");
-                additonalRank.mint(address(this), 1, gameRank + 1, "");
-                additonalRank.mint(address(this), 3, gameRank, "");
-            }
-            game.additionalRanks = additionalRanks;
-        }
     }
 
     function createGame(address gameMaster, uint256 gameRank) public {
@@ -298,7 +282,7 @@ contract RankifyInstanceMainFacet is
         IRankifyInstanceCommons.RInstance storage game = gameId.getGameStorage();
         address[] memory players = gameId.getPlayers();
         bool[] memory playerVoted = new bool[](players.length);
-        for (uint256 i = 0; i < players.length; i++) {
+        for (uint256 i = 0; i < players.length; ++i) {
             playerVoted[i] = game.playerVoted[players[i]];
         }
         return playerVoted;
@@ -308,7 +292,7 @@ contract RankifyInstanceMainFacet is
         LibTBG.GameInstance storage game = gameId._getGame();
         address[] memory players = gameId.getPlayers();
         bool[] memory playersMoved = new bool[](players.length);
-        for (uint256 i = 0; i < players.length; i++) {
+        for (uint256 i = 0; i < players.length; ++i) {
             playersMoved[i] = game.madeMove[players[i]];
         }
         return (playersMoved, game.numPlayersMadeMove);

@@ -7,9 +7,9 @@ pragma solidity ^0.8.0;
 import {LibDiamond} from "./libraries/LibDiamond.sol";
 import {IDiamondCut} from "./interfaces/IDiamondCut.sol";
 
-contract DiamondClonable {
+contract DiamondCloneable {
     error fucntionDoesNotExist(bytes4 selector);
-    address immutable cutFacet;
+    address private immutable cutFacet;
 
     constructor(address _contractOwner, address _diamondCutFacet) payable {
         cutFacet = _diamondCutFacet;
@@ -31,8 +31,6 @@ contract DiamondClonable {
         LibDiamond.diamondCut(cut, address(0), "");
     }
 
-    event debuga(address target, bytes data);
-
     // Find facet for function that is called and execute the
     // function if a facet is found and return any value.
     fallback() external payable {
@@ -50,7 +48,6 @@ contract DiamondClonable {
                     msg.data[4:],
                     (IDiamondCut.FacetCut[], address, bytes)
                 );
-                emit debuga(target, data);
                 // diamond was cloned, has no state
                 // Owner is inferred from msg.sender
                 addDiamondCutFacet(msg.sender);

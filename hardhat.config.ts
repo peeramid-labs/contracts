@@ -1,5 +1,4 @@
 import { task } from 'hardhat/config';
-import { ethers } from 'hardhat';
 import '@nomicfoundation/hardhat-chai-matchers';
 import 'hardhat-diamond-abi';
 import '@nomicfoundation/hardhat-toolbox';
@@ -11,6 +10,7 @@ import 'hardhat-gas-reporter';
 // import fs from "fs";
 import 'hardhat-contract-sizer';
 import 'hardhat-deploy';
+import 'hardhat-tracer';
 import 'solidity-docgen';
 import './playbook/initializeDomain';
 import './playbook/createGame';
@@ -98,7 +98,10 @@ export default {
     },
     defaultPlayer: {
       localhost: '0xF52E5dF676f51E410c456CC34360cA6F27959420',
-    }
+    },
+  },
+  mocha: {
+    timeout: 400000,
   },
   defaultNetwork: 'hardhat',
   networks: {
@@ -106,6 +109,10 @@ export default {
       accounts: {
         mnemonic: 'casual vacant letter raw trend tool vacant opera buzz jaguar bridge myself',
       }, // ONLY LOCAL
+      forking: {
+        url: process.env.FORK_RPC_URL ?? '',
+        blockNumber: 257223284, // works for arbitrum, change for others
+      },
     },
     mumbai: {
       url: 'https://matic-mumbai.chainstacklabs.com',
@@ -146,7 +153,16 @@ export default {
         settings: {
           optimizer: {
             enabled: true,
-            runs: 200000,
+            runs: 2000,
+          },
+        },
+      },
+      {
+        version: '0.8.17',
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 2000,
           },
         },
       },

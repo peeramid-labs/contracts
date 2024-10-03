@@ -32,7 +32,7 @@ interface IRankToken is ILockableERC1155 {
      *
      * - The address of the ranking instance.
      */
-    function getRankingInstance() external view returns (address);
+    // function getRankingInstance() external view returns (address);
 
     // /**
     //  * @dev Finds the new rank of an account. `account` is the address of the account. `oldRank` is the old rank of the account.

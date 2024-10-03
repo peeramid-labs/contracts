@@ -7,6 +7,7 @@ import {IRankifyInstanceCommons} from "../interfaces/IRankifyInstanceCommons.sol
 import "../abstracts/draft-EIP712Diamond.sol";
 import "../vendor/diamond/libraries/LibDiamond.sol";
 import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 
 error ZeroValue();
@@ -83,6 +84,27 @@ contract RankifyInstanceGameOwnersFacet {
 
         IRankifyInstanceCommons.RInstanceSettings storage _RInstance = RInstanceStorage();
         _RInstance.rankTokenAddress = newRankToken;
+    }
+
+    /**
+     *
+     * @dev Sets the payment token address.
+     * Requirements:
+     *
+     * - The caller must be the contract owner.
+     * - `newPaymentToken` must not be the zero address.
+     * - `newRankToken` must support the ERC20 interface.
+     */
+    function setPaymentTokenAddress(address newPaymentToken) external {
+        LibDiamond.enforceIsContractOwner();
+        if (newPaymentToken == address(0)) {
+            require(false, "zerovalue"); //revert ZeroValue();
+        }
+        if (!ERC165Checker.supportsInterface(newPaymentToken, type(IERC20).interfaceId)) {
+            require(false, "wrongaddress"); //revert WrongAddress();
+        }
+        IRankifyInstanceCommons.RInstanceSettings storage _RInstance = RInstanceStorage();
+        _RInstance.gamePaymentToken = newPaymentToken;
     }
 
     /**

@@ -8,6 +8,8 @@ import {IERC1155} from "@openzeppelin/contracts/interfaces/IERC1155.sol";
  * @dev Interface for a lockable ERC1155 token contract.
  */
 interface ILockableERC1155 is IERC1155 {
+    error insufficient(uint256 id, uint256 balance, uint256 required);
+
     event TokensLocked(address indexed account, uint256 indexed id, uint256 value);
 
     event TokensUnlocked(address indexed account, uint256 indexed id, uint256 value);

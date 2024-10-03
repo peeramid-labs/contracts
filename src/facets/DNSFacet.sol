@@ -7,8 +7,6 @@ import "../abstracts/draft-EIP712Diamond.sol";
 import "../interfaces/IMultipass.sol";
 import "../libraries/LibMultipass.sol";
 import "../modifiers/OnlyOwnerDiamond.sol";
-import "hardhat/console.sol";
-import "../vendor/diamond/facets/OwnershipFacet.sol";
 
 // Consider upgrade for https://eips.ethereum.org/EIPS/eip-4834
 

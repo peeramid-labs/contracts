@@ -156,7 +156,7 @@ library LibTBG {
         TBGStorageStruct storage tbg = TBGStorage();
         GameInstance storage _game = _getGame(gameId);
         address[] memory players = _game.players.values();
-        for (uint256 i = 0; i < players.length; i++) {
+        for (uint256 i = 0; i < players.length; ++i) {
             tbg.games[gameId].score[players[i]] = 0;
             tbg.games[gameId].madeMove[players[i]] = false;
         }
@@ -357,7 +357,7 @@ library LibTBG {
      * - Sets the madeMove of each player in `game` to false.
      */
     function _clearCurrentMoves(GameInstance storage game) internal {
-        for (uint256 i = 0; i < game.players.length(); i++) {
+        for (uint256 i = 0; i < game.players.length(); ++i) {
             address player = game.players.at(i);
             game.madeMove[player] = false;
         }
@@ -372,7 +372,7 @@ library LibTBG {
      * - Sets the madeMove and score of each player in `game` to their initial values.
      */
     function _resetPlayerStates(GameInstance storage game) internal {
-        for (uint256 i = 0; i < game.players.length(); i++) {
+        for (uint256 i = 0; i < game.players.length(); ++i) {
             address player = game.players.at(i);
             game.madeMove[player] = false;
             game.score[player] = 0;
@@ -419,7 +419,7 @@ library LibTBG {
     function getScores(uint256 gameId) internal view returns (address[] memory, uint256[] memory) {
         address[] memory players = getPlayers(gameId);
         uint256[] memory scores = new uint256[](players.length);
-        for (uint256 i = 0; i < players.length; i++) {
+        for (uint256 i = 0; i < players.length; ++i) {
             scores[i] = getScore(gameId, players[i]);
         }
         return (players, scores);
@@ -848,7 +848,7 @@ library LibTBG {
         (address[] memory players, uint256[] memory scores) = getScores(gameId);
 
         LibArray.quickSort(scores, int256(0), int256(scores.length - 1));
-        for (uint256 i = 0; i < players.length - 1; i++) {
+        for (uint256 i = 0; i < players.length - 1; ++i) {
             if ((i <= tbg.settings.numWinners - 1)) {
                 if (scores[i] == scores[i + 1]) {
                     return (true);
@@ -886,12 +886,12 @@ library LibTBG {
         if (i == j) return;
         uint256 pivot = scores[uint256(left + (right - left) / 2)];
         while (i <= j) {
-            while (scores[uint256(i)] > pivot) i++;
+            while (scores[uint256(i)] > pivot) ++i;
             while (pivot > scores[uint256(j)]) j--;
             if (i <= j) {
                 (scores[uint256(i)], scores[uint256(j)]) = (scores[uint256(j)], scores[uint256(i)]);
                 (players[uint256(i)], players[uint256(j)]) = (players[uint256(j)], players[uint256(i)]);
-                i++;
+                ++i;
                 j--;
             }
         }

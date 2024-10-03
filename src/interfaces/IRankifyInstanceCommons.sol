@@ -2,15 +2,9 @@
 pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import {LibTBG} from "../libraries/LibTurnBasedGame.sol";
-import {LibCoinVending} from "../libraries/LibCoinVending.sol";
 import {LibQuadraticVoting} from "../libraries/LibQuadraticVoting.sol";
 
 interface IRankifyInstanceCommons {
-    struct Score {
-        address participant;
-        uint256 score;
-    }
-
     struct RInstanceSettings {
         uint256 gamePrice;
         address gamePaymentToken;

@@ -1,6 +1,6 @@
- 
- 
- 
+
+
+
 // import { time } from "@openzeppelin/test-helpers";
 import hre, { deployments, config } from 'hardhat';
 import aes from 'crypto-js/aes';
@@ -14,6 +14,9 @@ import {
   RankToken,
   RankifyDiamondInstance,
   MultipassDiamond,
+  MAODistribution,
+  PeeramidLabsDistributor,
+  ArguableVotingTournament,
 } from '../types';
 import { BigNumber, BigNumberish, BytesLike, Wallet } from 'ethers';
 // @ts-ignore
@@ -70,12 +73,14 @@ export interface AdrSetupResult {
 
 export interface EnvSetupResult {
   rankifyToken: Rankify;
-  rankifyInstance: RankifyDiamondInstance;
+  arguableVotingTournamentDistribution: ArguableVotingTournament;
   multipass: MultipassDiamond;
-  rankToken: RankToken;
+  rankTokenBase: RankToken;
   mockERC20: MockERC20;
   mockERC1155: MockERC1155;
   mockERC721: MockERC721;
+  maoDistribution: MAODistribution;
+  distributor: PeeramidLabsDistributor;
 }
 export const addPlayerNameId = (idx: any) => {
   return { name: `player-${idx}`, id: `player-${idx}-id` };
@@ -312,7 +317,7 @@ export const setupTest = deployments.createFixture(async ({ deployments, getName
     to: owner,
     value: _eth.utils.parseEther('1'),
   });
-  await deployments.fixture(['rankify', 'multipass']);
+  await deployments.fixture(['MAO', 'multipass']);
   const MockERC20F = await _eth.getContractFactory('MockERC20', adr.contractDeployer.wallet);
   const mockERC20 = (await MockERC20F.deploy('Mock ERC20', 'MCK20', adr.contractDeployer.wallet.address)) as MockERC20;
   await mockERC20.deployed();
@@ -329,10 +334,13 @@ export const setupTest = deployments.createFixture(async ({ deployments, getName
   )) as MockERC721;
   await mockERC721.deployed();
   const env = await setupEnvironment({
+    distributor: await deployments.get('PeeramidLabsDistributor'),
+    mao: await deployments.get('MAODistribution'),
     RankifyToken: await deployments.get('Rankify'),
-    RankToken: await deployments.get('RankToken'),
-    RankifyInstance: await deployments.get('RankifyInstance'),
+    RankTokenBase: await deployments.get('RankToken'),
+    // RankifyInstance: await deployments.get('RankifyInstance'),
     multipass: await deployments.get('Multipass'),
+    arguableVotingTournamentDistribution: await deployments.get('ArguableVotingTournament'),
     mockERC20: mockERC20,
     mockERC721: mockERC721,
     mockERC1155: mockERC1155,
@@ -386,35 +394,35 @@ export const setupTest = deployments.createFixture(async ({ deployments, getName
   await env.rankifyToken
     .connect(adr.gameOwner.wallet)
     .mint(adr.maliciousActor3.wallet.address, ethers.utils.parseEther('1000000'));
-  await env.rankifyToken
-    .connect(adr.gameCreator1.wallet)
-    .approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
-  await env.rankifyToken
-    .connect(adr.gameCreator2.wallet)
-    .approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
-  await env.rankifyToken
-    .connect(adr.gameCreator3.wallet)
-    .approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
-  await env.rankifyToken.connect(adr.player1.wallet).approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
-  await env.rankifyToken.connect(adr.player2.wallet).approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
-  await env.rankifyToken.connect(adr.player3.wallet).approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
-  await env.rankifyToken.connect(adr.player4.wallet).approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
-  await env.rankifyToken.connect(adr.player5.wallet).approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
-  await env.rankifyToken.connect(adr.player6.wallet).approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
-  await env.rankifyToken.connect(adr.player7.wallet).approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
-  await env.rankifyToken.connect(adr.player8.wallet).approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
-  await env.rankifyToken.connect(adr.player9.wallet).approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
-  await env.rankifyToken.connect(adr.player10.wallet).approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
+  //   await env.rankifyToken
+  //     .connect(adr.gameCreator1.wallet)
+  //     .approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
+  //   await env.rankifyToken
+  //     .connect(adr.gameCreator2.wallet)
+  //     .approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
+  //   await env.rankifyToken
+  //     .connect(adr.gameCreator3.wallet)
+  //     .approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
+  //   await env.rankifyToken.connect(adr.player1.wallet).approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
+  //   await env.rankifyToken.connect(adr.player2.wallet).approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
+  //   await env.rankifyToken.connect(adr.player3.wallet).approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
+  //   await env.rankifyToken.connect(adr.player4.wallet).approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
+  //   await env.rankifyToken.connect(adr.player5.wallet).approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
+  //   await env.rankifyToken.connect(adr.player6.wallet).approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
+  //   await env.rankifyToken.connect(adr.player7.wallet).approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
+  //   await env.rankifyToken.connect(adr.player8.wallet).approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
+  //   await env.rankifyToken.connect(adr.player9.wallet).approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
+  //   await env.rankifyToken.connect(adr.player10.wallet).approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
 
-  await env.rankifyToken
-    .connect(adr.maliciousActor1.wallet)
-    .approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
-  await env.rankifyToken
-    .connect(adr.maliciousActor2.wallet)
-    .approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
-  await env.rankifyToken
-    .connect(adr.maliciousActor3.wallet)
-    .approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
+  //   await env.rankifyToken
+  //     .connect(adr.maliciousActor1.wallet)
+  //     .approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
+  //   await env.rankifyToken
+  //     .connect(adr.maliciousActor2.wallet)
+  //     .approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
+  //   await env.rankifyToken
+  //     .connect(adr.maliciousActor3.wallet)
+  //     .approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
 
   return {
     adr,
@@ -423,31 +431,48 @@ export const setupTest = deployments.createFixture(async ({ deployments, getName
 });
 // export const setupTest = () => setupTest();
 export const setupEnvironment = async (setup: {
+  distributor: Deployment;
+  mao: Deployment;
   RankifyToken: Deployment;
-  RankToken: Deployment;
-  RankifyInstance: Deployment;
+  RankTokenBase: Deployment;
+  //   RankifyInstance: Deployment;
   mockERC20: MockERC20;
   mockERC721: MockERC721;
   mockERC1155: MockERC1155;
   multipass: Deployment;
   adr: AdrSetupResult;
+  arguableVotingTournamentDistribution: Deployment;
 }): Promise<EnvSetupResult> => {
-  const rankToken = (await ethers.getContractAt(setup.RankToken.abi, setup.RankToken.address)) as RankToken;
+  const rankTokenBase = (await ethers.getContractAt(setup.RankTokenBase.abi, setup.RankTokenBase.address)) as RankToken;
   const rankifyToken = (await ethers.getContractAt(setup.RankifyToken.abi, setup.RankifyToken.address)) as Rankify;
-  const rankifyInstance = (await ethers.getContractAt(
-    setup.RankifyInstance.abi,
-    setup.RankifyInstance.address,
-  )) as RankifyDiamondInstance;
+  //   const rankifyInstance = (await ethers.getContractAt(
+  //     setup.RankifyInstance.abi,
+  //     setup.RankifyInstance.address,
+  //   )) as RankifyDiamondInstance;
   const multipass = (await ethers.getContractAt(setup.multipass.abi, setup.multipass.address)) as MultipassDiamond;
 
+  const maoDistribution = (await ethers.getContractAt(setup.mao.abi, setup.mao.address)) as MAODistribution;
+  const distributor = (await ethers.getContractAt(
+    setup.distributor.abi,
+    setup.distributor.address,
+  )) as PeeramidLabsDistributor;
+
+  const arguableVotingTournamentDistribution = (await ethers.getContractAt(
+    setup.arguableVotingTournamentDistribution.abi,
+    setup.arguableVotingTournamentDistribution.address,
+  )) as ArguableVotingTournament;
+
   return {
+    maoDistribution,
+    distributor,
     rankifyToken,
-    rankifyInstance,
+    // rankifyInstance,
     multipass,
-    rankToken,
+    rankTokenBase,
     mockERC1155: setup.mockERC1155,
     mockERC20: setup.mockERC20,
     mockERC721: setup.mockERC721,
+    arguableVotingTournamentDistribution,
   };
 };
 
@@ -926,29 +951,30 @@ export const signRegistrarMessage = async (
 };
 
 const getSuperInterface = () => {
-    let mergedArray: JsonFragment[] = [];
-    function readDirectory(directory: string) {
-      const files = fs.readdirSync(directory);
+  let mergedArray: JsonFragment[] = [];
+  function readDirectory(directory: string) {
+    const files = fs.readdirSync(directory);
 
-      files.forEach(file => {
-        const fullPath = path.join(directory, file);
-        if (fs.statSync(fullPath).isDirectory()) {
-          readDirectory(fullPath); // Recurse into subdirectories
-        } else if (path.extname(file) === '.json') {
-          const fileContents = require('../' + fullPath); // Load the JSON file
-          if (Array.isArray(fileContents)) {
-            mergedArray = mergedArray.concat(fileContents); // Merge the array from the JSON file
-          }
+    files.forEach(file => {
+      const fullPath = path.join(directory, file);
+      if (fs.statSync(fullPath).isDirectory()) {
+        readDirectory(fullPath); // Recurse into subdirectories
+      } else if (path.extname(file) === '.json') {
+        const fileContents = require('../' + fullPath); // Load the JSON file
+        if (Array.isArray(fileContents)) {
+          mergedArray = mergedArray.concat(fileContents); // Merge the array from the JSON file
         }
-      });
-    }
-    const originalConsoleLog = console.log;
-    readDirectory('./abi');
-    console.log = () => {}; // avoid noisy output
-    const result = new ethers.utils.Interface(mergedArray);
-    console.log = originalConsoleLog;
-    return result;
-  };
+      }
+    });
+  }
+  const originalConsoleLog = console.log;
+  readDirectory('./abi');
+  readDirectory('./node_modules/@peeramid-labs/eds/abi');
+  console.log = () => {}; // avoid noisy output
+  const result = new ethers.utils.Interface(mergedArray);
+  console.log = originalConsoleLog;
+  return result;
+};
 
 export default {
   setupAddresses,
@@ -956,5 +982,5 @@ export default {
   addPlayerNameId,
   baseFee,
   signMessage: signRegistrarMessage,
-  getSuperInterface
+  getSuperInterface,
 };
