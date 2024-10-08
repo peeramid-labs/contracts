@@ -70,20 +70,29 @@ library LibQuadraticVoting {
         uint256[] memory creditsUsed = new uint256[](VotersVotes.length);
 
         for (uint256 proposalIdx = 0; proposalIdx < proposalsLength; proposalIdx++) {
-            //For each proposal
+            // For each proposal
             scores[proposalIdx] = 0;
             for (uint256 vi = 0; vi < VotersVotes.length; vi++) {
                 // For each potential voter
                 uint256[] memory voterVotes = VotersVotes[vi];
+
+                // If voter hasn't voted
                 if (!voterVoted[vi]) {
-                    // Check if voter wasn't voting
-                    scores[proposalIdx] += notVotedGivesEveyone; // Gives benefits to everyone but himself
+                    // Check if the voter is also the proposer (is active for this proposal)
+                    if (voterVotes[proposalIdx] == 0) {
+                        // Give benefits to everyone but himself only if the voter did not propose
+                        scores[proposalIdx] += notVotedGivesEveyone;
+                    }
                     creditsUsed[vi] = q.voteCredits;
                 } else {
-                    //If voter voted
+                    // If voter voted
                     scores[proposalIdx] += voterVotes[proposalIdx];
                     creditsUsed[vi] += voterVotes[proposalIdx] ** 2;
-                    if (creditsUsed[vi] > q.voteCredits) require(false, "quadraticVotingError"); // revert quadraticVotingError("Quadratic: vote credits overrun", q.voteCredits, creditsUsed[vi]);
+
+                    // Revert if quadratic voting credits are overrun
+                    if (creditsUsed[vi] > q.voteCredits) {
+                        require(false, "quadraticVotingError");
+                    }
                 }
             }
         }
