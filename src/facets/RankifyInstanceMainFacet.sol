@@ -271,7 +271,25 @@ contract RankifyInstanceMainFacet is
     }
 
     function canEndTurn(uint256 gameId) public view returns (bool) {
-        return gameId.canEndTurnEarly();
+        if (gameId == 1) return gameId.canEndTurnEarly();
+        /// @dev Allows early turn ending if all active players have moved.
+        bool allActivePlayersMoved = true;
+        bool anyMoveMade = false;
+
+        LibTBG.GameInstance storage previousGame = (gameId - 1)._getGame();
+        LibTBG.GameInstance storage currentGame = gameId._getGame();
+        address[] memory players = gameId.getPlayers();
+
+        for (uint256 i = 0; i < players.length; ++i) {
+            anyMoveMade = anyMoveMade || currentGame.madeMove[players[i]];
+
+            if (previousGame.madeMove[players[i]] && !currentGame.madeMove[players[i]]) {
+                allActivePlayersMoved = false;
+                break;
+            }
+        }
+
+        return (allActivePlayersMoved && anyMoveMade) || gameId.canEndTurnEarly();
     }
 
     function isPlayerTurnComplete(uint256 gameId, address player) public view returns (bool) {
