@@ -1,6 +1,5 @@
 import { task } from 'hardhat/config';
 import '@nomicfoundation/hardhat-chai-matchers';
-import 'hardhat-diamond-abi';
 import '@nomicfoundation/hardhat-toolbox';
 import 'hardhat-abi-exporter';
 import { toSignature, isIncluded } from './scripts/diamond';
@@ -169,19 +168,7 @@ export default {
     ],
   },
   diamondAbi: [
-    {
-      // (required) The name of your Diamond ABI
-      name: 'MultipassDiamond',
-      include: ['DNSFacet', 'OwnershipFacet', 'DiamondLoupeFacet', 'EIP712InspectorFacet'],
-      // We explicitly set `strict` to `true` because we want to validate our facets don't accidentally provide overlapping functions
-      strict: true,
-      // We use our diamond utils to filter some functions we ignore from the combined ABI
-      filter(abiElement: unknown, index: number, abi: unknown[], fullyQualifiedName: string) {
-        // const changes = new diamondUtils.DiamondChanges();
-        const signature = toSignature(abiElement);
-        return isIncluded(fullyQualifiedName, signature);
-      },
-    },
+    // We use this just to generate type
     {
       name: 'RankifyDiamondInstance',
       include: [

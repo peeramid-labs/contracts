@@ -1,33 +1,23 @@
-
-
-
 // import { time } from "@openzeppelin/test-helpers";
-import hre, { deployments, config } from 'hardhat';
+import hre, { deployments } from 'hardhat';
 import aes from 'crypto-js/aes';
 import { ethers } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import {
-  Rankify,
-  MockERC1155,
-  MockERC20,
-  MockERC721,
-  RankToken,
-  RankifyDiamondInstance,
-  MultipassDiamond,
-  MAODistribution,
-  PeeramidLabsDistributor,
-  ArguableVotingTournament,
+    Rankify,
+    MockERC1155,
+    MockERC20,
+    MockERC721,
+    RankToken,
+    MAODistribution,
+    PeeramidLabsDistributor,
+    ArguableVotingTournament,
 } from '../types';
 import { BigNumber, BigNumberish, BytesLike, Wallet } from 'ethers';
 // @ts-ignore
 import { assert } from 'console';
 import { Deployment } from 'hardhat-deploy/types';
 import { HardhatEthersHelpers } from '@nomiclabs/hardhat-ethers/types';
-import { MultipassJs } from '../utils/multipass';
-import { LibMultipass } from '../types/src/facets/DNSFacet';
-import { JsonFragment } from '@ethersproject/abi';
-import fs from 'fs';
-import path from 'path';
 
 export const MULTIPASS_CONTRACT_NAME = 'MultipassDNS';
 export const MULTIPASS_CONTRACT_VERSION = '0.0.1';
@@ -67,14 +57,13 @@ export interface AdrSetupResult {
   gameMaster2: SignerIdentity;
   gameMaster3: SignerIdentity;
   gameOwner: SignerIdentity;
-  multipassOwner: SignerIdentity;
+  gameOwner2: SignerIdentity;
   registrar1: SignerIdentity;
 }
 
 export interface EnvSetupResult {
   rankifyToken: Rankify;
   arguableVotingTournamentDistribution: ArguableVotingTournament;
-  multipass: MultipassDiamond;
   rankTokenBase: RankToken;
   mockERC20: MockERC20;
   mockERC1155: MockERC1155;
@@ -274,7 +263,7 @@ export const setupAddresses = async (
     maliciousActor2,
     maliciousActor3,
     gameOwner,
-    multipassOwner: gameOwner,
+    gameOwner2: gameOwner,
   };
 };
 
@@ -317,7 +306,7 @@ export const setupTest = deployments.createFixture(async ({ deployments, getName
     to: owner,
     value: _eth.utils.parseEther('1'),
   });
-  await deployments.fixture(['MAO', 'multipass']);
+  await deployments.fixture(['MAO']);
   const MockERC20F = await _eth.getContractFactory('MockERC20', adr.contractDeployer.wallet);
   const mockERC20 = (await MockERC20F.deploy('Mock ERC20', 'MCK20', adr.contractDeployer.wallet.address)) as MockERC20;
   await mockERC20.deployed();
@@ -338,8 +327,6 @@ export const setupTest = deployments.createFixture(async ({ deployments, getName
     mao: await deployments.get('MAODistribution'),
     RankifyToken: await deployments.get('Rankify'),
     RankTokenBase: await deployments.get('RankToken'),
-    // RankifyInstance: await deployments.get('RankifyInstance'),
-    multipass: await deployments.get('Multipass'),
     arguableVotingTournamentDistribution: await deployments.get('ArguableVotingTournament'),
     mockERC20: mockERC20,
     mockERC721: mockERC721,
@@ -439,7 +426,6 @@ export const setupEnvironment = async (setup: {
   mockERC20: MockERC20;
   mockERC721: MockERC721;
   mockERC1155: MockERC1155;
-  multipass: Deployment;
   adr: AdrSetupResult;
   arguableVotingTournamentDistribution: Deployment;
 }): Promise<EnvSetupResult> => {
@@ -449,7 +435,6 @@ export const setupEnvironment = async (setup: {
   //     setup.RankifyInstance.abi,
   //     setup.RankifyInstance.address,
   //   )) as RankifyDiamondInstance;
-  const multipass = (await ethers.getContractAt(setup.multipass.abi, setup.multipass.address)) as MultipassDiamond;
 
   const maoDistribution = (await ethers.getContractAt(setup.mao.abi, setup.mao.address)) as MAODistribution;
   const distributor = (await ethers.getContractAt(
@@ -466,8 +451,6 @@ export const setupEnvironment = async (setup: {
     maoDistribution,
     distributor,
     rankifyToken,
-    // rankifyInstance,
-    multipass,
     rankTokenBase,
     mockERC1155: setup.mockERC1155,
     mockERC20: setup.mockERC20,
@@ -862,125 +845,9 @@ export const mockProposals = async ({
   return proposals;
 };
 
-export const signReferralCode = async (message: ReferrerMesage, verifierAddress: string, signer: SignerIdentity) => {
-  let { chainId } = await ethers.provider.getNetwork();
-
-  const domain = {
-    name: MULTIPASS_CONTRACT_NAME,
-    version: MULTIPASS_CONTRACT_VERSION,
-    chainId,
-    verifyingContract: verifierAddress,
-  };
-
-  const types = {
-    proofOfReferrer: [
-      {
-        type: 'address',
-        name: 'referrerAddress',
-      },
-    ],
-  };
-  const s = await signer.wallet._signTypedData(domain, types, { ...message });
-  return s;
-};
-
-export const getUserRegisterProps = async (
-  account: SignerIdentity,
-  registrar: SignerIdentity,
-  domainName: string,
-  deadline: number,
-  multipassAddress: string,
-  referrer?: SignerIdentity,
-  referrerDomain?: string,
-) => {
-  const registrarMessage = {
-    name: ethers.utils.formatBytes32String(account.name + `.` + domainName),
-    id: ethers.utils.formatBytes32String(account.id + `.` + domainName),
-    domainName: ethers.utils.formatBytes32String(domainName),
-    deadline: ethers.BigNumber.from(deadline),
-    nonce: ethers.BigNumber.from(0),
-  };
-
-  const validSignature = await signRegistrarMessage(registrarMessage, multipassAddress, registrar);
-
-  const applicantData: LibMultipass.RecordStruct = {
-    name: ethers.utils.formatBytes32String(account.name + `.` + domainName),
-    id: ethers.utils.formatBytes32String(account.id + `.` + domainName),
-    wallet: account.wallet.address,
-    nonce: 0,
-    domainName: ethers.utils.formatBytes32String(domainName),
-  };
-
-  const referrerData: LibMultipass.NameQueryStruct = {
-    name: ethers.utils.formatBytes32String(referrer?.name ? referrer?.name + `.` + domainName : ''),
-    domainName: ethers.utils.formatBytes32String(domainName),
-    id: ethers.utils.formatBytes32String(''),
-    wallet: ethers.constants.AddressZero,
-    targetDomain: ethers.utils.formatBytes32String(referrerDomain ?? ''),
-  };
-  let referrerSignature = ethers.constants.HashZero;
-  const proofOfReferrer: ReferrerMesage = {
-    referrerAddress: referrer?.wallet.address ?? ethers.constants.AddressZero,
-  };
-  if (referrer?.wallet.address) {
-    referrerSignature = await signReferralCode(proofOfReferrer, multipassAddress, referrer);
-  }
-
-  return {
-    registrarMessage,
-    validSignature,
-    applicantData,
-    referrerData,
-    referrerSignature,
-  };
-};
-export const signRegistrarMessage = async (
-  message: RegisterMessage,
-  verifierAddress: string,
-  signer: SignerIdentity,
-) => {
-  let { chainId } = await ethers.provider.getNetwork();
-
-  const multipassJs = new MultipassJs({
-    chainId: chainId,
-    contractName: MULTIPASS_CONTRACT_NAME,
-    version: MULTIPASS_CONTRACT_VERSION,
-    ...hre.network,
-  });
-  return await multipassJs.signRegistrarMessage(message, verifierAddress, signer.wallet);
-};
-
-const getSuperInterface = () => {
-  let mergedArray: JsonFragment[] = [];
-  function readDirectory(directory: string) {
-    const files = fs.readdirSync(directory);
-
-    files.forEach(file => {
-      const fullPath = path.join(directory, file);
-      if (fs.statSync(fullPath).isDirectory()) {
-        readDirectory(fullPath); // Recurse into subdirectories
-      } else if (path.extname(file) === '.json') {
-        const fileContents = require('../' + fullPath); // Load the JSON file
-        if (Array.isArray(fileContents)) {
-          mergedArray = mergedArray.concat(fileContents); // Merge the array from the JSON file
-        }
-      }
-    });
-  }
-  const originalConsoleLog = console.log;
-  readDirectory('./abi');
-  readDirectory('./node_modules/@peeramid-labs/eds/abi');
-  console.log = () => {}; // avoid noisy output
-  const result = new ethers.utils.Interface(mergedArray);
-  console.log = originalConsoleLog;
-  return result;
-};
-
 export default {
   setupAddresses,
   setupEnvironment,
   addPlayerNameId,
   baseFee,
-  signMessage: signRegistrarMessage,
-  getSuperInterface,
 };
