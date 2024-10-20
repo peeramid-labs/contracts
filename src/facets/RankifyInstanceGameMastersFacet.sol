@@ -162,8 +162,8 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
             emit LastTurn(gameId);
         }
         if (_isGameOver) {
-            uint256[] memory finalScores = gameId.closeGame(LibDiamond.contractOwner(), onPlayersGameEnd);
             address[] memory players = gameId.getPlayers();
+            uint256[] memory finalScores = gameId.closeGame(LibDiamond.contractOwner(), onPlayersGameEnd);
             emit GameOver(gameId, players, finalScores);
         }
         _afterNextTurn(gameId, newProposals);
