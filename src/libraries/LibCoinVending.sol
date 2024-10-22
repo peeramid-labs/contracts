@@ -384,8 +384,8 @@ library LibCoinVending {
      */
     function _refund(Condition storage reqPos, address to) private {
         require((reqPos.timesRefunded + reqPos.timesReleased) < reqPos.timesFunded, "Not enough balance to refund");
-        fulfill(reqPos, address(this), to, to, to, to);
         reqPos.timesRefunded += 1;
+        fulfill(reqPos, address(this), to, to, to, to);
     }
 
     /**
@@ -426,8 +426,8 @@ library LibCoinVending {
 
     function _release(Condition storage reqPos, address payee, address beneficiary, address returnAddress) private {
         require((reqPos.timesRefunded + reqPos.timesReleased) < reqPos.timesFunded, "Not enough balance to release");
-        fulfill(reqPos, address(this), payee, beneficiary, address(0), returnAddress);
         reqPos.timesReleased += 1;
+        fulfill(reqPos, address(this), payee, beneficiary, address(0), returnAddress);
     }
 
     /**
@@ -475,8 +475,8 @@ library LibCoinVending {
 
     function _fund(Condition storage reqPos, address funder) private {
         require(reqPos._isConfigured, "Position does not exist");
-        fulfill(reqPos, funder, address(this), address(this), address(this), address(this));
         reqPos.timesFunded += 1;
+        fulfill(reqPos, funder, address(this), address(this), address(this), address(this));
     }
 
     /**

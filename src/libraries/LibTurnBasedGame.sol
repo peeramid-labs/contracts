@@ -249,7 +249,6 @@ library LibTBG {
         require(tbg.playerInGame[participant] == gameId, "Not in the game");
         require(_game.hasStarted == false || _game.hasEnded == true, "Cannot leave once started");
         tbg.playerInGame[participant] = 0;
-        _game.players.remove(participant);
     }
 
     /**
@@ -419,8 +418,9 @@ library LibTBG {
     function getScores(uint256 gameId) internal view returns (address[] memory, uint256[] memory) {
         address[] memory players = getPlayers(gameId);
         uint256[] memory scores = new uint256[](players.length);
+        GameInstance storage _game = _getGame(gameId);
         for (uint256 i = 0; i < players.length; ++i) {
-            scores[i] = getScore(gameId, players[i]);
+            scores[i] = _game.score[players[i]];
         }
         return (players, scores);
     }

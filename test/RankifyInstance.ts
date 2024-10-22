@@ -1,11 +1,13 @@
 import {
-    AdrSetupResult,
-    RInstance_MAX_PLAYERS,
-    RInstance_MIN_PLAYERS,
-    EnvSetupResult, MockVotes,
-    ProposalSubmittion,
-    setupTest,
-    SignerIdentity, RInstance_MAX_TURNS
+  AdrSetupResult,
+  RInstance_MAX_PLAYERS,
+  RInstance_MIN_PLAYERS,
+  EnvSetupResult,
+  MockVotes,
+  ProposalSubmittion,
+  setupTest,
+  SignerIdentity,
+  RInstance_MAX_TURNS,
 } from './utils';
 import { RInstanceSettings, mineBlocks, mockProposals, mockVotes, getPlayers } from './utils';
 import { expect } from 'chai';
@@ -25,7 +27,7 @@ import { network } from 'hardhat';
 const scriptName = path.basename(__filename);
 
 import { getCodeIdFromArtifact } from '../scripts/getCodeId';
-import { DistributorArgumentsStruct } from '../types/src/distributions/MAODistribution.sol/MAODistribution';
+import { MAODistribution } from '../types/src/distributions/MAODistribution';
 let votes: MockVotes;
 let proposalsStruct: ProposalSubmittion[];
 let adr: AdrSetupResult;
@@ -289,7 +291,7 @@ describe(scriptName, () => {
     adr = setup.adr;
     env = setup.env;
     await addDistribution(hre)(await getCodeIdFromArtifact(hre)('MAODistribution'), adr.gameOwner.wallet);
-    const distributorArguments: DistributorArgumentsStruct = {
+    const distributorArguments: MAODistribution.DistributorArgumentsStruct = {
       DAOSEttings: {
         daoURI: 'https://example.com/dao',
         subdomain: 'example',
@@ -1298,6 +1300,11 @@ describe(scriptName, () => {
             adr.gameMaster1,
             getPlayers(adr, RInstanceSettings.RInstance_MAX_PLAYERS),
           );
+        });
+        it('Can retrieve scores', async () => {
+          const scores = await rankifyInstance.getScores(1);
+          expect(scores[0].length).to.be.equal(RInstanceSettings.RInstance_MAX_PLAYERS);
+          expect(scores[1].length).to.be.equal(RInstanceSettings.RInstance_MAX_PLAYERS);
         });
         it('Throws on attempt to make another turn', async () => {
           const currentTurn = await rankifyInstance.getTurn(1);
