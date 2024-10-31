@@ -22,7 +22,12 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     '0xc0D31d398c5ee86C5f8a23FA253ee8a586dA03Ce',
   )) as CodeIndex;
 
-  await codeIndexContract.connect(await hre.ethers.getSigner(deployer)).register(sacmDeployment.address);
+  const code = await hre.ethers.provider.getCode(sacmDeployment.address);
+  const codeId = ethers.utils.keccak256(code);
+  const registerAddress = await codeIndexContract.get(codeId);
+  if (registerAddress === ethers.constants.AddressZero) {
+    await codeIndexContract.connect(await hre.ethers.getSigner(deployer)).register(sacmDeployment.address);
+  }
 };
 
 export default func;
