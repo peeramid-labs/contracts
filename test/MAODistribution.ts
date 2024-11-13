@@ -3,14 +3,14 @@
 import { deployments, ethers } from 'hardhat';
 import hre from 'hardhat';
 import { expect } from 'chai';
-import { IDAO, MAODistribution, PeeramidLabsDistributor, Rankify, RankifyDiamondInstance } from '../types';
+import { IDAO, MAODistribution, PeeramidDAODistributor, Rankify, RankifyDiamondInstance } from '../types';
 import utils, { AdrSetupResult, setupTest } from './utils';
 import { getCodeIdFromArtifact } from '../scripts/getCodeId';
 import addDistribution from '../scripts/playbooks/addDistribution';
 
 describe('MAODistribution', async function () {
   let contract: MAODistribution;
-  let distributorContract: PeeramidLabsDistributor;
+  let distributorContract: PeeramidDAODistributor;
   let maoId: string;
   let rankify: Rankify;
   let addr: AdrSetupResult;

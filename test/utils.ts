@@ -1,6 +1,3 @@
-
-
-
 // import { time } from "@openzeppelin/test-helpers";
 import hre, { deployments, config } from 'hardhat';
 import aes from 'crypto-js/aes';
@@ -15,7 +12,7 @@ import {
   RankifyDiamondInstance,
   MultipassDiamond,
   MAODistribution,
-  PeeramidLabsDistributor,
+  PeeramidDAODistributor,
   ArguableVotingTournament,
 } from '../types';
 import { BigNumber, BigNumberish, BytesLike, Wallet } from 'ethers';
@@ -80,7 +77,7 @@ export interface EnvSetupResult {
   mockERC1155: MockERC1155;
   mockERC721: MockERC721;
   maoDistribution: MAODistribution;
-  distributor: PeeramidLabsDistributor;
+  distributor: PeeramidDAODistributor;
 }
 export const addPlayerNameId = (idx: any) => {
   return { name: `player-${idx}`, id: `player-${idx}-id` };
@@ -334,7 +331,7 @@ export const setupTest = deployments.createFixture(async ({ deployments, getName
   )) as MockERC721;
   await mockERC721.deployed();
   const env = await setupEnvironment({
-    distributor: await deployments.get('PeeramidLabsDistributor'),
+    distributor: await deployments.get('PeeramidDAODistributor'),
     mao: await deployments.get('MAODistribution'),
     RankifyToken: await deployments.get('Rankify'),
     RankTokenBase: await deployments.get('RankToken'),
@@ -455,7 +452,7 @@ export const setupEnvironment = async (setup: {
   const distributor = (await ethers.getContractAt(
     setup.distributor.abi,
     setup.distributor.address,
-  )) as PeeramidLabsDistributor;
+  )) as PeeramidDAODistributor;
 
   const arguableVotingTournamentDistribution = (await ethers.getContractAt(
     setup.arguableVotingTournamentDistribution.abi,

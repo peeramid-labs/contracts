@@ -3,25 +3,43 @@ pragma solidity ^0.8.20;
 
 import "@peeramid-labs/eds/src/abstracts/Distributor.sol";
 import "@openzeppelin/contracts/access/extensions/AccessControlDefaultAdminRules.sol";
-
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 /**
- * @title PeeramidLabsDistributor
+ * @title PeeramidDAODistributor
  * @notice This contract is a distributor for Peeramid Labs.
  * It is designed to handle the distribution logic specific to Peeramid Labs.
  * The contract leverages access control mechanisms to ensure that only authorized
  * users can perform certain actions.
  * @author Peeramid Labs, 2024
  */
-contract PeeramidLabsDistributor is Distributor, AccessControlDefaultAdminRules {
-    constructor(address defaultAdmin) Distributor() AccessControlDefaultAdminRules(3 days, defaultAdmin) {}
+contract PeeramidDAODistributor is Distributor, AccessControlDefaultAdminRules {
+    IERC20 public paymentToken;
+    mapping(bytes32 id => uint256) public instantiationCosts;
+    constructor(address defaultAdmin, IERC20 token) Distributor() AccessControlDefaultAdminRules(3 days, defaultAdmin) {
+        paymentToken = token;
+    }
+
+
 
     /**
      * @notice Adds a new distribution with the given identifier and initializer address.
      * @dev This function can only be called by an account with the `DEFAULT_ADMIN_ROLE`.
-     * @param id The unique identifier for the distribution.     * @param initializer The address that initializes the distribution.
+     * @param id The unique identifier for the distribution.
+     * @param initializer The address that initializes the distribution.
      */
     function addDistribution(bytes32 id, address initializer) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _addDistribution(id, initializer);
+        instantiationCosts[keccak256(abi.encode(id, initializer))] = type(uint256).max;
+    }
+
+
+    /**
+     * @notice Sets instantiation cost on a specific instantiation id
+     * @param id distributors id
+     * @param cost cost of instantiation
+     */
+    function setInstantiationCost(bytes32 id, uint256 cost) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        instantiationCosts[id] = cost;
     }
 
     /**

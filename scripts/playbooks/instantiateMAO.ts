@@ -28,7 +28,8 @@ export const instantiateMAO = async ({
     ACIDInstance: instances[3],
     ACIDAccessManager: instances[12],
     rankToken: instances[13],
-    instanceId: evts[0].args.instanceId,
+    instanceId: evts[0].args.newInstanceId,
+    distributorsId: evts[0].args.distributionId,
   };
 };
 

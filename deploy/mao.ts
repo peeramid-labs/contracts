@@ -10,7 +10,9 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployments, getNamedAccounts } = hre;
   const { deploy } = deployments;
   const network: keyof typeof activeContractsList =
-    process.env.NODE_ENV === 'TEST' ? 'arbitrum' : (hardhatArguments.network as keyof typeof activeContractsList);
+    process.env.NODE_ENV === 'TEST' || hardhatArguments.network == 'localhost'
+      ? 'arbitrum'
+      : (hardhatArguments.network as keyof typeof activeContractsList);
   if (process.env.NODE_ENV !== 'TEST') {
     console.log('network', network, process.env.NODE_ENV);
   }
