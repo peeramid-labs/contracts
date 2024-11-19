@@ -9,10 +9,9 @@ import {
   MockERC20,
   MockERC721,
   RankToken,
-  RankifyDiamondInstance,
   MultipassDiamond,
   MAODistribution,
-  PeeramidDAODistributor,
+  DAODistributor,
   ArguableVotingTournament,
 } from '../types';
 import { BigNumber, BigNumberish, BytesLike, Wallet } from 'ethers';
@@ -77,7 +76,7 @@ export interface EnvSetupResult {
   mockERC1155: MockERC1155;
   mockERC721: MockERC721;
   maoDistribution: MAODistribution;
-  distributor: PeeramidDAODistributor;
+  distributor: DAODistributor;
 }
 export const addPlayerNameId = (idx: any) => {
   return { name: `player-${idx}`, id: `player-${idx}-id` };
@@ -331,7 +330,7 @@ export const setupTest = deployments.createFixture(async ({ deployments, getName
   )) as MockERC721;
   await mockERC721.deployed();
   const env = await setupEnvironment({
-    distributor: await deployments.get('PeeramidDAODistributor'),
+    distributor: await deployments.get('DAODistributor'),
     mao: await deployments.get('MAODistribution'),
     RankifyToken: await deployments.get('Rankify'),
     RankTokenBase: await deployments.get('RankToken'),
@@ -449,10 +448,7 @@ export const setupEnvironment = async (setup: {
   const multipass = (await ethers.getContractAt(setup.multipass.abi, setup.multipass.address)) as MultipassDiamond;
 
   const maoDistribution = (await ethers.getContractAt(setup.mao.abi, setup.mao.address)) as MAODistribution;
-  const distributor = (await ethers.getContractAt(
-    setup.distributor.abi,
-    setup.distributor.address,
-  )) as PeeramidDAODistributor;
+  const distributor = (await ethers.getContractAt(setup.distributor.abi, setup.distributor.address)) as DAODistributor;
 
   const arguableVotingTournamentDistribution = (await ethers.getContractAt(
     setup.arguableVotingTournamentDistribution.abi,

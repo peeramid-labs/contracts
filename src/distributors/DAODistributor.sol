@@ -1,25 +1,23 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@peeramid-labs/eds/src/abstracts/Distributor.sol";
+import "@peeramid-labs/eds/src/abstracts/TokenizedDistributor.sol";
 import "@openzeppelin/contracts/access/extensions/AccessControlDefaultAdminRules.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 /**
- * @title PeeramidDAODistributor
+ * @title DAODistributor
  * @notice This contract is a distributor for Peeramid Labs.
  * It is designed to handle the distribution logic specific to Peeramid Labs.
  * The contract leverages access control mechanisms to ensure that only authorized
  * users can perform certain actions.
  * @author Peeramid Labs, 2024
  */
-contract PeeramidDAODistributor is Distributor, AccessControlDefaultAdminRules {
-    IERC20 public paymentToken;
-    mapping(bytes32 id => uint256) public instantiationCosts;
-    constructor(address defaultAdmin, IERC20 token) Distributor() AccessControlDefaultAdminRules(3 days, defaultAdmin) {
-        paymentToken = token;
-    }
-
-
+contract DAODistributor is TokenizedDistributor, AccessControlDefaultAdminRules {
+    constructor(
+        address defaultAdmin,
+        IERC20 token,
+        uint256 defaultCost
+    ) TokenizedDistributor(token, defaultCost, defaultAdmin) AccessControlDefaultAdminRules(3 days, defaultAdmin) {}
 
     /**
      * @notice Adds a new distribution with the given identifier and initializer address.
@@ -28,10 +26,8 @@ contract PeeramidDAODistributor is Distributor, AccessControlDefaultAdminRules {
      * @param initializer The address that initializes the distribution.
      */
     function addDistribution(bytes32 id, address initializer) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        _addDistribution(id, initializer);
-        instantiationCosts[keccak256(abi.encode(id, initializer))] = type(uint256).max;
+        super._addDistribution(id, initializer);
     }
-
 
     /**
      * @notice Sets instantiation cost on a specific instantiation id
@@ -39,7 +35,7 @@ contract PeeramidDAODistributor is Distributor, AccessControlDefaultAdminRules {
      * @param cost cost of instantiation
      */
     function setInstantiationCost(bytes32 id, uint256 cost) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        instantiationCosts[id] = cost;
+        super._setInstantiationCost(id, cost);
     }
 
     /**
@@ -54,7 +50,7 @@ contract PeeramidDAODistributor is Distributor, AccessControlDefaultAdminRules {
         bytes32 id,
         bytes calldata args
     ) external returns (address[] memory srcs, bytes32 name, uint256 version) {
-        return _instantiate(id, args);
+        return super._instantiate(id, args);
     }
 
     /**
@@ -63,7 +59,7 @@ contract PeeramidDAODistributor is Distributor, AccessControlDefaultAdminRules {
      * @param id The unique identifier of the distribution entry to be removed.
      */
     function removeDistribution(bytes32 id) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        _removeDistribution(id);
+        super._removeDistribution(id);
     }
 
     /**
