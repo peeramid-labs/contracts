@@ -1,5 +1,5 @@
 const { assert } = require('chai');
-import { ethers } from 'hardhat';
+import { deployments, ethers } from 'hardhat';
 import { expect } from 'chai';
 import { MockERC1155, MockVendingMachine, MockERC20, MockERC721 } from '../types/src/mocks';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
@@ -24,99 +24,103 @@ describe('LibCoinVending Test', async function () {
   let signer: SignerWithAddress;
   let payee: SignerWithAddress;
   let maliciousActor: SignerWithAddress;
-  let benificiary: SignerWithAddress;
+  let beneficiary: SignerWithAddress;
   let mockERC1155: MockERC1155;
   let mockERC20: MockERC20;
   let mockERC721: MockERC721;
   let ReqTokens: LibCoinVending.ConfigSmartRequirementStruct[] = [];
 
   beforeEach(async function () {
-    const signers = await ethers.getSigners();
-    signer = signers[0];
-    payee = signers[1];
-    benificiary = signers[2];
-    maliciousActor = signers[3];
+    const setupTest = deployments.createFixture(async ({ deployments, getNamedAccounts, ethers }, options) => {
+      await deployments.fixture(); // ensure you start from a fresh deployments
+      const signers = await ethers.getSigners();
+      signer = signers[0];
+      payee = signers[1];
+      beneficiary = signers[2];
+      maliciousActor = signers[3];
 
-    const MockCoinVending = await ethers.getContractFactory('MockVendingMachine');
-    const _mockCoinVending = (await MockCoinVending.deploy()) as MockVendingMachine;
-    await _mockCoinVending.deployed();
+      const MockCoinVending = await ethers.getContractFactory('MockVendingMachine');
+      const _mockCoinVending = (await MockCoinVending.deploy()) as MockVendingMachine;
+      await _mockCoinVending.deployed();
 
-    const MockERC20 = await ethers.getContractFactory('MockERC20');
-    const _mockERC20 = (await MockERC20.deploy('ERC20', 'ERC20', signer.address)) as MockERC20;
-    await _mockERC20.deployed();
-    await _mockERC20.mint(signer.address, eth100);
-    await _mockERC20.approve(_mockCoinVending.address, eth100);
-    await _mockERC20.connect(maliciousActor).approve(_mockCoinVending.address, eth100);
+      const MockERC20 = await ethers.getContractFactory('MockERC20');
+      const _mockERC20 = (await MockERC20.deploy('ERC20', 'ERC20', signer.address)) as MockERC20;
+      await _mockERC20.deployed();
+      await _mockERC20.mint(signer.address, eth100);
+      await _mockERC20.approve(_mockCoinVending.address, eth100);
+      await _mockERC20.connect(maliciousActor).approve(_mockCoinVending.address, eth100);
 
-    const MockERC721 = await ethers.getContractFactory('MockERC721');
-    const _mockERC721 = (await MockERC721.deploy('ERC721', 'ERC721', signer.address)) as MockERC721;
-    await _mockERC721.deployed();
+      const MockERC721 = await ethers.getContractFactory('MockERC721');
+      const _mockERC721 = (await MockERC721.deploy('ERC721', 'ERC721', signer.address)) as MockERC721;
+      await _mockERC721.deployed();
 
-    for (let i = 1; i < 100; i++) {
-      await _mockERC721.mintNext(signer.address);
-    }
-    await _mockERC721.setApprovalForAll(_mockCoinVending.address, true);
-    await _mockERC721.connect(maliciousActor).setApprovalForAll(_mockCoinVending.address, true);
+      for (let i = 1; i < 100; i++) {
+        await _mockERC721.mintNext(signer.address);
+      }
+      await _mockERC721.setApprovalForAll(_mockCoinVending.address, true);
+      await _mockERC721.connect(maliciousActor).setApprovalForAll(_mockCoinVending.address, true);
 
-    const MockERC1155 = await ethers.getContractFactory('MockERC1155');
-    const _mockERC1155 = (await MockERC1155.deploy(' ', signer.address)) as MockERC1155;
-    await _mockERC1155.deployed();
-    await _mockERC1155.setApprovalForAll(_mockCoinVending.address, true);
-    await _mockERC1155.connect(maliciousActor).setApprovalForAll(_mockCoinVending.address, true);
+      const MockERC1155 = await ethers.getContractFactory('MockERC1155');
+      const _mockERC1155 = (await MockERC1155.deploy(' ', signer.address)) as MockERC1155;
+      await _mockERC1155.deployed();
+      await _mockERC1155.setApprovalForAll(_mockCoinVending.address, true);
+      await _mockERC1155.connect(maliciousActor).setApprovalForAll(_mockCoinVending.address, true);
 
-    await _mockERC1155.batchMint(
-      signer.address,
-      ['1', '2', '3', '4', '5', '6'],
-      [eth100, eth100, eth100, eth100, eth100, eth100],
-      '0x',
-    );
-    ReqTokens = [];
-    //ERC20
-    ReqTokens.push({
-      contractAddress: _mockERC20.address,
-      contractId: '0',
-      contractType: '0',
-      contractRequirement: {
-        have: { amount: valueToHave, data: '0x' },
-        lock: { amount: valueToLock, data: '0x' },
-        burn: { amount: valueToBurn, data: '0x' },
-        bet: { amount: valueToAward, data: '0x' },
-        pay: { amount: valueToAccept, data: '0x' },
-      },
+      await _mockERC1155.batchMint(
+        signer.address,
+        ['1', '2', '3', '4', '5', '6'],
+        [eth100, eth100, eth100, eth100, eth100, eth100],
+        '0x',
+      );
+      ReqTokens = [];
+      //ERC20
+      ReqTokens.push({
+        contractAddress: _mockERC20.address,
+        contractId: '0',
+        contractType: '0',
+        contractRequirement: {
+          have: { amount: valueToHave, data: '0x' },
+          lock: { amount: valueToLock, data: '0x' },
+          burn: { amount: valueToBurn, data: '0x' },
+          bet: { amount: valueToAward, data: '0x' },
+          pay: { amount: valueToAccept, data: '0x' },
+        },
+      });
+
+      //ERC1155
+      ReqTokens.push({
+        contractAddress: _mockERC1155.address,
+        contractId: '1',
+        contractType: '1',
+        contractRequirement: {
+          have: { amount: valueToHave, data: '0x' },
+          lock: { amount: valueToLock, data: '0x' },
+          burn: { amount: valueToBurn, data: '0x' },
+          bet: { amount: valueToAward, data: '0x' },
+          pay: { amount: valueToAccept, data: '0x' },
+        },
+      });
+
+      //ERC721 have (balance)
+      ReqTokens.push({
+        contractAddress: _mockERC721.address,
+        contractId: '1',
+        contractType: '2',
+        contractRequirement: {
+          have: { amount: '1', data: '0x' },
+          lock: { amount: '0', data: '0x' },
+          burn: { amount: '0', data: '0x' },
+          bet: { amount: '0', data: '0x' },
+          pay: { amount: '0', data: '0x' },
+        },
+      });
+
+      mockERC20 = _mockERC20;
+      mockERC721 = _mockERC721;
+      mockERC1155 = _mockERC1155;
+      mockCoinVending = _mockCoinVending;
     });
-
-    //ERC1155
-    ReqTokens.push({
-      contractAddress: _mockERC1155.address,
-      contractId: '1',
-      contractType: '1',
-      contractRequirement: {
-        have: { amount: valueToHave, data: '0x' },
-        lock: { amount: valueToLock, data: '0x' },
-        burn: { amount: valueToBurn, data: '0x' },
-        bet: { amount: valueToAward, data: '0x' },
-        pay: { amount: valueToAccept, data: '0x' },
-      },
-    });
-
-    //ERC721 have (balance)
-    ReqTokens.push({
-      contractAddress: _mockERC721.address,
-      contractId: '1',
-      contractType: '2',
-      contractRequirement: {
-        have: { amount: '1', data: '0x' },
-        lock: { amount: '0', data: '0x' },
-        burn: { amount: '0', data: '0x' },
-        bet: { amount: '0', data: '0x' },
-        pay: { amount: '0', data: '0x' },
-      },
-    });
-
-    mockERC20 = _mockERC20;
-    mockERC721 = _mockERC721;
-    mockERC1155 = _mockERC1155;
-    mockCoinVending = _mockCoinVending;
+    await setupTest();
   });
 
   it('Should be able to create new position without tokens', async () => {
@@ -144,7 +148,7 @@ describe('LibCoinVending Test', async function () {
       mockCoinVending.release(
         ethers.utils.formatBytes32String('nonExistentPosition'),
         payee.address,
-        benificiary.address,
+        beneficiary.address,
       ),
     ).to.be.revertedWith('Not enough balance to release');
   });
@@ -198,7 +202,7 @@ describe('LibCoinVending Test', async function () {
     it('Release brings correct values back to funder, benificiary and payee', async () => {
       const initialBalance = await ethers.provider.getBalance(signer.address);
       const initialPayeeBalance = await ethers.provider.getBalance(payee.address);
-      const initialBenificiaryBalance = await ethers.provider.getBalance(benificiary.address);
+      const initialBenificiaryBalance = await ethers.provider.getBalance(beneficiary.address);
 
       let tx = await mockCoinVending.fund(ethers.utils.formatBytes32String('test position1'), { value: eth10 });
       let txReceipt = await tx.wait();
@@ -208,13 +212,13 @@ describe('LibCoinVending Test', async function () {
       tx = await mockCoinVending.release(
         ethers.utils.formatBytes32String('test position1'),
         payee.address,
-        benificiary.address,
+        beneficiary.address,
       );
       txReceipt = await tx.wait();
       let gasSpent2 = txReceipt.gasUsed.mul(txReceipt.effectiveGasPrice);
       updatedBalance = await ethers.provider.getBalance(signer.address);
       const payeeBalance = await ethers.provider.getBalance(payee.address);
-      const benificiaryBalance = await ethers.provider.getBalance(benificiary.address);
+      const benificiaryBalance = await ethers.provider.getBalance(beneficiary.address);
       expect(initialBalance.sub(valueToAccept).sub(valueToAward).sub(valueToBurn)).to.be.equal(
         updatedBalance.add(gasSpent).add(gasSpent2),
       );
@@ -285,12 +289,12 @@ describe('LibCoinVending Test', async function () {
       await mockCoinVending.fund(ethers.utils.formatBytes32String('tokens'));
       const balanceBefore1155 = await mockERC1155.balanceOf(signer.address, '1');
       const balanceBefore20 = await mockERC20.balanceOf(signer.address);
-      await mockCoinVending.release(ethers.utils.formatBytes32String('tokens'), payee.address, benificiary.address);
-      expect(await mockERC20.balanceOf(benificiary.address)).to.be.equal(valueToAward);
+      await mockCoinVending.release(ethers.utils.formatBytes32String('tokens'), payee.address, beneficiary.address);
+      expect(await mockERC20.balanceOf(beneficiary.address)).to.be.equal(valueToAward);
       expect(await mockERC20.balanceOf(payee.address)).to.be.equal(valueToAccept);
       expect(await mockERC20.balanceOf(signer.address)).to.be.equal(valueToLock.add(balanceBefore20));
       expect(await mockERC1155.balanceOf(mockCoinVending.address, '1')).to.be.equal('0');
-      expect(await mockERC1155.balanceOf(benificiary.address, '1')).to.be.equal(valueToAward);
+      expect(await mockERC1155.balanceOf(beneficiary.address, '1')).to.be.equal(valueToAward);
       expect(await mockERC1155.balanceOf(payee.address, '1')).to.be.equal(valueToAccept);
       expect(await mockERC1155.balanceOf(signer.address, '1')).to.be.equal(valueToLock.add(balanceBefore1155));
       expect(await mockERC1155.balanceOf(mockCoinVending.address, '1')).to.be.equal('0');

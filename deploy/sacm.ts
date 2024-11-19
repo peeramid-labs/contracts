@@ -7,8 +7,6 @@ import { CodeIndex } from '@peeramid-labs/eds/types';
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployments, getNamedAccounts } = hre;
   const { deploy } = deployments;
-  const PeeramidLabsDistributor = await deployments.get('PeeramidLabsDistributor');
-
   const { deployer } = await getNamedAccounts();
 
   const sacmDeployment = await deploy('SimpleAccessManager', {
@@ -21,12 +19,12 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     CodeIndexAbi,
     '0xc0D31d398c5ee86C5f8a23FA253ee8a586dA03Ce',
   )) as CodeIndex;
-
   const code = await hre.ethers.provider.getCode(sacmDeployment.address);
   const codeId = ethers.utils.keccak256(code);
   const registerAddress = await codeIndexContract.get(codeId);
-  if (registerAddress === ethers.constants.AddressZero) {
-    await codeIndexContract.connect(await hre.ethers.getSigner(deployer)).register(sacmDeployment.address);
+  if (registerAddress == ethers.constants.AddressZero) {
+    console.warn('registering contract', registerAddress, sacmDeployment.address, codeId);
+    await codeIndexContract.register(sacmDeployment.address);
   }
 };
 

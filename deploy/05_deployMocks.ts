@@ -11,7 +11,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     from: deployer,
     skipIfAlreadyDeployed: true,
   });
-  console.log('deployed rank token at', result.address);
+//   console.log('deployed rank token at', result.address);
 };
 
 export default func;
