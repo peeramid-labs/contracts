@@ -1,19 +1,21 @@
 import {
-    AdrSetupResult,
-    RInstance_MAX_PLAYERS,
-    RInstance_MIN_PLAYERS,
-    EnvSetupResult, MockVotes,
-    ProposalSubmittion,
-    setupTest,
-    SignerIdentity, RInstance_MAX_TURNS
+  AdrSetupResult,
+  RInstance_MAX_PLAYERS,
+  RInstance_MIN_PLAYERS,
+  EnvSetupResult,
+  MockVotes,
+  ProposalSubmittion,
+  setupTest,
+  SignerIdentity,
+  RInstance_MAX_TURNS,
 } from './utils';
 import { RInstanceSettings, mineBlocks, mockProposals, mockVotes, getPlayers } from './utils';
 import { expect } from 'chai';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
-import { RankifyDiamondInstance, RankToken } from '../types/';
+import { Rankify, RankifyDiamondInstance, RankToken } from '../types/';
 import { LibCoinVending } from '../types/src/facets/RankifyInstanceRequirementsFacet';
 import { IRankifyInstanceCommons } from '../types/src/facets/RankifyInstanceMainFacet';
-import { ethers } from 'hardhat';
+import { deployments, ethers, getNamedAccounts } from 'hardhat';
 const path = require('path');
 // import { TokenMust, TokenTypes } from "../types/enums";
 import { BigNumber, BigNumberish } from 'ethers';
@@ -25,7 +27,7 @@ import { network } from 'hardhat';
 const scriptName = path.basename(__filename);
 
 import { getCodeIdFromArtifact } from '../scripts/getCodeId';
-import { DistributorArgumentsStruct } from '../types/src/distributions/MAODistribution.sol/MAODistribution';
+import { MAODistribution } from '../types/src/distributions/MAODistribution';
 let votes: MockVotes;
 let proposalsStruct: ProposalSubmittion[];
 let adr: AdrSetupResult;
@@ -289,7 +291,7 @@ describe(scriptName, () => {
     adr = setup.adr;
     env = setup.env;
     await addDistribution(hre)(await getCodeIdFromArtifact(hre)('MAODistribution'), adr.gameOwner.wallet);
-    const distributorArguments: DistributorArgumentsStruct = {
+    const distributorArguments: MAODistribution.DistributorArgumentsStruct = {
       DAOSEttings: {
         daoURI: 'https://example.com/dao',
         subdomain: 'example',
@@ -325,7 +327,15 @@ describe(scriptName, () => {
     const distributorsDistId = ethers.utils.keccak256(
       ethers.utils.defaultAbiCoder.encode(['bytes32', 'address'], [maoId, ethers.constants.AddressZero]),
     );
-    await env.distributor.instantiate(distributorsDistId, data);
+
+    const token = await deployments.get('Rankify');
+    const { owner } = await getNamedAccounts();
+    const oSigner = await ethers.getSigner(owner);
+    const tokenContract = new ethers.Contract(token.address, token.abi, oSigner) as Rankify;
+    await tokenContract.mint(oSigner.address, ethers.utils.parseEther('100'));
+    await tokenContract.approve(env.distributor.address, ethers.constants.MaxUint256);
+    await env.distributor.connect(oSigner).instantiate(distributorsDistId, data);
+
     const filter = env.distributor.filters.Instantiated();
     const evts = await env.distributor.queryFilter(filter);
     rankifyInstance = (await ethers.getContractAt(
@@ -394,7 +404,7 @@ describe(scriptName, () => {
       },
     });
   });
-  it('Is by distributor contract', async () => {
+  it('Is owned by distributor contract', async () => {
     expect(await rankifyInstance.owner()).to.be.equal(env.arguableVotingTournamentDistribution.address);
   });
   it('Has correct initial settings', async () => {
