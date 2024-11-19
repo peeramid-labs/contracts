@@ -176,7 +176,6 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       _distributionVersion,
     ],
   });
-  console.warn('where 0');
 
   const MaoDistrCode = await hre.ethers.provider.getCode(result.address);
   const MaoDistrCodeId = ethers.utils.keccak256(MaoDistrCode);

@@ -1,6 +1,6 @@
 /* global  ethers */
 
-import { deployments, ethers } from 'hardhat';
+import { deployments, ethers, getNamedAccounts } from 'hardhat';
 import hre from 'hardhat';
 import { expect } from 'chai';
 import { IDAO, MAODistribution, DAODistributor, Rankify, RankifyDiamondInstance } from '../types';
@@ -77,7 +77,14 @@ describe('MAODistribution', async function () {
       const distributorsDistId = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(['bytes32', 'address'], [maoId, ethers.constants.AddressZero]),
       );
-      const tx = await distributorContract.instantiate(distributorsDistId, data);
+      const token = await deployments.get('Rankify');
+      const { owner } = await getNamedAccounts();
+      const oSigner = await ethers.getSigner(owner);
+      const tokenContract = new ethers.Contract(token.address, token.abi, oSigner) as Rankify;
+      await tokenContract.mint(oSigner.address, ethers.utils.parseEther('100'));
+      await tokenContract.approve(distributorContract.address, ethers.constants.MaxUint256);
+
+      const tx = await distributorContract.connect(oSigner).instantiate(distributorsDistId, data);
       //   const receipt = await tx.wait(1);
       await expect(tx).not.reverted;
       expect((await distributorContract.functions.getDistributions()).length).to.equal(1);
