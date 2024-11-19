@@ -1,13 +1,11 @@
-import { ethers, network } from 'hardhat';
+import { ethers, getNamedAccounts, network } from 'hardhat';
 import { expect } from 'chai';
 import hre, { deployments } from 'hardhat';
-import { AdrSetupResult, EnvSetupResult, RInstanceSettings, setupAddresses, setupTest } from './utils';
-import { RankifyDiamondInstance, RankToken } from '../types';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { Wallet } from 'ethers';
+import { AdrSetupResult, EnvSetupResult, RInstanceSettings, setupTest } from './utils';
+import { RankifyDiamondInstance, RankToken, Rankify } from '../types';
 import addDistribution from '../scripts/playbooks/addDistribution';
 import { getCodeIdFromArtifact } from '../scripts/getCodeId';
-import { DistributorArgumentsStruct } from '../types/src/distributions/MAODistribution.sol/MAODistribution';
+import { MAODistribution } from '../types/src/distributions/MAODistribution';
 
 let adr: AdrSetupResult;
 let env: EnvSetupResult;
@@ -21,7 +19,7 @@ describe('Rank Token Test', async function () {
     env = setup.env;
 
     await addDistribution(hre)(await getCodeIdFromArtifact(hre)('MAODistribution'), adr.gameOwner.wallet);
-    const distributorArguments: DistributorArgumentsStruct = {
+    const distributorArguments: MAODistribution.DistributorArgumentsStruct = {
       DAOSEttings: {
         daoURI: 'https://example.com/dao',
         subdomain: 'example',
@@ -57,7 +55,13 @@ describe('Rank Token Test', async function () {
     const distributorsDistId = ethers.utils.keccak256(
       ethers.utils.defaultAbiCoder.encode(['bytes32', 'address'], [maoId, ethers.constants.AddressZero]),
     );
-    await env.distributor.instantiate(distributorsDistId, data);
+    const token = await deployments.get('Rankify');
+    const { owner } = await getNamedAccounts();
+    const oSigner = await ethers.getSigner(owner);
+    const tokenContract = new ethers.Contract(token.address, token.abi, oSigner) as Rankify;
+    await tokenContract.mint(oSigner.address, ethers.utils.parseEther('100'));
+    await tokenContract.approve(env.distributor.address, ethers.constants.MaxUint256);
+    await env.distributor.connect(oSigner).instantiate(distributorsDistId, data);
     const filter = env.distributor.filters.Instantiated();
     const evts = await env.distributor.queryFilter(filter);
     rankifyInstance = (await ethers.getContractAt(
@@ -116,7 +120,6 @@ describe('Rank Token Test', async function () {
         rankToken.connect(impersonatedSigner).lock(adr.player1.wallet.address, 1, 4),
       ).to.be.revertedWithCustomError(rankToken, 'insufficient');
     });
-
 
     describe('When tokens locked', async () => {
       beforeEach(async () => {
