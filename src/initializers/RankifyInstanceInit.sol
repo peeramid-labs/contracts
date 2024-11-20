@@ -20,7 +20,7 @@ import {IRankToken} from "../interfaces/IRankToken.sol";
 import {LibTBG} from "../libraries/LibTurnBasedGame.sol";
 import {LibQuadraticVoting} from "../libraries/LibQuadraticVoting.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-
+import {LibRankify} from "../libraries/LibRankify.sol";
 // import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 
 // It is expected that this contract is customized if you want to deploy your diamond
@@ -36,7 +36,7 @@ contract RankifyInstanceInit is Initializable {
         return keccak256(abi.encode(typeHash, nameHash, versionHash, block.chainid, address(this)));
     }
 
-    function RInstanceStorage() internal pure returns (IRankifyInstanceCommons.RInstanceSettings storage bog) {
+    function InstanceState() internal pure returns (LibRankify.InstanceState storage bog) {
         bytes32 position = LibTBG.getDataStorage();
         assembly {
             bog.slot := position
@@ -80,7 +80,7 @@ contract RankifyInstanceInit is Initializable {
         ss._CACHED_THIS = address(this);
         ss._TYPE_HASH = typeHash;
 
-        IRankifyInstanceCommons.RInstanceSettings storage _RInstance = RInstanceStorage();
+        LibRankify.InstanceState storage _RInstance = InstanceState();
         _RInstance.voting = LibQuadraticVoting.precomputeValues(initData.voteCredits, initData.minPlayersSize);
         _RInstance.gamePrice = initData.gamePrice;
         _RInstance.joinGamePrice = initData.joinGamePrice;
@@ -93,15 +93,6 @@ contract RankifyInstanceInit is Initializable {
         );
         _RInstance.rankTokenAddress = initData.rewardToken;
         _RInstance.contractInitialized = true;
-
-        LibTBG.GameSettings memory settings;
-        settings.timePerTurn = initData.timePerTurn;
-        settings.maxPlayersSize = initData.maxPlayersSize;
-        settings.minPlayersSize = initData.minPlayersSize;
-        settings.timeToJoin = initData.timeToJoin;
-        settings.maxTurns = initData.maxTurns;
-        settings.numWinners = initData.numWinners;
-        LibTBG.init(settings);
 
         // add your own state variables
         // EIP-2535 specifies that the `diamondCut` function takes two optional

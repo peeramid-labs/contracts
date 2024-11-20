@@ -9,10 +9,48 @@ import {LibQuadraticVoting} from "./LibQuadraticVoting.sol";
 import "hardhat/console.sol";
 
 library LibRankify {
-    using LibTBG for LibTBG.GameInstance;
+    using LibTBG for LibTBG.Instance;
     using LibTBG for uint256;
-    using LibTBG for LibTBG.GameSettings;
+    using LibTBG for LibTBG.Settings;
+    using LibTBG for LibTBG.State;
     using LibQuadraticVoting for LibQuadraticVoting.qVotingStruct;
+
+    struct InstanceState {
+        uint256 numGames;
+        bool contractInitialized;
+        CommonParams instanceConfiguration;
+    }
+
+    struct CommonParams {
+        uint256 principalCost;
+        uint256 principalTimeConstant;
+        address gamePaymentToken;
+        address rankTokenAddress;
+    }
+
+    struct VoteHidden {
+        bytes32 hash;
+        bytes proof;
+    }
+
+    struct GameState {
+        uint256 joinGamePrice;
+        uint256 gamePrice;
+        uint256 rank;
+        address createdBy;
+        uint256 numOngoingProposals;
+        uint256 numPrevProposals;
+        uint256 numCommitments;
+        address[] additionalRanks;
+        uint256 paymentsBalance;
+        uint256 numVotesThisTurn;
+        uint256 numVotesPrevTurn;
+        LibQuadraticVoting.qVotingStruct voting;
+        mapping(uint256 => string) ongoingProposals; //Previous Turn Proposals (These are being voted on)
+        mapping(address => bytes32) proposalCommitmentHashes; //Current turn Proposal submission
+        mapping(address => VoteHidden) votesHidden;
+        mapping(address => bool) playerVoted;
+    }
 
     /**
      * @dev Compares two strings for equality. `a` and `b` are the strings to compare.
@@ -32,7 +70,7 @@ library LibRankify {
      *
      * - The game storage for `gameId`.
      */
-    function getGameStorage(uint256 gameId) internal view returns (IRankifyInstanceCommons.RInstance storage game) {
+    function getGameState(uint256 gameId) internal view returns (GameState storage game) {
         bytes32 position = LibTBG.getGameDataStorage(gameId);
         assembly {
             game.slot := position
@@ -44,12 +82,12 @@ library LibRankify {
      *
      * Returns:
      *
-     * - The RInstanceSettings storage.
+     * - The instanceState storage.
      */
-    function RInstanceStorage() internal pure returns (IRankifyInstanceCommons.RInstanceSettings storage bog) {
+    function instanceState() internal pure returns (InstanceState storage contractState) {
         bytes32 position = LibTBG.getDataStorage();
         assembly {
-            bog.slot := position
+            contractState.slot := position
         }
     }
 
@@ -68,7 +106,7 @@ library LibRankify {
      * - The contract must be initialized.
      */
     function enforceIsInitialized() internal view {
-        IRankifyInstanceCommons.RInstanceSettings storage settings = RInstanceStorage();
+        InstanceState storage settings = instanceState();
         require(settings.contractInitialized, "onlyInitialized");
     }
 
@@ -105,9 +143,9 @@ library LibRankify {
      */
     function newGame(uint256 gameId, address gameMaster, uint256 gameRank, address creator) internal {
         LibRankify.enforceIsInitialized();
-        IRankifyInstanceCommons.RInstanceSettings storage settings = RInstanceStorage();
+        InstanceState storage settings = instanceState();
         gameId.createGame(gameMaster); // This will enforce game does not exist yet
-        IRankifyInstanceCommons.RInstance storage game = getGameStorage(gameId);
+        GameState storage game = getGameState(gameId);
         require(gameRank != 0, "game rank not specified");
         if (settings.gamePrice != 0) {
             IERC20(settings.gamePaymentToken).transferFrom(creator, address(this), settings.gamePrice);
@@ -133,7 +171,7 @@ library LibRankify {
      */
     function enforceIsGameCreator(uint256 gameId, address candidate) internal view {
         enforceGameExists(gameId);
-        IRankifyInstanceCommons.RInstance storage game = getGameStorage(gameId);
+        GameState storage game = getGameState(gameId);
         require(game.createdBy == candidate, "Only game creator");
     }
 
@@ -183,10 +221,10 @@ library LibRankify {
     function joinGame(uint256 gameId, address player) internal {
         enforceGameExists(gameId);
         fulfillRankRq(gameId, player);
-        IRankifyInstanceCommons.RInstanceSettings storage _RInstance = RInstanceStorage();
+        InstanceState storage _RInstance = instanceState();
         if (_RInstance.joinGamePrice != 0) {
             IERC20(_RInstance.gamePaymentToken).transferFrom(player, address(this), _RInstance.joinGamePrice);
-            IRankifyInstanceCommons.RInstance storage game = getGameStorage(gameId);
+            GameState storage game = getGameState(gameId);
             game.paymentsBalance += _RInstance.joinGamePrice;
         }
         gameId.addPlayer(player);
@@ -223,7 +261,7 @@ library LibRankify {
             removeAndUnlockPlayer(gameId, players[i]);
             playersGameEndedCallback(gameId, players[i]);
         }
-        IRankifyInstanceCommons.RInstanceSettings storage _RInstance = LibRankify.RInstanceStorage();
+        InstanceState storage _RInstance = LibRankify.instanceState();
         IERC20(_RInstance.gamePaymentToken).transfer(
             beneficiary,
             (_RInstance.joinGamePrice * players.length) + _RInstance.gamePrice
@@ -250,11 +288,11 @@ library LibRankify {
         bool slash,
         function(uint256, address) onPlayerLeftCallback
     ) internal {
-        IRankifyInstanceCommons.RInstanceSettings storage _RInstance = RInstanceStorage();
+        InstanceState storage _RInstance = instanceState();
         if (_RInstance.joinGamePrice != 0) {
             uint256 divideBy = slash ? 2 : 1;
             uint256 paymentRefund = _RInstance.joinGamePrice / divideBy;
-            IRankifyInstanceCommons.RInstance storage game = getGameStorage(gameId);
+            GameState storage game = getGameState(gameId);
             game.paymentsBalance -= paymentRefund;
             IERC20(_RInstance.gamePaymentToken).transfer(player, paymentRefund);
         }
@@ -288,8 +326,8 @@ library LibRankify {
         }
 
         // Refund payment to the game creator
-        IRankifyInstanceCommons.RInstance storage game = getGameStorage(gameId);
-        IRankifyInstanceCommons.RInstanceSettings storage _RInstance = RInstanceStorage();
+        GameState storage game = getGameState(gameId);
+        InstanceState storage _RInstance = instanceState();
         uint256 paymentRefund = _RInstance.gamePrice / 2;
         IERC20(_RInstance.gamePaymentToken).transfer(game.createdBy, paymentRefund);
         game.paymentsBalance -= paymentRefund;
@@ -311,8 +349,8 @@ library LibRankify {
      * - If the game has additional ranks, locks the additional ranks of `player` in the respective rank token contracts.
      */
     function fulfillRankRq(uint256 gameId, address player) internal {
-        IRankifyInstanceCommons.RInstanceSettings storage settings = RInstanceStorage();
-        IRankifyInstanceCommons.RInstance storage game = getGameStorage(gameId);
+        InstanceState storage settings = instanceState();
+        GameState storage game = getGameState(gameId);
         if (game.rank > 1) {
             _fulfillRankRq(player, game.rank, settings.rankTokenAddress);
             for (uint256 i = 0; i < game.additionalRanks.length; ++i) {
@@ -329,7 +367,7 @@ library LibRankify {
      * - Transfers rank tokens from this contract to the top three addresses in the leaderboard.
      */
     function emitRankReward(uint256 gameId, address[] memory leaderboard, address rankTokenAddress) private {
-        IRankifyInstanceCommons.RInstance storage game = getGameStorage(gameId);
+        GameState storage game = getGameState(gameId);
         IRankToken rankTokenContract = IRankToken(rankTokenAddress);
         rankTokenContract.safeTransferFrom(address(this), leaderboard[0], game.rank + 1, 1, "");
         rankTokenContract.safeTransferFrom(address(this), leaderboard[1], game.rank, 2, "");
@@ -344,8 +382,8 @@ library LibRankify {
      * - Calls `emitRankReward` for the main rank and each additional rank in the game.
      */
     function emitRankRewards(uint256 gameId, address[] memory leaderboard) internal {
-        IRankifyInstanceCommons.RInstance storage game = getGameStorage(gameId);
-        IRankifyInstanceCommons.RInstanceSettings storage settings = LibRankify.RInstanceStorage();
+        GameState storage game = getGameState(gameId);
+        InstanceState storage settings = LibRankify.instanceState();
         emitRankReward(gameId, leaderboard, settings.rankTokenAddress);
         for (uint256 i = 0; i < game.additionalRanks.length; ++i) {
             emitRankReward(gameId, leaderboard, game.additionalRanks[i]);
@@ -379,8 +417,8 @@ library LibRankify {
     function removeAndUnlockPlayer(uint256 gameId, address player) internal {
         enforceGameExists(gameId);
         gameId.removePlayer(player); //This will throw if game is in the process
-        IRankifyInstanceCommons.RInstanceSettings storage settings = RInstanceStorage();
-        IRankifyInstanceCommons.RInstance storage game = getGameStorage(gameId);
+        InstanceState storage settings = instanceState();
+        GameState storage game = getGameState(gameId);
         if (game.rank > 1) {
             _releaseRankToken(player, game.rank, settings.rankTokenAddress);
             for (uint256 i = 0; i < game.additionalRanks.length; ++i) {
@@ -404,8 +442,8 @@ library LibRankify {
      */
     function tryPlayerMove(uint256 gameId, address player) internal returns (bool) {
         uint256 turn = gameId.getTurn();
-        IRankifyInstanceCommons.RInstanceSettings storage settings = RInstanceStorage();
-        IRankifyInstanceCommons.RInstance storage game = getGameStorage(gameId);
+        InstanceState storage settings = instanceState();
+        GameState storage game = getGameState(gameId);
         bool expectVote = true;
         bool expectProposal = true;
         if (turn == 1) expectVote = false; //Dont expect votes at firt turn
@@ -434,8 +472,8 @@ library LibRankify {
         address[] memory players = gameId.getPlayers();
         uint256[] memory scores = new uint256[](players.length);
         bool[] memory playerVoted = new bool[](players.length);
-        IRankifyInstanceCommons.RInstanceSettings storage settings = RInstanceStorage();
-        IRankifyInstanceCommons.RInstance storage game = getGameStorage(gameId);
+        InstanceState storage settings = instanceState();
+        GameState storage game = getGameState(gameId);
         // Convert mappiing to array to pass it to libQuadratic
         for (uint256 i = 0; i < players.length; ++i) {
             playerVoted[i] = game.playerVoted[players[i]];

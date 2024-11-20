@@ -16,7 +16,7 @@ import "../vendor/diamond/libraries/LibDiamond.sol";
 contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
     using LibTBG for uint256;
     using LibRankify for uint256;
-    using LibTBG for LibTBG.GameInstance;
+    using LibTBG for LibTBG.State;
     event OverTime(uint256 indexed gameId);
     event LastTurn(uint256 indexed gameId);
     event ProposalScore(
@@ -62,7 +62,7 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
      * - Releases the coins for the game with `gameId`, the game creator, the top player, and `player`.
      */
     function onPlayersGameEnd(uint256 gameId, address player) private {
-        IRankifyInstanceCommons.RInstance storage game = gameId.getGameStorage();
+        LibRankify.GameState storage game = gameId.getGameState();
         LibCoinVending.release(bytes32(gameId), game.createdBy, gameId.getLeaderBoard()[0], player);
     }
 
@@ -87,7 +87,7 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
         require(!gameId.isGameOver(), "Game over");
         gameId.enforceIsPlayingGame(voter);
         require(gameId.getTurn() > 1, "No proposals exist at turn 1: cannot vote");
-        IRankifyInstanceCommons.RInstance storage game = gameId.getGameStorage();
+        LibRankify.GameState storage game = gameId.getGameState();
         require(!game.playerVoted[voter], "Already voted");
         game.numVotesThisTurn += 1;
         game.playerVoted[voter] = true;
@@ -109,7 +109,7 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
         require(!proposalData.gameId.isGameOver(), "Game over");
         proposalData.gameId.enforceHasStarted();
 
-        IRankifyInstanceCommons.RInstance storage game = proposalData.gameId.getGameStorage();
+        LibRankify.GameState storage game = proposalData.gameId.getGameState();
         require(LibTBG.getPlayersGame(proposalData.proposer) == proposalData.gameId, "not a player");
         // require(!proposalData.gameId.isLastTurn(), "Cannot propose in last turn");
         require(bytes(proposalData.encryptedProposal).length != 0, "Cannot propose empty");
@@ -136,7 +136,7 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
      * - Increments the number of ongoing proposals of the game with `gameId` by the number of `newProposals`.
      */
     function _afterNextTurn(uint256 gameId, string[] memory newProposals) private {
-        IRankifyInstanceCommons.RInstance storage game = gameId.getGameStorage();
+        LibRankify.GameState storage game = gameId.getGameState();
         for (uint256 i = 0; i < newProposals.length; ++i) {
             game.ongoingProposals[i] = newProposals[i];
         }
@@ -200,7 +200,7 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
         gameId.enforceIsGM(msg.sender);
         gameId.enforceHasStarted();
         gameId.enforceIsNotOver();
-        IRankifyInstanceCommons.RInstance storage game = gameId.getGameStorage();
+        LibRankify.GameState storage game = gameId.getGameState();
         uint256 turn = gameId.getTurn();
 
         address[] memory players = gameId.getPlayers();

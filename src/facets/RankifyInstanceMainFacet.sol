@@ -23,12 +23,12 @@ contract RankifyInstanceMainFacet is
     IERC721Receiver,
     EIP712
 {
-    using LibTBG for LibTBG.GameInstance;
+    using LibTBG for LibTBG.Instance;
     using LibTBG for uint256;
-    using LibTBG for LibTBG.GameSettings;
+    using LibTBG for LibTBG.Settings;
     using LibRankify for uint256;
 
-    function RInstanceStorage() internal pure returns (RInstanceSettings storage bog) {
+    function InstanceState() internal pure returns (LibRankify.InstanceState storage bog) {
         bytes32 position = LibTBG.getDataStorage();
         assembly {
             bog.slot := position
@@ -58,7 +58,7 @@ contract RankifyInstanceMainFacet is
 
     function createGame(address gameMaster, uint256 gameRank) public {
         LibRankify.enforceIsInitialized();
-        RInstanceSettings storage settings = RInstanceStorage();
+        LibRankify.InstanceState storage settings = InstanceState();
         createGame(gameMaster, settings.numGames + 1, gameRank);
     }
 
@@ -216,10 +216,8 @@ contract RankifyInstanceMainFacet is
         return bytes4("");
     }
 
-    function getContractState() public view returns (RInstanceState memory) {
-        RInstanceSettings storage settings = RInstanceStorage();
-        LibTBG.GameSettings memory tbgSettings = LibTBG.getGameSettings();
-        return (RInstanceState({BestOfState: settings, TBGSEttings: tbgSettings}));
+    function getContractState() public view returns (LibRankify.InstanceState memory) {
+        return LibRankify.instanceState();
     }
 
     function getTurn(uint256 gameId) public view returns (uint256) {
@@ -255,11 +253,11 @@ contract RankifyInstanceMainFacet is
     }
 
     function gameCreator(uint256 gameId) public view returns (address) {
-        return gameId.getGameStorage().createdBy;
+        return gameId.getGameState().createdBy;
     }
 
     function getGameRank(uint256 gameId) public view returns (uint256) {
-        return gameId.getGameStorage().rank;
+        return gameId.getGameState().rank;
     }
 
     function getPlayers(uint256 gameId) public view returns (address[] memory) {
@@ -279,7 +277,7 @@ contract RankifyInstanceMainFacet is
     }
 
     function getPlayerVotedArray(uint256 gameId) public view returns (bool[] memory) {
-        IRankifyInstanceCommons.RInstance storage game = gameId.getGameStorage();
+        LibRankify.GameState storage game = gameId.getGameState();
         address[] memory players = gameId.getPlayers();
         bool[] memory playerVoted = new bool[](players.length);
         for (uint256 i = 0; i < players.length; ++i) {
@@ -289,7 +287,7 @@ contract RankifyInstanceMainFacet is
     }
 
     function getPlayersMoved(uint256 gameId) public view returns (bool[] memory, uint256) {
-        LibTBG.GameInstance storage game = gameId._getGame();
+        LibTBG.State storage game = gameId._getState();
         address[] memory players = gameId.getPlayers();
         bool[] memory playersMoved = new bool[](players.length);
         for (uint256 i = 0; i < players.length; ++i) {

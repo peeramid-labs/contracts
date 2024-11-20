@@ -8,7 +8,6 @@ import "../vendor/diamond/facets/OwnershipFacet.sol";
 import "../facets/RankifyInstanceMainFacet.sol";
 import "../facets/RankifyInstanceRequirementsFacet.sol";
 import "../facets/RankifyInstanceGameMastersFacet.sol";
-import "../facets/RankifyInstanceGameOwnersFacet.sol";
 import "../initializers/RankifyInstanceInit.sol";
 import "../vendor/diamond/interfaces/IDiamondCut.sol";
 import "@peeramid-labs/eds/src/libraries/LibSemver.sol";
@@ -25,7 +24,6 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
     RankifyInstanceMainFacet private immutable _RankifyMainFacet;
     RankifyInstanceRequirementsFacet private immutable _RankifyReqsFacet;
     RankifyInstanceGameMastersFacet private immutable _RankifyGMFacet;
-    RankifyInstanceGameOwnersFacet private immutable _RankifyOwnerFacet;
     OwnershipFacet private immutable _OwnershipFacet;
     address private immutable _initializer;
 
@@ -62,7 +60,6 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
         _RankifyMainFacet = RankifyInstanceMainFacet(RankifyMainFacet);
         _RankifyReqsFacet = RankifyInstanceRequirementsFacet(RankifyReqsFacet);
         _RankifyGMFacet = RankifyInstanceGameMastersFacet(RankifyGMFacet);
-        _RankifyOwnerFacet = RankifyInstanceGameOwnersFacet(RankifyOwnerFacet);
         _OwnershipFacet = OwnershipFacet(OwnershipFacetAddr);
 
         distributionName = _distributionName;
@@ -70,15 +67,16 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
     }
 
     /**
-     * @dev see Ethereum Distribution System IDistribute for interface specification.
-     * @return instances Array[9]: [diamond proxy, 8x diamond facets..]
+     * @notice see Ethereum Distribution System IDistribute for interface specification.
+     * @return instances Array[8]: [diamond proxy, 8x diamond facets..]
      * @return distributionName: bytes32 encoded name to be used in EIP712 signing flow
      * @return distributionVersion: uint256 encoded distribution version. Can be parsed to eip712 signature with EDS LibSemver
+     * @dev   // instances: 0 - diamond; 1 - DiamondLoupeFacet; 2 - EIP712InspectorFacet; 3 - RankifyInstanceMainFacet; 4 - RankifyInstanceRequirementsFacet; 5 - RankifyInstanceGameMastersFacet // 6 - OwnershipFacet
      */
     function instantiate(bytes memory) external override returns (address[] memory instances, bytes32, uint256) {
         (address[] memory _instances, , ) = super._instantiate();
         address diamond = _instances[0];
-        IDiamondCut.FacetCut[] memory facetCuts = new IDiamondCut.FacetCut[](8);
+        IDiamondCut.FacetCut[] memory facetCuts = new IDiamondCut.FacetCut[](7);
 
         bytes4[] memory loupeSelectors = new bytes4[](4);
         loupeSelectors[0] = DiamondLoupeFacet.facets.selector;
@@ -159,34 +157,18 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
             functionSelectors: RankifyInstanceGameMastersFacetSelectors
         });
 
-        bytes4[] memory RankifyInstanceGameOwnersFacetSelectors = new bytes4[](8);
-
-        RankifyInstanceGameOwnersFacetSelectors[0] = RankifyInstanceGameOwnersFacet.setGamePrice.selector;
-        RankifyInstanceGameOwnersFacetSelectors[1] = RankifyInstanceGameOwnersFacet.setJoinGamePrice.selector;
-        RankifyInstanceGameOwnersFacetSelectors[2] = RankifyInstanceGameOwnersFacet.setRankTokenAddress.selector;
-        RankifyInstanceGameOwnersFacetSelectors[3] = RankifyInstanceGameOwnersFacet.setTimePerTurn.selector;
-        RankifyInstanceGameOwnersFacetSelectors[4] = RankifyInstanceGameOwnersFacet.setMaxPlayersSize.selector;
-        RankifyInstanceGameOwnersFacetSelectors[5] = RankifyInstanceGameOwnersFacet.setMinPlayersSize.selector;
-        RankifyInstanceGameOwnersFacetSelectors[6] = RankifyInstanceGameOwnersFacet.setTimeToJoin.selector;
-        RankifyInstanceGameOwnersFacetSelectors[7] = RankifyInstanceGameOwnersFacet.setMaxTurns.selector;
-        facetCuts[5] = IDiamondCut.FacetCut({
-            facetAddress: address(_RankifyOwnerFacet),
-            action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: RankifyInstanceGameOwnersFacetSelectors
-        });
-
         bytes4[] memory OwnershipFacetSelectors = new bytes4[](2);
         OwnershipFacetSelectors[0] = _OwnershipFacet.transferOwnership.selector;
         OwnershipFacetSelectors[1] = _OwnershipFacet.owner.selector;
 
-        facetCuts[6] = IDiamondCut.FacetCut({
+        facetCuts[5] = IDiamondCut.FacetCut({
             facetAddress: address(_OwnershipFacet),
             action: IDiamondCut.FacetCutAction.Add,
             functionSelectors: OwnershipFacetSelectors
         });
         bytes4[] memory initializerSelectors = new bytes4[](1);
         initializerSelectors[0] = RankifyInstanceInit.init.selector;
-        facetCuts[7] = IDiamondCut.FacetCut({
+        facetCuts[6] = IDiamondCut.FacetCut({
             facetAddress: _initializer,
             action: IDiamondCut.FacetCutAction.Add,
             functionSelectors: initializerSelectors
@@ -203,6 +185,7 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
         returnValue[6] = facetCuts[5].facetAddress;
         returnValue[7] = facetCuts[6].facetAddress;
         returnValue[8] = facetCuts[7].facetAddress;
+
 
         return (returnValue, distributionName, distributionVersion);
     }

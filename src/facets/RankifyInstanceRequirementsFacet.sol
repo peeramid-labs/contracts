@@ -8,7 +8,7 @@ import {LibRankify} from "../libraries/LibRankify.sol";
 contract RankifyInstanceRequirementsFacet {
     using LibTBG for uint256;
     using LibRankify for uint256;
-    using LibTBG for LibTBG.GameInstance;
+    using LibTBG for LibTBG.State;
     event RequirementsConfigured(uint256 indexed gameId, LibCoinVending.ConfigPosition config);
 
     /**
