@@ -15,7 +15,7 @@ import {IERC173} from "../vendor/diamond/interfaces/IERC173.sol";
 import {IERC165} from "../vendor/diamond/interfaces/IERC165.sol";
 import {LibEIP712WithStorage} from "../libraries/LibEIP712Storage.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import {IRankifyInstanceCommons} from "../interfaces/IRankifyInstanceCommons.sol";
+import {IRankifyInstance} from "../interfaces/IRankifyInstance.sol";
 import {IRankToken} from "../interfaces/IRankToken.sol";
 import {LibTBG} from "../libraries/LibTurnBasedGame.sol";
 import {LibQuadraticVoting} from "../libraries/LibQuadraticVoting.sol";
@@ -44,17 +44,11 @@ contract RankifyInstanceInit is Initializable {
     }
 
     struct contractInitializer {
-        uint256 timePerTurn;
-        uint256 maxPlayersSize;
-        uint256 minPlayersSize;
         address rewardToken;
-        uint256 timeToJoin;
-        uint256 gamePrice;
-        uint256 joinGamePrice;
-        uint256 maxTurns;
-        uint256 numWinners;
-        uint256 voteCredits;
+        uint256 principalCost;
+        uint256 principalTimeConstant;
         address paymentToken;
+        address beneficiary;
     }
 
     // You can add parameters to this function in order to pass in
@@ -80,25 +74,26 @@ contract RankifyInstanceInit is Initializable {
         ss._CACHED_THIS = address(this);
         ss._TYPE_HASH = typeHash;
 
+        LibRankify.CommonParams storage commons = LibRankify.instanceState().commonParams;
+
+        commons.principalCost = initData.principalCost;
+        commons.principalTimeConstant = initData.principalTimeConstant;
+        commons.gamePaymentToken = initData.paymentToken;
+        commons.rankTokenAddress = initData.rewardToken;
+        commons.beneficiary = initData.beneficiary;
+
         LibRankify.InstanceState storage _RInstance = InstanceState();
-        _RInstance.voting = LibQuadraticVoting.precomputeValues(initData.voteCredits, initData.minPlayersSize);
-        _RInstance.gamePrice = initData.gamePrice;
-        _RInstance.joinGamePrice = initData.joinGamePrice;
+        // _RInstance.voting = LibQuadraticVoting.precomputeValues(initData.voteCredits, initData.minPlayerCnt);
+        // _RInstance.gamePrice = initData.gamePrice;
+        // _RInstance.joinPrice = initData.joinPrice;
         require(initData.paymentToken != address(0), "initializer.paymentToken not set");
-        _RInstance.gamePaymentToken = initData.paymentToken;
+        // _RInstance.gamePaymentToken = initData.paymentToken;
         IRankToken rankContract = IRankToken(initData.rewardToken);
         require(
             rankContract.supportsInterface(type(IRankToken).interfaceId),
             "RankifyInstance->init: rank token address does not support Rank interface"
         );
-        _RInstance.rankTokenAddress = initData.rewardToken;
+        // _RInstance.rankTokenAddress = initData.rewardToken;
         _RInstance.contractInitialized = true;
-
-        // add your own state variables
-        // EIP-2535 specifies that the `diamondCut` function takes two optional
-        // arguments: address _init and bytes calldata _calldata
-        // These arguments are used to execute an arbitrary function using delegatecall
-        // in order to set state variables in the diamond during deployment or an upgrade
-        // More info here: https://eips.ethereum.org/EIPS/eip-2535#diamond-interface
     }
 }

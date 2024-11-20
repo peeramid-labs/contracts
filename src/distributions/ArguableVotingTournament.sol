@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity =0.8.28;
 
 import "./InitializedDiamondDistribution.sol";
 import "../vendor/diamond/facets/DiamondLoupeFacet.sol";
@@ -14,7 +14,7 @@ import "@peeramid-labs/eds/src/libraries/LibSemver.sol";
 
 /**
  * @title ArguableVotingTournament Distribution
- * @notice This contract implements a diamond distribution for Ethereum Distribution System. It is reponsible to create new instance of ArguableVotingTournament.
+ * @notice This contract implements a diamond distribution for Ethereum Distribution System. It is responsible to create new instance of ArguableVotingTournament.
  * @dev It is expected to be used ONLY by the Distributor contract.
  * @author Peeramid Labs, 2024
  */
@@ -34,33 +34,36 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
         return bytes4(keccak256(bytes(signature)));
     }
 
+    struct ArguableTournamentAddresses {
+        address loupeFacet;
+        address inspectorFacet;
+        address RankifyMainFacet;
+        address RankifyReqsFacet;
+        address RankifyGMFacet;
+        address OwnershipFacet;
+    }
+
     /**
      * @dev Constructor for the ArguableVotingTournament contract.
      *
      * Note Initializer function will be added as a regular facet to the Diamond Proxy,
      * Since it is expected that initialization is done by distributor contract, the initializer will not be run, hence
-     * it is up for distributor to remove this facet upon succesfull initialization.
+     * it is up for distributor to remove this facet upon successful initialization.
      */
     constructor(
         address initializer,
         bytes4 initializerSelector,
         bytes32 _distributionName,
         LibSemver.Version memory version,
-        address loupeFacet,
-        address inspectorFacet,
-        address RankifyMainFacet,
-        address RankifyReqsFacet,
-        address RankifyGMFacet,
-        address RankifyOwnerFacet,
-        address OwnershipFacetAddr
+        ArguableTournamentAddresses memory addresses
     ) InitializedDiamondDistribution(address(this), bytes32(0), initializerSelector) {
         _initializer = initializer;
-        _loupeFacet = DiamondLoupeFacet(loupeFacet);
-        _inspectorFacet = EIP712InspectorFacet(inspectorFacet);
-        _RankifyMainFacet = RankifyInstanceMainFacet(RankifyMainFacet);
-        _RankifyReqsFacet = RankifyInstanceRequirementsFacet(RankifyReqsFacet);
-        _RankifyGMFacet = RankifyInstanceGameMastersFacet(RankifyGMFacet);
-        _OwnershipFacet = OwnershipFacet(OwnershipFacetAddr);
+        _loupeFacet = DiamondLoupeFacet(addresses.loupeFacet);
+        _inspectorFacet = EIP712InspectorFacet(addresses.inspectorFacet);
+        _RankifyMainFacet = RankifyInstanceMainFacet(addresses.RankifyMainFacet);
+        _RankifyReqsFacet = RankifyInstanceRequirementsFacet(addresses.RankifyReqsFacet);
+        _RankifyGMFacet = RankifyInstanceGameMastersFacet(addresses.RankifyGMFacet);
+        _OwnershipFacet = OwnershipFacet(addresses.OwnershipFacet);
 
         distributionName = _distributionName;
         distributionVersion = LibSemver.toUint256(version);
@@ -133,6 +136,7 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
             action: IDiamondCut.FacetCutAction.Add,
             functionSelectors: RankifyInstanceMainFacetSelectors
         });
+
         bytes4[] memory RankifyInstanceRequirementsFacetSelectors = new bytes4[](3);
         RankifyInstanceRequirementsFacetSelectors[0] = RankifyInstanceRequirementsFacet.setJoinRequirements.selector;
         RankifyInstanceRequirementsFacetSelectors[1] = RankifyInstanceRequirementsFacet.getJoinRequirements.selector;
@@ -175,7 +179,7 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
         });
 
         super.initialize(DiamondCutFacet(diamond), facetCuts, "");
-        address[] memory returnValue = new address[](9);
+        address[] memory returnValue = new address[](8);
         returnValue[0] = diamond;
         returnValue[1] = facetCuts[0].facetAddress;
         returnValue[2] = facetCuts[1].facetAddress;
@@ -185,7 +189,6 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
         returnValue[6] = facetCuts[5].facetAddress;
         returnValue[7] = facetCuts[6].facetAddress;
         returnValue[8] = facetCuts[7].facetAddress;
-
 
         return (returnValue, distributionName, distributionVersion);
     }

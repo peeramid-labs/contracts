@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "../vendor/diamond/DiamondCloneable.sol";
+import "../vendor/diamond/DiamondClonable.sol";
 import "../vendor/diamond/facets/DiamondCutFacet.sol";
-import "../distributions/DiamondDistribution.sol";
+import "./DiamondDistribution.sol";
 import "../vendor/diamond/libraries/LibDiamond.sol";
 import "../vendor/diamond/interfaces/IDiamondCut.sol";
 

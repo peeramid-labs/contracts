@@ -14,7 +14,7 @@ import { expect } from 'chai';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
 import { Rankify, RankifyDiamondInstance, RankToken } from '../types/';
 import { LibCoinVending } from '../types/src/facets/RankifyInstanceRequirementsFacet';
-import { IRankifyInstanceCommons } from '../types/src/facets/RankifyInstanceMainFacet';
+import { IRankifyInstance } from '../types/src/facets/RankifyInstanceMainFacet';
 import { deployments, ethers, getNamedAccounts } from 'hardhat';
 const path = require('path');
 // import { TokenMust, TokenTypes } from "../types/enums";
@@ -47,7 +47,7 @@ const createGame = async (
   await gameContract.connect(signer.wallet)['createGame(address,uint256)'](gameMaster, gameRank);
   const gameId = await gameContract
     .getContractState()
-    .then((state: IRankifyInstanceCommons.RInstanceStateStructOutput) => state.BestOfState.numGames);
+    .then((state: IRankifyInstance.RInstanceStateStructOutput) => state.BestOfState.numGames);
   if (openNow) await gameContract.connect(signer.wallet).openRegistration(gameId);
   return gameId;
 };
@@ -301,24 +301,17 @@ describe(scriptName, () => {
       },
       ACIDSettings: {
         RankTokenContractURI: 'https://example.com/rank',
-        gamePrice: RInstanceSettings.RInstance_GAME_PRICE,
-        joinGamePrice: RInstanceSettings.RInstance_JOIN_GAME_PRICE,
-        maxPlayersSize: RInstanceSettings.RInstance_MAX_PLAYERS,
-        maxTurns: RInstanceSettings.RInstance_MAX_TURNS,
         metadata: ethers.utils.hexlify(ethers.utils.toUtf8Bytes('metadata')),
-        minPlayersSize: RInstanceSettings.RInstance_MIN_PLAYERS,
-        paymentToken: env.rankifyToken.address,
         rankTokenURI: 'https://example.com/rank',
-        timePerTurn: RInstanceSettings.RInstance_TIME_PER_TURN,
-        timeToJoin: RInstanceSettings.RInstance_TIME_TO_JOIN,
-        voteCredits: RInstanceSettings.RInstance_VOTE_CREDITS,
+        principalCost: RInstanceSettings.PRINCIPAL_COST,
+        principalTimeConstant: RInstanceSettings.PRINCIPAL_TIME_CONSTANT,
       },
     };
     // const abi = import('../abi/src/distributions/MAODistribution.sol/MAODistribution.json');
     // Encode the arguments
     const data = ethers.utils.defaultAbiCoder.encode(
       [
-        'tuple(tuple(string daoURI, string subdomain, bytes metadata, string tokenName, string tokenSymbol) DAOSEttings, tuple(uint256 timePerTurn, uint256 maxPlayersSize, uint256 minPlayersSize, uint256 timeToJoin, uint256 maxTurns, uint256 voteCredits, uint256 gamePrice, address paymentToken, uint256 joinGamePrice, string metadata, string rankTokenURI, string RankTokenContractURI) ACIDSettings)',
+        'tuple(tuple(string daoURI, string subdomain, bytes metadata, string tokenName, string tokenSymbol) DAOSEttings, tuple(uint256 timePerTurn, uint256 maxPlayerCnt, uint256 minPlayerCnt, uint256 timeToJoin, uint256 maxTurns, uint256 voteCredits, uint256 gamePrice, address paymentToken, uint256 joinPrice, string metadata, string rankTokenURI, string RankTokenContractURI) ACIDSettings)',
       ],
       [distributorArguments],
     );
@@ -410,12 +403,12 @@ describe(scriptName, () => {
   it('Has correct initial settings', async () => {
     const state = await rankifyInstance.connect(adr.gameCreator1.wallet).getContractState();
     expect(state.BestOfState.gamePrice).to.be.equal(RInstanceSettings.RInstance_GAME_PRICE);
-    expect(state.BestOfState.joinGamePrice).to.be.equal(RInstanceSettings.RInstance_JOIN_GAME_PRICE);
+    expect(state.BestOfState.joinPrice).to.be.equal(RInstanceSettings.RInstance_JOIN_GAME_PRICE);
     expect(state.BestOfState.numGames).to.be.equal(0);
     expect(state.BestOfState.rankTokenAddress).to.be.equal(rankToken.address);
     expect(state.TBGSEttings.maxTurns).to.be.equal(RInstanceSettings.RInstance_MAX_TURNS);
     expect(state.TBGSEttings.timePerTurn).to.be.equal(RInstanceSettings.RInstance_TIME_PER_TURN);
-    expect(state.TBGSEttings.minPlayersSize).to.be.equal(RInstanceSettings.RInstance_MIN_PLAYERS);
+    expect(state.TBGSEttings.minPlayerCnt).to.be.equal(RInstanceSettings.RInstance_MIN_PLAYERS);
     expect(state.TBGSEttings.timeToJoin).to.be.equal(RInstanceSettings.RInstance_TIME_TO_JOIN);
     expect(state.TBGSEttings.maxTurns).to.be.equal(RInstanceSettings.RInstance_MAX_TURNS);
   });

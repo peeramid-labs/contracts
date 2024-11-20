@@ -12,7 +12,6 @@ import 'hardhat-contract-sizer';
 import 'hardhat-deploy';
 import 'hardhat-tracer';
 import 'solidity-docgen';
-import './playbook/initializeDomain';
 import './playbook/createGame';
 
 task('accounts', 'Prints the list of accounts', async (taskArgs, hre) => {
@@ -148,6 +147,15 @@ export default {
   },
   solidity: {
     compilers: [
+      {
+        version: '0.8.28',
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 2000,
+          },
+        },
+      },
       {
         version: '0.8.20',
         settings: {

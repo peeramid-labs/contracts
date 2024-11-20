@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity =0.8.28;
 
 import {LibTBG} from "../libraries/LibTurnBasedGame.sol";
 import {LibRankify} from "../libraries/LibRankify.sol";
-import {IRankifyInstanceCommons} from "../interfaces/IRankifyInstanceCommons.sol";
+import {IRankifyInstance} from "../interfaces/IRankifyInstance.sol";
 import "../abstracts/DiamondReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
@@ -18,7 +18,6 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
     using LibRankify for uint256;
     using LibTBG for LibTBG.State;
     event OverTime(uint256 indexed gameId);
-    event LastTurn(uint256 indexed gameId);
     event ProposalScore(
         uint256 indexed gameId,
         uint256 indexed turn,
@@ -26,18 +25,20 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
         string proposal,
         uint256 score
     );
+
+
+
     event TurnEnded(
         uint256 indexed gameId,
         uint256 indexed turn,
         address[] players,
         uint256[] scores,
         string[] newProposals,
-        uint256[] proposerIndicies,
+        uint256[] proposerIndices,
         uint256[][] votes
     );
-
+    event LastTurn(uint256 indexed gameId);
     event GameOver(uint256 indexed gameId, address[] players, uint256[] scores);
-
     event ProposalSubmitted(
         uint256 indexed gameId,
         uint256 indexed turn,
@@ -172,7 +173,7 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
     /**
      * @dev Ends the current turn of a game with the provided game ID. `gameId` is the ID of the game. `votes` is the array of votes.
      *  `newProposals` is the array of new proposals for the upcoming voting round.
-     *  `proposerIndicies` is the array of indices of the proposers in the previous voting round.
+     *  `proposerIndices` is the array of indices of the proposers in the previous voting round.
      *
      * emits a _ProposalScore_ event for each player if the turn is not the first.
      * emits a _TurnEnded_ event.
@@ -189,13 +190,13 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
      * - The game with `gameId` must have started.
      * - The game with `gameId` must not be over.
      * -  newProposals array MUST be sorted randomly to ensure privacy
-     * votes and proposerIndicies MUST correspond to players array from game.getPlayers()
+     * votes and proposerIndices MUST correspond to players array from game.getPlayers()
      */
     function endTurn(
         uint256 gameId,
         uint256[][] memory votes,
         string[] memory newProposals, //REFERRING TO UPCOMING VOTING ROUND
-        uint256[] memory proposerIndicies //REFERRING TO game.players index in PREVIOUS VOTING ROUND
+        uint256[] memory proposerIndices //REFERRING TO game.players index in PREVIOUS VOTING ROUND
     ) public {
         gameId.enforceIsGM(msg.sender);
         gameId.enforceHasStarted();
@@ -210,7 +211,7 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
                 votesSorted[player] = new uint256[](players.length);
             }
             for (uint256 votee = 0; votee < players.length; ++votee) {
-                uint256 voteesColumn = proposerIndicies[votee];
+                uint256 voteesColumn = proposerIndices[votee];
                 if (voteesColumn < players.length) {
                     // if index is above length of players array, it means the player did not propose
                     for (uint256 voter = 0; voter < players.length; voter++) {
@@ -219,14 +220,14 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
                 }
             }
 
-            (, uint256[] memory roundScores) = gameId.calculateScoresQuadratic(votesSorted, proposerIndicies);
+            (, uint256[] memory roundScores) = gameId.calculateScoresQuadratic(votesSorted, proposerIndices);
             for (uint256 i = 0; i < players.length; ++i) {
-                string memory proposal = game.ongoingProposals[proposerIndicies[i]];
+                string memory proposal = game.ongoingProposals[proposerIndices[i]];
                 emit ProposalScore(gameId, turn, proposal, proposal, roundScores[i]);
             }
         }
         (, uint256[] memory scores) = gameId.getScores();
-        emit TurnEnded(gameId, gameId.getTurn(), players, scores, newProposals, proposerIndicies, votes);
+        emit TurnEnded(gameId, gameId.getTurn(), players, scores, newProposals, proposerIndices, votes);
 
         // Clean up game instance for upcoming round
 

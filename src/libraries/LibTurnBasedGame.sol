@@ -30,11 +30,10 @@ library LibTBG {
 
     struct Settings {
         uint256 timePerTurn;
-        uint256 maxPlayersSize;
-        uint256 minPlayersSize;
+        uint256 maxPlayerCnt;
+        uint256 minPlayerCnt;
         uint256 timeToJoin;
         uint256 maxTurns;
-        uint256 numWinners;
         uint256 voteCredits;
         address gameMaster;
         bytes32 implementationStoragePointer;
@@ -91,12 +90,11 @@ library LibTBG {
      * Requirements:
      *
      * - `settings.timePerTurn` must not be zero.
-     * - `settings.maxPlayersSize` must not be zero.
-     * - `settings.minPlayersSize` must be at least 2.
+     * - `settings.maxPlayerCnt` must not be zero.
+     * - `settings.minPlayerCnt` must be at least 2.
      * - `settings.maxTurns` must not be zero.
-     * - `settings.numWinners` must not be zero and must be less than `settings.minPlayersSize`.
      * - `settings.timeToJoin` must not be zero.
-     * - `settings.maxPlayersSize` must not be less than `settings.minPlayersSize`.
+     * - `settings.maxPlayerCnt` must not be less than `settings.minPlayerCnt`.
      * Modifies:
      *
      * - Sets the settings of the game to `settings`.
@@ -105,12 +103,11 @@ library LibTBG {
         TBGStorageStruct storage tbg = TBGStorage();
         Settings storage settings = tbg.instances[gameId].settings;
         if (settings.timePerTurn == 0) require(false, "settings.timePerTurn"); //  revert invalidConfiguration('timePerTurn');
-        if (settings.maxPlayersSize == 0) require(false, "settings.maxPlayersSize"); // revert invalidConfiguration('maxPlayersSize');
-        if (settings.minPlayersSize < 2) require(false, "settings.minPlayersSize"); //revert invalidConfiguration('minPlayersSize');
+        if (settings.maxPlayerCnt == 0) require(false, "settings.maxPlayerCnt"); // revert invalidConfiguration('maxPlayerCnt');
+        if (settings.minPlayerCnt < 2) require(false, "settings.minPlayerCnt"); //revert invalidConfiguration('minPlayerCnt');
         if (settings.maxTurns == 0) require(false, "settings.maxTurns"); //revert invalidConfiguration('maxTurns');
-        if (settings.numWinners == 0 || settings.numWinners >= settings.minPlayersSize) require(false, "numWinners"); //revert invalidConfiguration('numWinners');
         if (settings.timeToJoin == 0) require(false, "timeToJoin"); // revert invalidConfiguration('timeToJoin');
-        if (settings.maxPlayersSize < settings.minPlayersSize) require(false, "maxPlayersSize"); //revert invalidConfiguration('maxPlayersSize');
+        if (settings.maxPlayerCnt < settings.minPlayerCnt) require(false, "maxPlayerCnt"); //revert invalidConfiguration('maxPlayerCnt');
 
         tbg.instances[gameId].settings = newSettings;
     }
@@ -217,7 +214,7 @@ library LibTBG {
         require(gameExists(gameId), "addPlayer->invalid game");
 
         require(tbg.playerInGame[participant] == 0, "addPlayer->Player in game");
-        require(state.players.length() < settings.maxPlayersSize, "addPlayer->party full");
+        require(state.players.length() < settings.maxPlayerCnt, "addPlayer->party full");
 
         require(canBeJoined(gameId), "addPlayer->cant join now");
         state.players.add(participant);
@@ -254,7 +251,6 @@ library LibTBG {
     function removePlayer(uint256 gameId, address participant) internal {
         TBGStorageStruct storage tbg = TBGStorage();
         State storage state = tbg.instances[gameId].state;
-        Settings storage settings = tbg.instances[gameId].settings;
         require(gameExists(gameId), "game does not exist");
         require(tbg.playerInGame[participant] == gameId, "Not in the game");
         require(state.hasStarted == false || state.hasEnded == true, "Cannot leave once started");
@@ -277,7 +273,6 @@ library LibTBG {
     function isTurnTimedOut(uint256 gameId) internal view returns (bool) {
         TBGStorageStruct storage tbg = TBGStorage();
         State storage state = _getState(gameId);
-        Settings storage settings = tbg.instances[gameId].settings;
         assert(gameId != 0);
         assert(state.hasStarted == true);
         if (block.timestamp <= tbg.instances[gameId].settings.timePerTurn + state.turnStartedAt) return false;
@@ -466,7 +461,8 @@ library LibTBG {
         if (state.registrationOpenAt == 0) {
             return false;
         } else {
-            return state.registrationOpenAt < block.timestamp + tbg.instances[gameId].settings.timeToJoin ? true : false;
+            return
+                state.registrationOpenAt < block.timestamp + tbg.instances[gameId].settings.timeToJoin ? true : false;
         }
     }
 
@@ -484,7 +480,7 @@ library LibTBG {
         if (state.registrationOpenAt == 0) return false;
         if (gameId == 0) return false;
         if (block.timestamp <= state.registrationOpenAt + tbg.instances[gameId].settings.timeToJoin) return false;
-        if (state.players.length() < tbg.instances[gameId].settings.minPlayersSize) return false;
+        if (state.players.length() < tbg.instances[gameId].settings.minPlayerCnt) return false;
         return true;
     }
 
@@ -500,7 +496,7 @@ library LibTBG {
         State storage state = _getState(gameId);
         TBGStorageStruct storage tbg = TBGStorage();
 
-        if ((state.players.length() == tbg.instances[gameId].settings.maxPlayersSize) || canStart(gameId)) return true;
+        if ((state.players.length() == tbg.instances[gameId].settings.maxPlayerCnt) || canStart(gameId)) return true;
         return false;
     }
 
@@ -527,9 +523,12 @@ library LibTBG {
         require(state.hasStarted == false, "startGame->already started");
         require(state.registrationOpenAt != 0, "startGame->Game registration was not yet open");
         require(gameId != 0, "startGame->Game not found");
-        require(state.players.length() >= tbg.instances[gameId].settings.minPlayersSize, "startGame->Not enough players");
         require(
-            (state.players.length() == tbg.instances[gameId].settings.maxPlayersSize) ||
+            state.players.length() >= tbg.instances[gameId].settings.minPlayerCnt,
+            "startGame->Not enough players"
+        );
+        require(
+            (state.players.length() == tbg.instances[gameId].settings.maxPlayerCnt) ||
                 (block.timestamp > state.registrationOpenAt + tbg.instances[gameId].settings.timeToJoin),
             "startGame->Not enough players"
         );
@@ -560,9 +559,15 @@ library LibTBG {
         TBGStorageStruct storage tbg = TBGStorage();
         require(state.hasStarted == false, "startGame->already started");
         require(state.registrationOpenAt != 0, "startGame->Game registration was not yet open");
-        require(block.timestamp > state.registrationOpenAt + tbg.instances[gameId].settings.timeToJoin, "startGame->Still Can Join");
+        require(
+            block.timestamp > state.registrationOpenAt + tbg.instances[gameId].settings.timeToJoin,
+            "startGame->Still Can Join"
+        );
         require(gameId != 0, "startGame->Game not found");
-        require(state.players.length() >= tbg.instances[gameId].settings.minPlayersSize, "startGame->Not enough players");
+        require(
+            state.players.length() >= tbg.instances[gameId].settings.minPlayerCnt,
+            "startGame->Not enough players"
+        );
         state.hasStarted = true;
         state.hasEnded = false;
         state.currentTurn = 1;
@@ -848,26 +853,21 @@ library LibTBG {
 
     /**
      * @dev Checks if a game with the provided game ID is a tie. `gameId` is the ID of the game.
-     * Tie being defined as at least two of the top `numWinners` players having the same score.
+     * Tie being defined as at least two of the top `numWinners=1` players having the same score.
      *
      * Returns:
      *
      * - A boolean indicating whether the game is a tie.
      */
     function isTie(uint256 gameId) internal view returns (bool) {
-        TBGStorageStruct storage tbg = TBGStorage();
-        (address[] memory players, uint256[] memory scores) = getScores(gameId);
+        (, uint256[] memory scores) = getScores(gameId);
 
         LibArray.quickSort(scores, int256(0), int256(scores.length - 1));
-        for (uint256 i = 0; i < players.length - 1; ++i) {
-            if ((i <= tbg.instances[gameId].settings.numWinners - 1)) {
-                if (scores[i] == scores[i + 1]) {
-                    return (true);
-                }
-            } else {
-                break;
-            }
+
+        if (scores[0] == scores[1]) {
+            return (true);
         }
+
         return (false);
     }
 

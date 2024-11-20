@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.28;
 import {LibTBG} from "../libraries/LibTurnBasedGame.sol";
-import {IRankifyInstanceCommons} from "../interfaces/IRankifyInstanceCommons.sol";
+import {IRankifyInstance} from "../interfaces/IRankifyInstance.sol";
 import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import {IRankToken} from "../interfaces/IRankToken.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
@@ -18,7 +18,7 @@ library LibRankify {
     struct InstanceState {
         uint256 numGames;
         bool contractInitialized;
-        CommonParams instanceConfiguration;
+        CommonParams commonParams;
     }
 
     struct CommonParams {
@@ -26,6 +26,7 @@ library LibRankify {
         uint256 principalTimeConstant;
         address gamePaymentToken;
         address rankTokenAddress;
+        address beneficiary;
     }
 
     struct VoteHidden {
@@ -34,7 +35,7 @@ library LibRankify {
     }
 
     struct GameState {
-        uint256 joinGamePrice;
+        uint256 joinPrice;
         uint256 gamePrice;
         uint256 rank;
         address createdBy;
@@ -122,6 +123,21 @@ library LibRankify {
         require(gameId.gameExists(), "no game found");
     }
 
+    struct NewGameParams {
+        uint256 gameId;
+        uint256 gameRank;
+        address creator;
+        uint256 joinPrice;
+        uint256 minPlayerCnt;
+        uint256 maxPlayerCnt;
+        uint256 nTurns;
+        uint256 voteCredits;
+        address gameMaster;
+        uint256 minGameTime;
+        uint256 timePerTurn;
+        uint256 timeToJoin;
+    }
+
     /**
      * @dev Creates a new game with the given parameters. `gameId` is the ID of the new game. `gameMaster` is the address of the game master. `gameRank` is the rank of the game. `creator` is the address of the creator of the game.
      *
@@ -141,24 +157,48 @@ library LibRankify {
      * - Sets the rank of the game to `gameRank`.
      * - Mints new rank tokens.
      */
-    function newGame(uint256 gameId, address gameMaster, uint256 gameRank, address creator) internal {
-        LibRankify.enforceIsInitialized();
-        InstanceState storage settings = instanceState();
-        gameId.createGame(gameMaster); // This will enforce game does not exist yet
-        GameState storage game = getGameState(gameId);
-        require(gameRank != 0, "game rank not specified");
-        if (settings.gamePrice != 0) {
-            IERC20(settings.gamePaymentToken).transferFrom(creator, address(this), settings.gamePrice);
-            game.paymentsBalance = settings.gamePrice;
-        }
+    function newGame( NewGameParams memory params) internal {
+        enforceIsInitialized();
+        CommonParams storage commonParams = instanceState().commonParams;
 
-        game.createdBy = creator;
-        settings.numGames += 1;
-        game.rank = gameRank;
+        require(
+            commonParams.principalTimeConstant % params.nTurns == 0,
+            IRankifyInstance.NoDivisionReminderAllowed(commonParams.principalTimeConstant, params.nTurns)
+        );
+        require(
+            commonParams.principalTimeConstant % params.nTurns == 0,
+            IRankifyInstance.NoDivisionReminderAllowed(commonParams.principalTimeConstant, params.minGameTime)
+        );
+        require(params.minGameTime % params.nTurns == 0, IRankifyInstance.NoDivisionReminderAllowed(params.nTurns, params.minGameTime));
+        require(params.nTurns > 2, IRankifyInstance.invalidTurnCount(params.nTurns));
 
-        IRankToken rankTokenContract = IRankToken(settings.rankTokenAddress);
-        rankTokenContract.mint(address(this), 1, gameRank + 1, "");
-        rankTokenContract.mint(address(this), 3, gameRank, "");
+        LibTBG.Settings memory newSettings = LibTBG.Settings({
+            timePerTurn: params.timePerTurn,
+            maxPlayerCnt: params.maxPlayerCnt,
+            minPlayerCnt: params.minPlayerCnt,
+            timeToJoin: params.timeToJoin,
+            maxTurns: params.nTurns,
+            voteCredits: params.voteCredits,
+            gameMaster: params.gameMaster,
+            implementationStoragePointer: bytes32(0)
+        });
+
+        InstanceState storage state = instanceState();
+
+        params.gameId.createGame(params.gameMaster, newSettings); // This will enforce game does not exist yet
+        GameState storage game = getGameState(params.gameId);
+        uint256 principalGamePrice = (commonParams.principalCost * commonParams.principalTimeConstant) / params.minGameTime;
+
+        IERC20(commonParams.gamePaymentToken).transferFrom(params.creator, commonParams.beneficiary, principalGamePrice);
+
+        require(params.gameRank != 0, IRankifyInstance.RankNotSpecified());
+
+        game.createdBy = params.creator;
+        state.numGames += 1;
+        game.rank = params.gameRank;
+
+        IRankToken rankTokenContract = IRankToken(state.commonParams.rankTokenAddress);
+        rankTokenContract.mint(address(this), 1, params.gameRank + 1, "");
     }
 
     /**
@@ -221,11 +261,11 @@ library LibRankify {
     function joinGame(uint256 gameId, address player) internal {
         enforceGameExists(gameId);
         fulfillRankRq(gameId, player);
-        InstanceState storage _RInstance = instanceState();
-        if (_RInstance.joinGamePrice != 0) {
-            IERC20(_RInstance.gamePaymentToken).transferFrom(player, address(this), _RInstance.joinGamePrice);
-            GameState storage game = getGameState(gameId);
-            game.paymentsBalance += _RInstance.joinGamePrice;
+        GameState storage game = getGameState(gameId);
+        InstanceState storage state = instanceState();
+        if (game.joinPrice != 0) {
+            IERC20(state.commonParams.gamePaymentToken).transferFrom(player, address(this), game.joinPrice);
+            game.paymentsBalance += game.joinPrice;
         }
         gameId.addPlayer(player);
     }
@@ -261,10 +301,11 @@ library LibRankify {
             removeAndUnlockPlayer(gameId, players[i]);
             playersGameEndedCallback(gameId, players[i]);
         }
-        InstanceState storage _RInstance = LibRankify.instanceState();
-        IERC20(_RInstance.gamePaymentToken).transfer(
+        GameState storage game = LibRankify.getGameState(gameId);
+        InstanceState storage state = instanceState();
+        IERC20(state.commonParams.gamePaymentToken).transfer(
             beneficiary,
-            (_RInstance.joinGamePrice * players.length) + _RInstance.gamePrice
+            (game.joinPrice * players.length) + game.gamePrice
         );
         return finalScores;
     }
@@ -288,13 +329,14 @@ library LibRankify {
         bool slash,
         function(uint256, address) onPlayerLeftCallback
     ) internal {
-        InstanceState storage _RInstance = instanceState();
-        if (_RInstance.joinGamePrice != 0) {
+        GameState storage state = getGameState(gameId);
+        InstanceState storage instance = instanceState();
+        if (state.joinPrice != 0) {
             uint256 divideBy = slash ? 2 : 1;
-            uint256 paymentRefund = _RInstance.joinGamePrice / divideBy;
+            uint256 paymentRefund = state.joinPrice / divideBy;
             GameState storage game = getGameState(gameId);
             game.paymentsBalance -= paymentRefund;
-            IERC20(_RInstance.gamePaymentToken).transfer(player, paymentRefund);
+            IERC20(instance.commonParams.gamePaymentToken).transfer(player, paymentRefund);
         }
         removeAndUnlockPlayer(gameId, player); // this will throw if game has started or doesnt exist
         onPlayerLeftCallback(gameId, player);
@@ -327,13 +369,13 @@ library LibRankify {
 
         // Refund payment to the game creator
         GameState storage game = getGameState(gameId);
-        InstanceState storage _RInstance = instanceState();
-        uint256 paymentRefund = _RInstance.gamePrice / 2;
-        IERC20(_RInstance.gamePaymentToken).transfer(game.createdBy, paymentRefund);
+        InstanceState storage instance = instanceState();
+        uint256 paymentRefund = game.gamePrice / 2;
+        IERC20(instance.commonParams.gamePaymentToken).transfer(game.createdBy, paymentRefund);
         game.paymentsBalance -= paymentRefund;
 
         // Transfer remaining payments balance to the beneficiary
-        IERC20(_RInstance.gamePaymentToken).transfer(beneficiary, game.paymentsBalance);
+        IERC20(instance.commonParams.gamePaymentToken).transfer(beneficiary, game.paymentsBalance);
         game.paymentsBalance = 0;
 
         // Delete the game
@@ -349,10 +391,10 @@ library LibRankify {
      * - If the game has additional ranks, locks the additional ranks of `player` in the respective rank token contracts.
      */
     function fulfillRankRq(uint256 gameId, address player) internal {
-        InstanceState storage settings = instanceState();
+        InstanceState storage instance = instanceState();
         GameState storage game = getGameState(gameId);
         if (game.rank > 1) {
-            _fulfillRankRq(player, game.rank, settings.rankTokenAddress);
+            _fulfillRankRq(player, game.rank, instance.commonParams.rankTokenAddress);
             for (uint256 i = 0; i < game.additionalRanks.length; ++i) {
                 _fulfillRankRq(player, game.rank, game.additionalRanks[i]);
             }
@@ -370,8 +412,6 @@ library LibRankify {
         GameState storage game = getGameState(gameId);
         IRankToken rankTokenContract = IRankToken(rankTokenAddress);
         rankTokenContract.safeTransferFrom(address(this), leaderboard[0], game.rank + 1, 1, "");
-        rankTokenContract.safeTransferFrom(address(this), leaderboard[1], game.rank, 2, "");
-        rankTokenContract.safeTransferFrom(address(this), leaderboard[2], game.rank, 1, "");
     }
 
     /**
@@ -383,8 +423,8 @@ library LibRankify {
      */
     function emitRankRewards(uint256 gameId, address[] memory leaderboard) internal {
         GameState storage game = getGameState(gameId);
-        InstanceState storage settings = LibRankify.instanceState();
-        emitRankReward(gameId, leaderboard, settings.rankTokenAddress);
+        InstanceState storage instance = LibRankify.instanceState();
+        emitRankReward(gameId, leaderboard, instance.commonParams.rankTokenAddress);
         for (uint256 i = 0; i < game.additionalRanks.length; ++i) {
             emitRankReward(gameId, leaderboard, game.additionalRanks[i]);
         }
@@ -417,10 +457,10 @@ library LibRankify {
     function removeAndUnlockPlayer(uint256 gameId, address player) internal {
         enforceGameExists(gameId);
         gameId.removePlayer(player); //This will throw if game is in the process
-        InstanceState storage settings = instanceState();
+        InstanceState storage instance = instanceState();
         GameState storage game = getGameState(gameId);
         if (game.rank > 1) {
-            _releaseRankToken(player, game.rank, settings.rankTokenAddress);
+            _releaseRankToken(player, game.rank, instance.commonParams.rankTokenAddress);
             for (uint256 i = 0; i < game.additionalRanks.length; ++i) {
                 _releaseRankToken(player, game.rank, game.additionalRanks[i]);
             }
@@ -442,13 +482,12 @@ library LibRankify {
      */
     function tryPlayerMove(uint256 gameId, address player) internal returns (bool) {
         uint256 turn = gameId.getTurn();
-        InstanceState storage settings = instanceState();
         GameState storage game = getGameState(gameId);
         bool expectVote = true;
         bool expectProposal = true;
         if (turn == 1) expectVote = false; //Dont expect votes at firt turn
         // else if (gameId.isLastTurn()) expectProposal = false; // For now easiest solution is to keep collecting proposals as that is less complicated boundry case
-        if (game.numPrevProposals < settings.voting.minQuadraticPositons) expectVote = false; // If there is not enough proposals then round is skipped votes cannot be filled
+        if (game.numPrevProposals < game.voting.minQuadraticPositions) expectVote = false; // If there is not enough proposals then round is skipped votes cannot be filled
         bool madeMove = true;
         if (expectVote && !game.playerVoted[player]) madeMove = false;
         if (expectProposal && game.proposalCommitmentHashes[player] == "") madeMove = false;
@@ -457,7 +496,7 @@ library LibRankify {
     }
 
     /**
-     * @dev Calculates the scores using a quadratic formula based on the revealed votes and proposer indices. `gameId` is the ID of the game. `votesRevealed` is an array of revealed votes. `proposerIndicies` is an array of proposer indices that links proposals to index in getPlayers().
+     * @dev Calculates the scores using a quadratic formula based on the revealed votes and proposer indices. `gameId` is the ID of the game. `votesRevealed` is an array of revealed votes. `proposerIndices` is an array of proposer indices that links proposals to index in getPlayers().
      *
      * Returns:
      *
@@ -467,26 +506,25 @@ library LibRankify {
     function calculateScoresQuadratic(
         uint256 gameId,
         uint256[][] memory votesRevealed,
-        uint256[] memory proposerIndicies
+        uint256[] memory proposerIndices
     ) internal returns (uint256[] memory, uint256[] memory) {
         address[] memory players = gameId.getPlayers();
         uint256[] memory scores = new uint256[](players.length);
         bool[] memory playerVoted = new bool[](players.length);
-        InstanceState storage settings = instanceState();
         GameState storage game = getGameState(gameId);
         // Convert mappiing to array to pass it to libQuadratic
         for (uint256 i = 0; i < players.length; ++i) {
             playerVoted[i] = game.playerVoted[players[i]];
         }
-        uint256[] memory roundScores = settings.voting.computeScoresByVPIndex(
+        uint256[] memory roundScores = game.voting.computeScoresByVPIndex(
             votesRevealed,
             playerVoted,
-            settings.voting.maxQuadraticPoints,
-            proposerIndicies.length
+            game.voting.maxQuadraticPoints,
+            proposerIndices.length
         );
         for (uint256 playerIdx = 0; playerIdx < players.length; playerIdx++) {
             //for each player
-            if (proposerIndicies[playerIdx] < players.length) {
+            if (proposerIndices[playerIdx] < players.length) {
                 //if player proposal exists
                 scores[playerIdx] = gameId.getScore(players[playerIdx]) + roundScores[playerIdx];
                 gameId.setScore(players[playerIdx], scores[playerIdx]);

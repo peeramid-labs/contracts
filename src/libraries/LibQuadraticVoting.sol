@@ -12,7 +12,7 @@ library LibQuadraticVoting {
     struct qVotingStruct {
         uint256 voteCredits;
         uint256 maxQuadraticPoints;
-        uint256 minQuadraticPositons;
+        uint256 minQuadraticPositions;
     }
 
     /**
@@ -39,13 +39,13 @@ library LibQuadraticVoting {
         } while (accumulator < voteCredits);
         // This enforces requirement that all vote credits can indeed be spended (no leftovers)
         if (accumulator != voteCredits) require(false, "quadraticVotingError: voteCredits bust be i^2 series"); //revert quadraticVotingError("voteCredits bust be i^2 series", accumulator, voteCredits);
-        q.minQuadraticPositons = iterator;
-        // In order to spend all vote credits there must be at least minQuadraticPositons+1 (becuase proposer is also a player and cannot vote for himself)
-        if (minExpectedVoteItems <= q.minQuadraticPositons)
+        q.minQuadraticPositions = iterator;
+        // In order to spend all vote credits there must be at least minQuadraticPositions+1 (becuase proposer is also a player and cannot vote for himself)
+        if (minExpectedVoteItems <= q.minQuadraticPositions)
             require(false, "quadraticVotingError: Minimum Voting positions above min players");
         // revert quadraticVotingError(
         //     "Minimum Voting positions above min players",
-        //     q.minQuadraticPositons,
+        //     q.minQuadraticPositions,
         //     minExpectedVoteItems
         // );
         q.voteCredits = voteCredits;

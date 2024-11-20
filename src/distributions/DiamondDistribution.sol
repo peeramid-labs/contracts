@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity =0.8.28;
 
 import "@peeramid-labs/eds/src/abstracts/CloneDistribution.sol";
-import "../vendor/diamond/DiamondCloneable.sol";
+import "../vendor/diamond/DiamondClonable.sol";
 import "../vendor/diamond/facets/DiamondCutFacet.sol";
 
 /**
@@ -17,7 +17,7 @@ contract DiamondDistribution is CloneDistribution {
     constructor(address owner) {
         address diamondCutFacet = address(new DiamondCutFacet());
         // Deploy the diamond proxy contract
-        address diamondProxy = address(new DiamondCloneable(owner, diamondCutFacet));
+        address diamondProxy = address(new DiamondClonable(owner, diamondCutFacet));
         _reference = diamondProxy;
     }
 

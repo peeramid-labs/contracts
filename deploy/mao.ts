@@ -6,6 +6,7 @@ import { activeContractsList } from '@aragon/osx-ethers';
 import { CodeIndex } from '@peeramid-labs/eds/types';
 import CodeIndexAbi from '@peeramid-labs/eds/abi/src/CodeIndex.sol/CodeIndex.json';
 import { MintSettingsStruct } from '../types/src/tokens/DistributableGovernanceERC20.sol/DistributableGovernanceERC20';
+import { ArguableVotingTournament } from '../types/src/distributions/ArguableVotingTournament';
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployments, getNamedAccounts } = hre;
   const { deploy } = deployments;
@@ -111,24 +112,21 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     skipIfAlreadyDeployed: true,
   });
 
+  const addresses: ArguableVotingTournament.ArguableTournamentAddressesStruct = {
+    loupeFacet: loupeFacetDeployment.address,
+    inspectorFacet: inspectorFacetDeployment.address,
+    RankifyMainFacet: RankifyMainFacetDeployment.address,
+    RankifyReqsFacet: RankifyReqsFacetDeployment.address,
+    RankifyGMFacet: RankifyGMFacetDeployment.address,
+    OwnershipFacet: OwnershipFacetDeployment.address,
+  };
+
   const arguableVotingTournamentDeployment = await deploy('ArguableVotingTournament', {
     from: deployer,
     gasLimit: 8000000,
     estimatedGasLimit: 8000000,
     skipIfAlreadyDeployed: true,
-    args: [
-      initializerAdr,
-      initializerSelector,
-      distributionName,
-      version,
-      loupeFacetDeployment.address,
-      inspectorFacetDeployment.address,
-      RankifyMainFacetDeployment.address,
-      RankifyReqsFacetDeployment.address,
-      RankifyGMFacetDeployment.address,
-      RankifyOwnerFacetDeployment.address,
-      OwnershipFacetDeployment.address,
-    ],
+    args: [initializerAdr, initializerSelector, distributionName, version, addresses],
   });
   const arguableVotingTournamentDeploymentCode = await hre.ethers.provider.getCode(
     arguableVotingTournamentDeployment.address,

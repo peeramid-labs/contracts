@@ -30,11 +30,11 @@ describe('Rank Token Test', async function () {
       ACIDSettings: {
         RankTokenContractURI: 'https://example.com/rank',
         gamePrice: RInstanceSettings.RInstance_GAME_PRICE,
-        joinGamePrice: RInstanceSettings.RInstance_JOIN_GAME_PRICE,
-        maxPlayersSize: RInstanceSettings.RInstance_MAX_PLAYERS,
+        joinPrice: RInstanceSettings.RInstance_JOIN_GAME_PRICE,
+        maxPlayerCnt: RInstanceSettings.RInstance_MAX_PLAYERS,
         maxTurns: RInstanceSettings.RInstance_MAX_TURNS,
         metadata: ethers.utils.hexlify(ethers.utils.toUtf8Bytes('metadata')),
-        minPlayersSize: RInstanceSettings.RInstance_MIN_PLAYERS,
+        minPlayerCnt: RInstanceSettings.RInstance_MIN_PLAYERS,
         paymentToken: env.rankifyToken.address,
         rankTokenURI: 'https://example.com/rank',
         timePerTurn: RInstanceSettings.RInstance_TIME_PER_TURN,
@@ -46,7 +46,7 @@ describe('Rank Token Test', async function () {
     // Encode the arguments
     const data = ethers.utils.defaultAbiCoder.encode(
       [
-        'tuple(tuple(string daoURI, string subdomain, bytes metadata, string tokenName, string tokenSymbol) DAOSEttings, tuple(uint256 timePerTurn, uint256 maxPlayersSize, uint256 minPlayersSize, uint256 timeToJoin, uint256 maxTurns, uint256 voteCredits, uint256 gamePrice, address paymentToken, uint256 joinGamePrice, string metadata, string rankTokenURI, string RankTokenContractURI) ACIDSettings)',
+        'tuple(tuple(string daoURI, string subdomain, bytes metadata, string tokenName, string tokenSymbol) DAOSEttings, tuple(uint256 timePerTurn, uint256 maxPlayerCnt, uint256 minPlayerCnt, uint256 timeToJoin, uint256 maxTurns, uint256 voteCredits, uint256 gamePrice, address paymentToken, uint256 joinPrice, string metadata, string rankTokenURI, string RankTokenContractURI) ACIDSettings)',
       ],
       [distributorArguments],
     );

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity =0.8.28;
 
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import "@peeramid-labs/eds/src/interfaces/IDistribution.sol";
@@ -24,15 +24,8 @@ import {TokenSettings, VotingMode, VotingSettings, IPluginRepo, IDAOFactory} fro
  */
 contract MAODistribution is IDistribution, CodeIndexer {
     struct UserACIDSettings {
-        uint256 timePerTurn;
-        uint256 maxPlayersSize;
-        uint256 minPlayersSize;
-        uint256 timeToJoin;
-        uint256 maxTurns;
-        uint256 voteCredits;
-        uint256 gamePrice;
-        address paymentToken;
-        uint256 joinGamePrice;
+        uint256 principalCost;
+        uint256 principalTimeConstant;
         string metadata;
         string rankTokenURI;
         string RankTokenContractURI;
@@ -61,6 +54,8 @@ contract MAODistribution is IDistribution, CodeIndexer {
     IDistribution private immutable _ACIDDistributionBase;
     address private immutable _governanceERC20Base;
     address private immutable _accessManagerBase;
+    address private immutable _paymentToken;
+    address private immutable _beneficiary;
 
     /**
      * @notice Initializes the contract with the provided parameters and performs necessary checks.
@@ -155,8 +150,8 @@ contract MAODistribution is IDistribution, CodeIndexer {
         SimpleAccessManager.SimpleAccessManagerInitializer[]
             memory govTokenAccessSettings = new SimpleAccessManager.SimpleAccessManagerInitializer[](1);
         govTokenAccessSettings[0].selector = DistributableGovernanceERC20.mint.selector;
-        govTokenAccessSettings[0].dissallowedAddresses = new address[](1);
-        govTokenAccessSettings[0].dissallowedAddresses[0] = createdDao;
+        govTokenAccessSettings[0].disallowedAddresses = new address[](1);
+        govTokenAccessSettings[0].disallowedAddresses[0] = createdDao;
         govTokenAccessSettings[0].distributionComponentsOnly = true;
 
         SimpleAccessManager govTokenAccessManager = SimpleAccessManager(_accessManagerBase.clone());
@@ -191,63 +186,61 @@ contract MAODistribution is IDistribution, CodeIndexer {
         rankTokenSelectors[3] = RankToken.batchMint.selector;
         rankTokenSelectors[4] = RankToken.setURI.selector;
         rankTokenSelectors[5] = RankToken.setContractURI.selector;
-
-        SimpleAccessManager.SimpleAccessManagerInitializer[]
-            memory RankTokenAccessSettings = new SimpleAccessManager.SimpleAccessManagerInitializer[](6);
-
-        RankTokenAccessSettings[0].selector = RankToken.mint.selector;
-        RankTokenAccessSettings[0].dissallowedAddresses = new address[](1);
-        RankTokenAccessSettings[0].dissallowedAddresses[0] = dao;
-        RankTokenAccessSettings[0].distributionComponentsOnly = true;
-
-        RankTokenAccessSettings[1].selector = RankToken.lock.selector;
-        RankTokenAccessSettings[1].dissallowedAddresses = new address[](1);
-        RankTokenAccessSettings[1].dissallowedAddresses[0] = dao;
-        RankTokenAccessSettings[1].distributionComponentsOnly = true;
-
-        RankTokenAccessSettings[2].selector = RankToken.unlock.selector;
-        RankTokenAccessSettings[2].dissallowedAddresses = new address[](1);
-        RankTokenAccessSettings[2].dissallowedAddresses[0] = dao;
-        RankTokenAccessSettings[2].distributionComponentsOnly = true;
-
-        RankTokenAccessSettings[3].selector = RankToken.batchMint.selector;
-        RankTokenAccessSettings[3].dissallowedAddresses = new address[](1);
-        RankTokenAccessSettings[3].dissallowedAddresses[0] = dao;
-        RankTokenAccessSettings[3].distributionComponentsOnly = true;
-
-        RankTokenAccessSettings[4].selector = RankToken.setURI.selector;
-        RankTokenAccessSettings[4].distributionComponentsOnly = true;
-
-        RankTokenAccessSettings[5].selector = RankToken.setContractURI.selector;
-        RankTokenAccessSettings[5].distributionComponentsOnly = true;
-
         SimpleAccessManager rankTokenAccessManager = SimpleAccessManager(_accessManagerBase.clone());
 
-        rankTokenAccessManager.initialize(RankTokenAccessSettings, rankToken, IDistributor(msg.sender)); // msg.sender must be IDistributor or it will revert
+        {
+            SimpleAccessManager.SimpleAccessManagerInitializer[]
+                memory RankTokenAccessSettings = new SimpleAccessManager.SimpleAccessManagerInitializer[](6);
 
-        RankToken(rankToken).initialize(args.rankTokenURI, args.RankTokenContractURI, address(rankTokenAccessManager));
+            RankTokenAccessSettings[0].selector = RankToken.mint.selector;
+            RankTokenAccessSettings[0].disallowedAddresses = new address[](1);
+            RankTokenAccessSettings[0].disallowedAddresses[0] = dao;
+            RankTokenAccessSettings[0].distributionComponentsOnly = true;
+
+            RankTokenAccessSettings[1].selector = RankToken.lock.selector;
+            RankTokenAccessSettings[1].disallowedAddresses = new address[](1);
+            RankTokenAccessSettings[1].disallowedAddresses[0] = dao;
+            RankTokenAccessSettings[1].distributionComponentsOnly = true;
+
+            RankTokenAccessSettings[2].selector = RankToken.unlock.selector;
+            RankTokenAccessSettings[2].disallowedAddresses = new address[](1);
+            RankTokenAccessSettings[2].disallowedAddresses[0] = dao;
+            RankTokenAccessSettings[2].distributionComponentsOnly = true;
+
+            RankTokenAccessSettings[3].selector = RankToken.batchMint.selector;
+            RankTokenAccessSettings[3].disallowedAddresses = new address[](1);
+            RankTokenAccessSettings[3].disallowedAddresses[0] = dao;
+            RankTokenAccessSettings[3].distributionComponentsOnly = true;
+
+            RankTokenAccessSettings[4].selector = RankToken.setURI.selector;
+            RankTokenAccessSettings[4].distributionComponentsOnly = true;
+
+            RankTokenAccessSettings[5].selector = RankToken.setContractURI.selector;
+            RankTokenAccessSettings[5].distributionComponentsOnly = true;
+
+            rankTokenAccessManager.initialize(RankTokenAccessSettings, rankToken, IDistributor(msg.sender)); // msg.sender must be IDistributor or it will revert
+            RankToken(rankToken).initialize(
+                args.rankTokenURI,
+                args.RankTokenContractURI,
+                address(rankTokenAccessManager)
+            );
+        }
         (
             address[] memory ACIDDistrAddresses,
-            bytes32 ACIDDistributionname,
+            bytes32 ACIDDistributionName,
             uint256 ACIDDistributionVersion
         ) = _ACIDDistributionBase.instantiate(abi.encode(dao, rankToken, args.metadata));
 
         RankifyInstanceInit.contractInitializer memory ACIDInit = RankifyInstanceInit.contractInitializer({
-            timePerTurn: args.timePerTurn,
-            maxPlayersSize: args.maxPlayersSize,
-            minPlayersSize: args.minPlayersSize,
             rewardToken: rankToken,
-            timeToJoin: args.timeToJoin,
-            gamePrice: args.gamePrice,
-            joinGamePrice: args.joinGamePrice,
-            maxTurns: args.maxTurns,
-            numWinners: 1,
-            voteCredits: args.voteCredits,
-            paymentToken: args.paymentToken
+            principalCost: args.principalCost,
+            principalTimeConstant: args.principalTimeConstant,
+            paymentToken: _paymentToken,
+            beneficiary: _beneficiary
         });
 
         RankifyInstanceInit(ACIDDistrAddresses[0]).init(
-            string(abi.encodePacked(ACIDDistributionname)),
+            string(abi.encodePacked(ACIDDistributionName)),
             LibSemver.toString(LibSemver.parse(ACIDDistributionVersion)),
             ACIDInit
         );
@@ -258,7 +251,7 @@ contract MAODistribution is IDistribution, CodeIndexer {
         returnValue[ACIDDistrAddresses.length] = address(rankTokenAccessManager);
         returnValue[ACIDDistrAddresses.length + 1] = rankToken;
 
-        return (returnValue, ACIDDistributionname, ACIDDistributionVersion);
+        return (returnValue, ACIDDistributionName, ACIDDistributionVersion);
     }
 
     /**
@@ -313,7 +306,7 @@ contract MAODistribution is IDistribution, CodeIndexer {
         return
             DistributorArguments({
                 DAOSEttings: OSxDistributionArguments("", "", "", "", ""),
-                ACIDSettings: UserACIDSettings(0, 0, 0, 0, 0, 0, 0, address(0), 0, "", "", "")
+                ACIDSettings: UserACIDSettings( 0, 0, "", "", "")
             });
     }
 }

@@ -4,14 +4,14 @@ import aes from 'crypto-js/aes';
 import { ethers } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import {
-    Rankify,
-    MockERC1155,
-    MockERC20,
-    MockERC721,
-    RankToken,
-    MAODistribution,
-    DAODistributor,
-    ArguableVotingTournament,
+  Rankify,
+  MockERC1155,
+  MockERC20,
+  MockERC721,
+  RankToken,
+  MAODistribution,
+  DAODistributor,
+  ArguableVotingTournament,
 } from '../types';
 import { BigNumber, BigNumberish, BytesLike, Wallet } from 'ethers';
 // @ts-ignore
@@ -286,6 +286,8 @@ export const RInstanceSettings = {
   RInstance_NUM_WINNERS,
   RInstance_VOTE_CREDITS,
   RInstance_SUBJECT,
+  PRINCIPAL_TIME_CONSTANT: 3600,
+  PRINCIPAL_COST: ethers.utils.parseEther('1'),
   // RInstance_NUM_ACTIONS_TO_TAKE,
 };
 

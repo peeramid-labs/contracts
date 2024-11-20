@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {LibTBG} from "../libraries/LibTurnBasedGame.sol";
-import {IRankifyInstanceCommons} from "../interfaces/IRankifyInstanceCommons.sol";
+import {IRankifyInstance} from "../interfaces/IRankifyInstance.sol";
 
 import {IERC1155Receiver} from "../interfaces/IERC1155Receiver.sol";
 import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
@@ -17,7 +17,7 @@ import "../abstracts/draft-EIP712Diamond.sol";
 import "hardhat/console.sol";
 
 contract RankifyInstanceMainFacet is
-    IRankifyInstanceCommons,
+    IRankifyInstance,
     IERC1155Receiver,
     DiamondReentrancyGuard,
     IERC721Receiver,
@@ -49,17 +49,33 @@ contract RankifyInstanceMainFacet is
      * - Configures the coin vending with `gameId` and an empty configuration.
      * - If `additionalRanks` is not empty, mints rank tokens for each additional rank and sets the additional ranks of the game with `gameId` to `additionalRanks`.
      */
-    function createGame(address gameMaster, uint256 gameId, uint256 gameRank) public nonReentrant {
-        gameId.newGame(gameMaster, gameRank, msg.sender);
+    function createGame(LibRankify.NewGameParams memory params) private nonReentrant {
+        LibRankify.newGame(params);
         LibCoinVending.ConfigPosition memory emptyConfig;
-        LibCoinVending.configure(bytes32(gameId), emptyConfig);
-        emit gameCreated(gameId, gameMaster, msg.sender, gameRank);
+        LibCoinVending.configure(bytes32(params.gameId), emptyConfig);
+        emit gameCreated(params.gameId, params.gameMaster, msg.sender, params.gameRank);
     }
 
-    function createGame(address gameMaster, uint256 gameRank) public {
+    function createGame(IRankifyInstance.NewGameParamsInput memory params) public {
         LibRankify.enforceIsInitialized();
         LibRankify.InstanceState storage settings = InstanceState();
-        createGame(gameMaster, settings.numGames + 1, gameRank);
+
+        LibRankify.NewGameParams memory newGameParams = LibRankify.NewGameParams({
+            gameId: settings.numGames + 1,
+            gameRank: params.gameRank,
+            creator: params.creator,
+            joinPrice: params.joinPrice,
+            minPlayerCnt: params.minPlayerCnt,
+            maxPlayerCnt: params.maxPlayerCnt,
+            gameMaster: params.gameMaster,
+            nTurns: params.nTurns,
+            voteCredits: params.voteCredits,
+            minGameTime: params.minGameTime,
+            timePerTurn: params.timePerTurn,
+            timeToJoin: params.timeToJoin
+        });
+
+        createGame(newGameParams);
     }
 
     /**
@@ -216,7 +232,7 @@ contract RankifyInstanceMainFacet is
         return bytes4("");
     }
 
-    function getContractState() public view returns (LibRankify.InstanceState memory) {
+    function getContractState() public pure returns (LibRankify.InstanceState memory) {
         return LibRankify.instanceState();
     }
 
