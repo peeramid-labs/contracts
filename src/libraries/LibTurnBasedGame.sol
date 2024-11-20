@@ -523,10 +523,7 @@ library LibTBG {
         require(state.hasStarted == false, "startGame->already started");
         require(state.registrationOpenAt != 0, "startGame->Game registration was not yet open");
         require(gameId != 0, "startGame->Game not found");
-        require(
-            state.players.length() >= tbg.instances[gameId].settings.minPlayerCnt,
-            "startGame->Not enough players"
-        );
+        require(state.players.length() >= tbg.instances[gameId].settings.minPlayerCnt, "startGame->Not enough players");
         require(
             (state.players.length() == tbg.instances[gameId].settings.maxPlayerCnt) ||
                 (block.timestamp > state.registrationOpenAt + tbg.instances[gameId].settings.timeToJoin),
@@ -564,10 +561,7 @@ library LibTBG {
             "startGame->Still Can Join"
         );
         require(gameId != 0, "startGame->Game not found");
-        require(
-            state.players.length() >= tbg.instances[gameId].settings.minPlayerCnt,
-            "startGame->Not enough players"
-        );
+        require(state.players.length() >= tbg.instances[gameId].settings.minPlayerCnt, "startGame->Not enough players");
         state.hasStarted = true;
         state.hasEnded = false;
         state.currentTurn = 1;

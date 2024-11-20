@@ -157,7 +157,7 @@ library LibRankify {
      * - Sets the rank of the game to `gameRank`.
      * - Mints new rank tokens.
      */
-    function newGame( NewGameParams memory params) internal {
+    function newGame(NewGameParams memory params) internal {
         enforceIsInitialized();
         CommonParams storage commonParams = instanceState().commonParams;
 
@@ -169,7 +169,10 @@ library LibRankify {
             commonParams.principalTimeConstant % params.nTurns == 0,
             IRankifyInstance.NoDivisionReminderAllowed(commonParams.principalTimeConstant, params.minGameTime)
         );
-        require(params.minGameTime % params.nTurns == 0, IRankifyInstance.NoDivisionReminderAllowed(params.nTurns, params.minGameTime));
+        require(
+            params.minGameTime % params.nTurns == 0,
+            IRankifyInstance.NoDivisionReminderAllowed(params.nTurns, params.minGameTime)
+        );
         require(params.nTurns > 2, IRankifyInstance.invalidTurnCount(params.nTurns));
 
         LibTBG.Settings memory newSettings = LibTBG.Settings({
@@ -187,9 +190,14 @@ library LibRankify {
 
         params.gameId.createGame(params.gameMaster, newSettings); // This will enforce game does not exist yet
         GameState storage game = getGameState(params.gameId);
-        uint256 principalGamePrice = (commonParams.principalCost * commonParams.principalTimeConstant) / params.minGameTime;
+        uint256 principalGamePrice = (commonParams.principalCost * commonParams.principalTimeConstant) /
+            params.minGameTime;
 
-        IERC20(commonParams.gamePaymentToken).transferFrom(params.creator, commonParams.beneficiary, principalGamePrice);
+        IERC20(commonParams.gamePaymentToken).transferFrom(
+            params.creator,
+            commonParams.beneficiary,
+            principalGamePrice
+        );
 
         require(params.gameRank != 0, IRankifyInstance.RankNotSpecified());
 

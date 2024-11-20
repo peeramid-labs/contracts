@@ -306,7 +306,7 @@ contract MAODistribution is IDistribution, CodeIndexer {
         return
             DistributorArguments({
                 DAOSEttings: OSxDistributionArguments("", "", "", "", ""),
-                ACIDSettings: UserACIDSettings( 0, 0, "", "", "")
+                ACIDSettings: UserACIDSettings(0, 0, "", "", "")
             });
     }
 }

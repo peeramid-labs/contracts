@@ -5,12 +5,9 @@ import {LibTBG} from "../libraries/LibTurnBasedGame.sol";
 import {LibQuadraticVoting} from "../libraries/LibQuadraticVoting.sol";
 
 interface IRankifyInstance {
-
     error NoDivisionReminderAllowed(uint256 a, uint256 b);
     error invalidTurnCount(uint256 nTurns);
     error RankNotSpecified();
-
-
 
     event RegistrationOpen(uint256 indexed gameid);
     event PlayerJoined(uint256 indexed gameId, address participant);
@@ -18,7 +15,6 @@ interface IRankifyInstance {
     event gameCreated(uint256 gameId, address indexed gm, address indexed creator, uint256 indexed rank);
     event GameClosed(uint256 indexed gameId);
     event PlayerLeft(uint256 indexed gameId, address indexed player);
-
 
     struct NewGameParamsInput {
         uint256 gameRank;
@@ -33,5 +29,4 @@ interface IRankifyInstance {
         uint256 timePerTurn;
         uint256 timeToJoin;
     }
-
 }
