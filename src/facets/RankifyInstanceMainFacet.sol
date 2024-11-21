@@ -13,27 +13,22 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "../abstracts/draft-EIP712Diamond.sol";
-
 import "hardhat/console.sol";
+import { IErrors } from "../interfaces/IErrors.sol";
 
 contract RankifyInstanceMainFacet is
     IRankifyInstance,
     IERC1155Receiver,
     DiamondReentrancyGuard,
     IERC721Receiver,
-    EIP712
+    EIP712,
+    IErrors
 {
     using LibTBG for LibTBG.Instance;
     using LibTBG for uint256;
     using LibTBG for LibTBG.Settings;
     using LibRankify for uint256;
 
-    function InstanceState() internal pure returns (LibRankify.InstanceState storage bog) {
-        bytes32 position = LibTBG.getDataStorage();
-        assembly {
-            bog.slot := position
-        }
-    }
 
     /**
      * @dev Creates a new game with the provided game master, game ID, and game rank. Optionally, additional ranks can be provided. `gameMaster` is the address of the game master. `gameId` is the ID of the new game. `gameRank` is the rank of the new game. `additionalRanks` is the array of additional ranks.
@@ -58,13 +53,11 @@ contract RankifyInstanceMainFacet is
 
     function createGame(IRankifyInstance.NewGameParamsInput memory params) public {
         LibRankify.enforceIsInitialized();
-        LibRankify.InstanceState storage settings = InstanceState();
-
+        LibRankify.InstanceState storage settings = LibRankify.instanceState();
         LibRankify.NewGameParams memory newGameParams = LibRankify.NewGameParams({
             gameId: settings.numGames + 1,
             gameRank: params.gameRank,
-            creator: params.creator,
-            joinPrice: params.joinPrice,
+            creator: msg.sender,
             minPlayerCnt: params.minPlayerCnt,
             maxPlayerCnt: params.maxPlayerCnt,
             gameMaster: params.gameMaster,
@@ -106,7 +99,7 @@ contract RankifyInstanceMainFacet is
      */
     function cancelGame(uint256 gameId) public nonReentrant {
         gameId.enforceIsGameCreator(msg.sender);
-        gameId.cancelGame(onPlayerQuit, LibDiamond.contractOwner());
+        gameId.cancelGame(onPlayerQuit);
         emit GameClosed(gameId);
     }
 
@@ -143,6 +136,7 @@ contract RankifyInstanceMainFacet is
      * - The game with `gameId` must be in the pre-registration stage.
      */
     function openRegistration(uint256 gameId) public {
+        gameId.enforceGameExists();
         gameId.enforceIsGameCreator(msg.sender);
         gameId.enforceIsPreRegistrationStage();
         gameId.openRegistration();
@@ -233,7 +227,8 @@ contract RankifyInstanceMainFacet is
     }
 
     function getContractState() public pure returns (LibRankify.InstanceState memory) {
-        return LibRankify.instanceState();
+        LibRankify.InstanceState memory state = LibRankify.instanceState();
+        return state;
     }
 
     function getTurn(uint256 gameId) public view returns (uint256) {

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.28;
 
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
-error quadraticVotingError(string paramter, uint256 arg, uint256 arg2);
+error quadraticVotingError(string parameter, uint256 arg, uint256 arg2);
 
 /**
  * @title LibQuadraticVoting
@@ -63,7 +63,7 @@ library LibQuadraticVoting {
         qVotingStruct memory q,
         uint256[][] memory VotersVotes,
         bool[] memory voterVoted,
-        uint256 notVotedGivesEveyone,
+        uint256 notVotedGivesEveryone,
         uint256 proposalsLength
     ) internal pure returns (uint256[] memory) {
         uint256[] memory scores = new uint256[](proposalsLength);
@@ -77,13 +77,16 @@ library LibQuadraticVoting {
                 uint256[] memory voterVotes = VotersVotes[vi];
                 if (!voterVoted[vi]) {
                     // Check if voter wasn't voting
-                    scores[proposalIdx] += notVotedGivesEveyone; // Gives benefits to everyone but himself
+                    scores[proposalIdx] += notVotedGivesEveryone; // Gives benefits to everyone but himself
                     creditsUsed[vi] = q.voteCredits;
                 } else {
                     //If voter voted
                     scores[proposalIdx] += voterVotes[proposalIdx];
                     creditsUsed[vi] += voterVotes[proposalIdx] ** 2;
-                    if (creditsUsed[vi] > q.voteCredits) require(false, "quadraticVotingError"); // revert quadraticVotingError("Quadratic: vote credits overrun", q.voteCredits, creditsUsed[vi]);
+                    require(
+                        creditsUsed[vi] <= q.voteCredits,
+                        quadraticVotingError("Quadratic: vote credits overrun", q.voteCredits, creditsUsed[vi])
+                    );
                 }
             }
         }

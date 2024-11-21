@@ -18,7 +18,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     console.log('network', network, process.env.NODE_ENV);
   }
   if (!network) throw new Error('Network not provided');
-  const { deployer } = await getNamedAccounts();
+  const { deployer, DAO } = await getNamedAccounts();
   const codeIndexContract = (await ethers.getContractAt(
     CodeIndexAbi,
     '0xc0D31d398c5ee86C5f8a23FA253ee8a586dA03Ce',
@@ -102,11 +102,6 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     skipIfAlreadyDeployed: true,
   });
 
-  const RankifyOwnerFacetDeployment = await deploy('RankifyInstanceGameOwnersFacet', {
-    from: deployer,
-    skipIfAlreadyDeployed: true,
-  });
-
   const OwnershipFacetDeployment = await deploy('OwnershipFacet', {
     from: deployer,
     skipIfAlreadyDeployed: true,
@@ -158,7 +153,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   }
   const govTokenCode = await hre.ethers.provider.getCode(govTokenDeployment.address);
   const govTokenCodeId = ethers.utils.keccak256(govTokenCode);
-
+  const rankifyToken = await deployments.get('Rankify');
   const result = await deploy('MAODistribution', {
     from: deployer,
     skipIfAlreadyDeployed: true,
@@ -166,6 +161,8 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       _tokenVotingPluginRepo,
       _daoFactory,
       _trustedForwarder,
+      rankifyToken.address,
+      DAO,
       rankTokenCodeId,
       arguableVotingTournamentCodeId,
       accessManagerId,
@@ -181,8 +178,8 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   if (MaoDistrCodeIdAddress === ethers.constants.AddressZero) {
     await codeIndexContract.register(result.address);
   }
-  const code = await hre.ethers.provider.getCode(result.address);
-  const codeId = ethers.utils.keccak256(code);
+  //   const code = await hre.ethers.provider.getCode(result.address);
+  //   const codeId = ethers.utils.keccak256(code);
   //   console.log('MAO deployed at', result.address, 'codeId', codeId);
   return;
 };

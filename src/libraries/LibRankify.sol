@@ -7,6 +7,8 @@ import {IRankToken} from "../interfaces/IRankToken.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {LibQuadraticVoting} from "./LibQuadraticVoting.sol";
 import "hardhat/console.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
+import {SignedMath} from "@openzeppelin/contracts/utils/math/SignedMath.sol";
 
 library LibRankify {
     using LibTBG for LibTBG.Instance;
@@ -23,7 +25,7 @@ library LibRankify {
 
     struct CommonParams {
         uint256 principalCost;
-        uint256 principalTimeConstant;
+        uint96 principalTimeConstant;
         address gamePaymentToken;
         address rankTokenAddress;
         address beneficiary;
@@ -111,6 +113,7 @@ library LibRankify {
         require(settings.contractInitialized, "onlyInitialized");
     }
 
+
     /**
      * @dev Ensures that the game with the given ID exists. `gameId` is the ID of the game.
      *
@@ -120,22 +123,21 @@ library LibRankify {
      */
     function enforceGameExists(uint256 gameId) internal view {
         enforceIsInitialized();
-        require(gameId.gameExists(), "no game found");
+        require(gameId.gameExists(), "game not found");
     }
 
     struct NewGameParams {
         uint256 gameId;
         uint256 gameRank;
         address creator;
-        uint256 joinPrice;
         uint256 minPlayerCnt;
         uint256 maxPlayerCnt;
-        uint256 nTurns;
         uint256 voteCredits;
         address gameMaster;
-        uint256 minGameTime;
-        uint256 timePerTurn;
-        uint256 timeToJoin;
+        uint96 nTurns;
+        uint128 minGameTime;
+        uint128 timePerTurn;
+        uint128 timeToJoin;
     }
 
     /**
@@ -173,6 +175,7 @@ library LibRankify {
             params.minGameTime % params.nTurns == 0,
             IRankifyInstance.NoDivisionReminderAllowed(params.nTurns, params.minGameTime)
         );
+        require(params.minGameTime > 0, "LibRankify::newGame->Min game time zero");
         require(params.nTurns > 2, IRankifyInstance.invalidTurnCount(params.nTurns));
 
         LibTBG.Settings memory newSettings = LibTBG.Settings({
@@ -188,10 +191,19 @@ library LibRankify {
 
         InstanceState storage state = instanceState();
 
-        params.gameId.createGame(params.gameMaster, newSettings); // This will enforce game does not exist yet
+        params.gameId.createGame(newSettings); // This will enforce game does not exist yet
         GameState storage game = getGameState(params.gameId);
-        uint256 principalGamePrice = (commonParams.principalCost * commonParams.principalTimeConstant) /
-            params.minGameTime;
+        game.voting = LibQuadraticVoting.precomputeValues(params.voteCredits, params.maxPlayerCnt);
+        require(
+            SignedMath.abs(int256(uint256(params.minGameTime)) - int256(uint256(commonParams.principalTimeConstant))) <
+                uint256(commonParams.principalTimeConstant) * 16,
+            "Min game time out of bounds"
+        );
+        uint256 principalGamePrice = Math.mulDiv(
+            uint256(commonParams.principalCost),
+            uint256(commonParams.principalTimeConstant),
+            uint256(params.minGameTime)
+        );
 
         IERC20(commonParams.gamePaymentToken).transferFrom(
             params.creator,
@@ -298,21 +310,20 @@ library LibRankify {
      */
     function closeGame(
         uint256 gameId,
-        address beneficiary,
         function(uint256, address) playersGameEndedCallback
     ) internal returns (uint256[] memory) {
         enforceGameExists(gameId);
-        emitRankRewards(gameId, gameId.getLeaderBoard());
         (, uint256[] memory finalScores) = gameId.getScores();
         address[] memory players = gameId.getPlayers();
         for (uint256 i = 0; i < players.length; ++i) {
             removeAndUnlockPlayer(gameId, players[i]);
             playersGameEndedCallback(gameId, players[i]);
         }
+        emitRankRewards(gameId, gameId.getLeaderBoard());
         GameState storage game = LibRankify.getGameState(gameId);
         InstanceState storage state = instanceState();
         IERC20(state.commonParams.gamePaymentToken).transfer(
-            beneficiary,
+            state.commonParams.beneficiary,
             (game.joinPrice * players.length) + game.gamePrice
         );
         return finalScores;
@@ -366,8 +377,7 @@ library LibRankify {
      * - Deletes the game.
      */ function cancelGame(
         uint256 gameId,
-        function(uint256, address) onPlayerLeftCallback,
-        address beneficiary
+        function(uint256, address) onPlayerLeftCallback
     ) internal {
         // Cancel the game for each player
         address[] memory players = gameId.getPlayers();
@@ -383,7 +393,10 @@ library LibRankify {
         game.paymentsBalance -= paymentRefund;
 
         // Transfer remaining payments balance to the beneficiary
-        IERC20(instance.commonParams.gamePaymentToken).transfer(beneficiary, game.paymentsBalance);
+        IERC20(instance.commonParams.gamePaymentToken).transfer(
+            instance.commonParams.beneficiary,
+            game.paymentsBalance
+        );
         game.paymentsBalance = 0;
 
         // Delete the game
@@ -419,6 +432,7 @@ library LibRankify {
     function emitRankReward(uint256 gameId, address[] memory leaderboard, address rankTokenAddress) private {
         GameState storage game = getGameState(gameId);
         IRankToken rankTokenContract = IRankToken(rankTokenAddress);
+        rankTokenContract.burn(leaderboard[0], game.rank, 1);
         rankTokenContract.safeTransferFrom(address(this), leaderboard[0], game.rank + 1, 1, "");
     }
 

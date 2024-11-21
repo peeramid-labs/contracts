@@ -13,6 +13,8 @@ import 'hardhat-deploy';
 import 'hardhat-tracer';
 import 'solidity-docgen';
 import './playbook/createGame';
+import getSuperInterface from './scripts/getSuperInterface';
+import { ErrorFragment, EventFragment, FunctionFragment } from '@ethersproject/abi';
 
 task('accounts', 'Prints the list of accounts', async (taskArgs, hre) => {
   const accounts = await hre.ethers.getSigners();
@@ -22,19 +24,28 @@ task('accounts', 'Prints the list of accounts', async (taskArgs, hre) => {
   }
 });
 
-// task("upload2IPFS", "Uploads files to ipfs")
-//   .addParam("path", "file path")
-//   .setAction(async (taskArgs) => {
-//     const data = fs.readFileSync(taskArgs.path);
-//     await ipfsUtils.upload2IPFS(data);
-//   });
-
-// task("uploadDir2IPFS", "Uploads directory to ipfs")
-//   .addParam("path", "path")
-//   .setAction(async (taskArgs) => {
-//     await ipfsUtils.uploadDir2IPFS(taskArgs.path);
-//   });
-
+task('getSuperInterface', 'Prints the super interface of a contract').setAction(async (taskArgs, hre) => {
+  const su = getSuperInterface();
+  let return_value: {
+    functions: Record<string, FunctionFragment>;
+    events: Record<string, EventFragment>;
+    errors: Record<string, ErrorFragment>;
+  } = {
+    functions: {},
+    events: {},
+    errors: {},
+  };
+  Object.values(su.functions).forEach(x => {
+    return_value['functions'][su.getSighash(x)] = x;
+  });
+  Object.values(su.events).forEach(x => {
+    return_value['events'][su.getSighash(x)] = x;
+  });
+  Object.values(su.errors).forEach(x => {
+    return_value['errors'][su.getSighash(x)] = x;
+  });
+  console.log(JSON.stringify(return_value, null, 2));
+});
 task('replaceFacet', 'Upgrades facet')
   .addParam('facet', 'facet')
   .addParam('address', 'contract address')
@@ -97,6 +108,9 @@ export default {
     },
     defaultPlayer: {
       localhost: '0xF52E5dF676f51E410c456CC34360cA6F27959420',
+    },
+    DAO: {
+      default: '0x520E00225C4a43B6c55474Db44a4a44199b4c3eE',
     },
   },
   mocha: {
@@ -186,9 +200,8 @@ export default {
         'RankifyInstanceMainFacet',
         'RankifyInstanceRequirementsFacet',
         'RankifyInstanceGameMastersFacet',
-        'RankifyInstanceGameOwnersFacet',
       ],
-      strict: true,
+      strict: false,
       filter(abiElement: unknown, index: number, abi: unknown[], fullyQualifiedName: string) {
         const signature = toSignature(abiElement);
         return isIncluded(fullyQualifiedName, signature);

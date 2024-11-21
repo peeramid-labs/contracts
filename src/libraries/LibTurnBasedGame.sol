@@ -9,7 +9,7 @@ import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {LibArray} from "../libraries/LibArray.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
-
+import {IErrors} from "../interfaces/IErrors.sol";
 /**
  * @title LibTBG
  * @dev Library for managing turn-based games.
@@ -99,16 +99,17 @@ library LibTBG {
      *
      * - Sets the settings of the game to `settings`.
      */
+
     function init(uint256 gameId, Settings memory newSettings) private {
         TBGStorageStruct storage tbg = TBGStorage();
         Settings storage settings = tbg.instances[gameId].settings;
-        if (settings.timePerTurn == 0) require(false, "settings.timePerTurn"); //  revert invalidConfiguration('timePerTurn');
-        if (settings.maxPlayerCnt == 0) require(false, "settings.maxPlayerCnt"); // revert invalidConfiguration('maxPlayerCnt');
-        if (settings.minPlayerCnt < 2) require(false, "settings.minPlayerCnt"); //revert invalidConfiguration('minPlayerCnt');
-        if (settings.maxTurns == 0) require(false, "settings.maxTurns"); //revert invalidConfiguration('maxTurns');
-        if (settings.timeToJoin == 0) require(false, "timeToJoin"); // revert invalidConfiguration('timeToJoin');
-        if (settings.maxPlayerCnt < settings.minPlayerCnt) require(false, "maxPlayerCnt"); //revert invalidConfiguration('maxPlayerCnt');
-
+        require(newSettings.timePerTurn != 0, IErrors.invalidConfiguration("LibTBG::init->settings.timePerTurn"));
+        require(newSettings.maxPlayerCnt != 0, IErrors.invalidConfiguration("LibTBG::init->settings.maxPlayerCnt"));
+        require(newSettings.minPlayerCnt > 1, IErrors.invalidConfiguration("LibTBG::init->settings.minPlayerCnt"));
+        require(newSettings.maxTurns != 0, IErrors.invalidConfiguration("LibTBG::init->settings.maxTurns"));
+        require(newSettings.timeToJoin != 0, IErrors.invalidConfiguration("LibTBG::init->timeToJoin"));
+        require(settings.minPlayerCnt < newSettings.maxPlayerCnt, IErrors.invalidConfiguration("LibTBG::init->maxPlayerCnt"));
+        require(newSettings.gameMaster != address(0), IErrors.invalidConfiguration("LibTBG::init->gameMaster"));
         tbg.instances[gameId].settings = newSettings;
     }
 
@@ -127,17 +128,14 @@ library LibTBG {
      * - Sets the game master of the game with `gameId` to `gm`.
      * - Increments the total number of games created.
      */
-    function createGame(uint256 gameId, address gm, Settings memory settings) internal {
+    function createGame(uint256 gameId, Settings memory settings) internal {
+        require(!gameExists(gameId), "createGame->Already exists");
+        require(gameId != 0, "createGame->gameId");
         init(gameId, settings);
         TBGStorageStruct storage tbg = TBGStorage();
-        require(!gameExists(gameId), "createGame->Already exists");
-        require(gm != address(0), "createGame->GM");
-        require(gameId != 0, "createGame->gameId");
-        require(tbg.instances[gameId].settings.gameMaster == address(0), "createGame->gameId");
-        tbg.instances[gameId].settings.gameMaster = gm;
         tbg.totalGamesCreated += 1;
 
-        //totalGamesCreated ensures nonce-like behaviur:
+        //totalGamesCreated ensures nonce-like behavior:
         //even if game would get deleted and re-created with same name, data storage would be different
         tbg.instances[gameId].settings.implementationStoragePointer = keccak256(
             abi.encode(gameId, tbg.totalGamesCreated, TBG_STORAGE_POSITION)

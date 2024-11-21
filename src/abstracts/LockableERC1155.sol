@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 pragma solidity ^0.8.20;
-import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155BurnableUpgradeable.sol";
 import {ILockableERC1155} from "../interfaces/ILockableERC1155.sol";
 
 /**
@@ -9,7 +9,7 @@ import {ILockableERC1155} from "../interfaces/ILockableERC1155.sol";
  * @dev This is an abstract contract that extends the ERC1155 token contract and implements the ILockableERC1155 interface.
  *      It provides functionality to lock and unlock token amounts for specific accounts and IDs.
  */
-abstract contract LockableERC1155 is ERC1155Upgradeable, ILockableERC1155 {
+abstract contract LockableERC1155 is ERC1155BurnableUpgradeable, ILockableERC1155 {
     struct LockableERC1155Storage {
         mapping(address => mapping(uint256 tokenId => uint256)) lockedAmounts;
     }
@@ -94,5 +94,15 @@ abstract contract LockableERC1155 is ERC1155Upgradeable, ILockableERC1155 {
             }
         }
         super._update(from, to, ids, values);
+    }
+
+    function burn(address account, uint256 id, uint256 value) public virtual override(ERC1155BurnableUpgradeable,ILockableERC1155) {
+        if (getLockableERC1155Storage().lockedAmounts[account][id] + value > balanceOf(account, id))
+            revert insufficient(
+                id,
+                balanceOf(account, id),
+                getLockableERC1155Storage().lockedAmounts[account][id] + value
+            );
+        super.burn(account, id, value);
     }
 }

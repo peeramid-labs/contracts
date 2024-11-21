@@ -18,9 +18,7 @@ import { BigNumber, BigNumberish, BytesLike, Wallet } from 'ethers';
 import { assert } from 'console';
 import { Deployment } from 'hardhat-deploy/types';
 import { HardhatEthersHelpers } from '@nomiclabs/hardhat-ethers/types';
-import { JsonFragment } from '@ethersproject/abi';
-import fs from 'fs';
-import path from 'path';
+
 
 export interface SignerIdentity {
   name: string;
@@ -265,7 +263,7 @@ export const setupAddresses = async (
 const baseFee = 1 * 10 ** 18;
 export const RANKIFY_INSTANCE_CONTRACT_NAME = 'RANKIFY_INSTANCENAME';
 export const RANKIFY_INSTANCE_CONTRACT_VERSION = '0.0.1';
-export const RInstance_TIME_PER_TURN = '25';
+export const RInstance_TIME_PER_TURN = 2500;
 export const RInstance_MAX_PLAYERS = 6;
 export const RInstance_MIN_PLAYERS = 5;
 export const RInstance_MAX_TURNS = 3;
@@ -287,6 +285,7 @@ export const RInstanceSettings = {
   RInstance_VOTE_CREDITS,
   RInstance_SUBJECT,
   PRINCIPAL_TIME_CONSTANT: 3600,
+  RInstance_MIN_GAME_TIME: 3600,
   PRINCIPAL_COST: ethers.utils.parseEther('1'),
   // RInstance_NUM_ACTIONS_TO_TAKE,
 };
@@ -499,7 +498,7 @@ export interface ProposalParams {
   proposer: string;
 }
 
-export interface ProposalSubmittion {
+export interface ProposalSubmission {
   proposal: string;
   params: ProposalParams;
   proposerSignerId: SignerIdentity;
@@ -793,7 +792,7 @@ export const mockProposalSecrets = async ({
   gameId: BigNumberish;
   turn: BigNumberish;
   verifierAddress: string;
-}): Promise<ProposalSubmittion> => {
+}): Promise<ProposalSubmission> => {
   const _gmW = gm.wallet as Wallet;
   const proposal = String(gameId) + String(turn) + proposer.id;
   const encryptedProposal = aes.encrypt(proposal, _gmW.privateKey).toString();
@@ -827,7 +826,7 @@ export const mockProposals = async ({
   verifierAddress: string;
   gm: SignerIdentity;
 }) => {
-  let proposals = [] as any as ProposalSubmittion[];
+  let proposals = [] as any as ProposalSubmission[];
   for (let i = 0; i < players.length; i++) {
     let proposal = await mockProposalSecrets({
       gm,
@@ -841,36 +840,9 @@ export const mockProposals = async ({
   return proposals;
 };
 
-const getSuperInterface = () => {
-  let mergedArray: JsonFragment[] = [];
-  function readDirectory(directory: string) {
-    const files = fs.readdirSync(directory);
-
-    files.forEach(file => {
-      const fullPath = path.join(directory, file);
-      if (fs.statSync(fullPath).isDirectory()) {
-        readDirectory(fullPath); // Recurse into subdirectories
-      } else if (path.extname(file) === '.json') {
-        const fileContents = require('../' + fullPath); // Load the JSON file
-        if (Array.isArray(fileContents)) {
-          mergedArray = mergedArray.concat(fileContents); // Merge the array from the JSON file
-        }
-      }
-    });
-  }
-  const originalConsoleLog = console.log;
-  readDirectory('./abi');
-  readDirectory('./node_modules/@peeramid-labs/eds/abi');
-  console.log = () => {}; // avoid noisy output
-  const result = new ethers.utils.Interface(mergedArray);
-  console.log = originalConsoleLog;
-  return result;
-};
-
 export default {
   setupAddresses,
   setupEnvironment,
   addPlayerNameId,
   baseFee,
-  getSuperInterface,
 };

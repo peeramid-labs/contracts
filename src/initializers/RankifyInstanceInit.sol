@@ -25,7 +25,7 @@ import {LibRankify} from "../libraries/LibRankify.sol";
 
 // It is expected that this contract is customized if you want to deploy your diamond
 // with data from a deployment script. Use the init function to initialize state variables
-// of your diamond. Add parameters to the init funciton if you need to.
+// of your diamond. Add parameters to the init function if you need to.
 
 contract RankifyInstanceInit is Initializable {
     function _buildDomainSeparator(
@@ -36,17 +36,10 @@ contract RankifyInstanceInit is Initializable {
         return keccak256(abi.encode(typeHash, nameHash, versionHash, block.chainid, address(this)));
     }
 
-    function InstanceState() internal pure returns (LibRankify.InstanceState storage bog) {
-        bytes32 position = LibTBG.getDataStorage();
-        assembly {
-            bog.slot := position
-        }
-    }
-
     struct contractInitializer {
         address rewardToken;
         uint256 principalCost;
-        uint256 principalTimeConstant;
+        uint96 principalTimeConstant;
         address paymentToken;
         address beneficiary;
     }
@@ -82,7 +75,7 @@ contract RankifyInstanceInit is Initializable {
         commons.rankTokenAddress = initData.rewardToken;
         commons.beneficiary = initData.beneficiary;
 
-        LibRankify.InstanceState storage _RInstance = InstanceState();
+        LibRankify.InstanceState storage _RInstance = LibRankify.instanceState();
         // _RInstance.voting = LibQuadraticVoting.precomputeValues(initData.voteCredits, initData.minPlayerCnt);
         // _RInstance.gamePrice = initData.gamePrice;
         // _RInstance.joinPrice = initData.joinPrice;

@@ -101,35 +101,33 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
             action: IDiamondCut.FacetCutAction.Add,
             functionSelectors: EIP712InspectorFacetSelectors
         });
-        bytes4[] memory RankifyInstanceMainFacetSelectors = new bytes4[](28);
+        bytes4[] memory RankifyInstanceMainFacetSelectors = new bytes4[](26);
         RankifyInstanceMainFacetSelectors[0] = RankifyInstanceMainFacet.cancelGame.selector;
         RankifyInstanceMainFacetSelectors[1] = RankifyInstanceMainFacet.gameCreator.selector;
-        RankifyInstanceMainFacetSelectors[2] = stringToSelector("createGame(address,uint256,uint256)");
-        RankifyInstanceMainFacetSelectors[3] = stringToSelector("createGame(address,uint256,uint256,address[])");
-        RankifyInstanceMainFacetSelectors[4] = stringToSelector("createGame(address,uint256)");
-        RankifyInstanceMainFacetSelectors[5] = RankifyInstanceMainFacet.leaveGame.selector;
-        RankifyInstanceMainFacetSelectors[6] = RankifyInstanceMainFacet.joinGame.selector;
-        RankifyInstanceMainFacetSelectors[7] = RankifyInstanceMainFacet.openRegistration.selector;
-        RankifyInstanceMainFacetSelectors[8] = RankifyInstanceMainFacet.startGame.selector;
-        RankifyInstanceMainFacetSelectors[9] = RankifyInstanceMainFacet.onERC1155BatchReceived.selector;
-        RankifyInstanceMainFacetSelectors[10] = RankifyInstanceMainFacet.onERC1155Received.selector;
-        RankifyInstanceMainFacetSelectors[11] = RankifyInstanceMainFacet.onERC721Received.selector;
-        RankifyInstanceMainFacetSelectors[12] = RankifyInstanceMainFacet.getContractState.selector;
-        RankifyInstanceMainFacetSelectors[13] = RankifyInstanceMainFacet.getTurn.selector;
-        RankifyInstanceMainFacetSelectors[14] = RankifyInstanceMainFacet.getGM.selector;
-        RankifyInstanceMainFacetSelectors[15] = RankifyInstanceMainFacet.getScores.selector;
-        RankifyInstanceMainFacetSelectors[16] = RankifyInstanceMainFacet.isOvertime.selector;
-        RankifyInstanceMainFacetSelectors[17] = RankifyInstanceMainFacet.isGameOver.selector;
-        RankifyInstanceMainFacetSelectors[18] = RankifyInstanceMainFacet.getPlayersGame.selector;
-        RankifyInstanceMainFacetSelectors[19] = RankifyInstanceMainFacet.isLastTurn.selector;
-        RankifyInstanceMainFacetSelectors[20] = RankifyInstanceMainFacet.isRegistrationOpen.selector;
-        RankifyInstanceMainFacetSelectors[21] = RankifyInstanceMainFacet.getGameRank.selector;
-        RankifyInstanceMainFacetSelectors[22] = RankifyInstanceMainFacet.getPlayers.selector;
-        RankifyInstanceMainFacetSelectors[23] = RankifyInstanceMainFacet.canStartGame.selector;
-        RankifyInstanceMainFacetSelectors[24] = RankifyInstanceMainFacet.canEndTurn.selector;
-        RankifyInstanceMainFacetSelectors[25] = RankifyInstanceMainFacet.isPlayerTurnComplete.selector;
-        RankifyInstanceMainFacetSelectors[26] = RankifyInstanceMainFacet.getPlayerVotedArray.selector;
-        RankifyInstanceMainFacetSelectors[27] = RankifyInstanceMainFacet.getPlayersMoved.selector;
+        RankifyInstanceMainFacetSelectors[2] = RankifyInstanceMainFacet.createGame.selector;
+        RankifyInstanceMainFacetSelectors[3] = RankifyInstanceMainFacet.leaveGame.selector;
+        RankifyInstanceMainFacetSelectors[4] = RankifyInstanceMainFacet.joinGame.selector;
+        RankifyInstanceMainFacetSelectors[5] = RankifyInstanceMainFacet.openRegistration.selector;
+        RankifyInstanceMainFacetSelectors[6] = RankifyInstanceMainFacet.startGame.selector;
+        RankifyInstanceMainFacetSelectors[7] = RankifyInstanceMainFacet.onERC1155BatchReceived.selector;
+        RankifyInstanceMainFacetSelectors[8] = RankifyInstanceMainFacet.onERC1155Received.selector;
+        RankifyInstanceMainFacetSelectors[9] = RankifyInstanceMainFacet.onERC721Received.selector;
+        RankifyInstanceMainFacetSelectors[10] = RankifyInstanceMainFacet.getContractState.selector;
+        RankifyInstanceMainFacetSelectors[11] = RankifyInstanceMainFacet.getTurn.selector;
+        RankifyInstanceMainFacetSelectors[12] = RankifyInstanceMainFacet.getGM.selector;
+        RankifyInstanceMainFacetSelectors[13] = RankifyInstanceMainFacet.getScores.selector;
+        RankifyInstanceMainFacetSelectors[14] = RankifyInstanceMainFacet.isOvertime.selector;
+        RankifyInstanceMainFacetSelectors[15] = RankifyInstanceMainFacet.isGameOver.selector;
+        RankifyInstanceMainFacetSelectors[16] = RankifyInstanceMainFacet.getPlayersGame.selector;
+        RankifyInstanceMainFacetSelectors[17] = RankifyInstanceMainFacet.isLastTurn.selector;
+        RankifyInstanceMainFacetSelectors[18] = RankifyInstanceMainFacet.isRegistrationOpen.selector;
+        RankifyInstanceMainFacetSelectors[19] = RankifyInstanceMainFacet.getGameRank.selector;
+        RankifyInstanceMainFacetSelectors[20] = RankifyInstanceMainFacet.getPlayers.selector;
+        RankifyInstanceMainFacetSelectors[21] = RankifyInstanceMainFacet.canStartGame.selector;
+        RankifyInstanceMainFacetSelectors[22] = RankifyInstanceMainFacet.canEndTurn.selector;
+        RankifyInstanceMainFacetSelectors[23] = RankifyInstanceMainFacet.isPlayerTurnComplete.selector;
+        RankifyInstanceMainFacetSelectors[24] = RankifyInstanceMainFacet.getPlayerVotedArray.selector;
+        RankifyInstanceMainFacetSelectors[25] = RankifyInstanceMainFacet.getPlayersMoved.selector;
 
         facetCuts[2] = IDiamondCut.FacetCut({
             facetAddress: address(_RankifyMainFacet),
@@ -188,7 +186,8 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
         returnValue[5] = facetCuts[4].facetAddress;
         returnValue[6] = facetCuts[5].facetAddress;
         returnValue[7] = facetCuts[6].facetAddress;
-        returnValue[8] = facetCuts[7].facetAddress;
+        //renouncing ownership
+        OwnershipFacet(diamond).transferOwnership(address(0));
 
         return (returnValue, distributionName, distributionVersion);
     }
