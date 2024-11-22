@@ -66,24 +66,19 @@ const distributorArguments: MAODistribution.DistributorArgumentsStruct = {
     tokenName: 'tokenName',
     tokenSymbol: 'tokenSymbol',
   },
-  ACIDSettings: {
+  RankifySettings: {
     RankTokenContractURI: 'https://example.com/rank',
-    gamePrice: 1,
-    joinGamePrice: 1,
-    maxPlayersSize: 16,
-    maxTurns: 1,
+    principalCost: RInstanceSettings.PRINCIPAL_COST,
+    principalTimeConstant: RInstanceSettings.PRINCIPAL_TIME_CONSTANT,
     metadata: ethers.utils.hexlify(ethers.utils.toUtf8Bytes('metadata')),
-    minPlayersSize: 4,
-    paymentToken: rankify.address,
     rankTokenURI: 'https://example.com/rank',
-    timePerTurn: 1,
-    timeToJoin: 1,
-    voteCredits: 14,
   },
 };
+// const abi = import('../abi/src/distributions/MAODistribution.sol/MAODistribution.json');
+// Encode the arguments
 const data = ethers.utils.defaultAbiCoder.encode(
   [
-    'tuple(tuple(string daoURI, string subdomain, bytes metadata, string tokenName, string tokenSymbol) DAOSEttings, tuple(uint256 timePerTurn, uint256 maxPlayersSize, uint256 minPlayersSize, uint256 timeToJoin, uint256 maxTurns, uint256 voteCredits, uint256 gamePrice, address paymentToken, uint256 joinGamePrice, string metadata, string rankTokenURI, string RankTokenContractURI) ACIDSettings)',
+    'tuple(tuple(string daoURI, string subdomain, bytes metadata, string tokenName, string tokenSymbol) DAOSEttings, tuple(uint256 principalCost, uint256 principalTimeConstant, string metadata, string rankTokenURI, string RankTokenContractURI) RankifySettings)',
   ],
   [distributorArguments],
 );

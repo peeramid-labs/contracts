@@ -121,7 +121,7 @@ contract RankToken is LockableERC1155, IRankToken, ERC7746Middleware {
 
     function supportsInterface(
         bytes4 interfaceId
-    ) public view virtual override(IERC165,ERC1155Upgradeable) returns (bool) {
+    ) public view virtual override(IERC165, ERC1155Upgradeable) returns (bool) {
         return interfaceId == type(IRankToken).interfaceId || super.supportsInterface(interfaceId);
     }
 
@@ -129,8 +129,7 @@ contract RankToken is LockableERC1155, IRankToken, ERC7746Middleware {
         address account,
         uint256 id,
         uint256 value
-    ) public override(LockableERC1155, ILockableERC1155) {
+    ) public override(LockableERC1155, ILockableERC1155) ERC7746C(msg.sig, msg.sender, msg.data, 0) {
         super.burn(account, id, value);
     }
-
 }

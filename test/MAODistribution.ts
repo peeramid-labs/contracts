@@ -7,6 +7,7 @@ import { IDAO, MAODistribution, DAODistributor, Rankify, RankifyDiamondInstance 
 import utils, { AdrSetupResult, setupTest } from './utils';
 import { getCodeIdFromArtifact } from '../scripts/getCodeId';
 import addDistribution from '../scripts/playbooks/addDistribution';
+import generateDistributorData from '../scripts/libraries/generateDistributorData';
 
 describe('MAODistribution', async function () {
   let contract: MAODistribution;
@@ -41,7 +42,6 @@ describe('MAODistribution', async function () {
       await addDistribution(hre)(await getCodeIdFromArtifact(hre)('MAODistribution'), signer);
     });
     it('Can instantiate a distribution', async () => {
-      // Define the arguments for the instantiate function
       const distributorArguments: MAODistribution.DistributorArgumentsStruct = {
         DAOSEttings: {
           daoURI: 'https://example.com/dao',
@@ -50,7 +50,7 @@ describe('MAODistribution', async function () {
           tokenName: 'tokenName',
           tokenSymbol: 'tokenSymbol',
         },
-        ACIDSettings: {
+        RankifySettings: {
           RankTokenContractURI: 'https://example.com/rank',
           metadata: ethers.utils.hexlify(ethers.utils.toUtf8Bytes('metadata')),
           rankTokenURI: 'https://example.com/rank',
@@ -58,15 +58,10 @@ describe('MAODistribution', async function () {
           principalTimeConstant: 1,
         },
       };
-      // const abi = import('../abi/src/distributions/MAODistribution.sol/MAODistribution.json');
-      // Encode the arguments
-      const data = ethers.utils.defaultAbiCoder.encode(
-        [
-          'tuple(tuple(string daoURI, string subdomain, bytes metadata, string tokenName, string tokenSymbol) DAOSEttings, tuple(uint256 timePerTurn, uint256 maxPlayerCnt, uint256 minPlayerCnt, uint256 timeToJoin, uint256 maxTurns, uint256 voteCredits, uint256 gamePrice, address paymentToken, uint256 joinPrice, string metadata, string rankTokenURI, string RankTokenContractURI) ACIDSettings)',
-        ],
-        [distributorArguments],
-      );
-      // const tx = contract.instantiate(data);
+
+      // Encode the arguments using generateDistributorData
+      const data = generateDistributorData(distributorArguments);
+
       const distributorsDistId = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(['bytes32', 'address'], [maoId, ethers.constants.AddressZero]),
       );

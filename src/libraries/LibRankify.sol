@@ -113,7 +113,6 @@ library LibRankify {
         require(settings.contractInitialized, "onlyInitialized");
     }
 
-
     /**
      * @dev Ensures that the game with the given ID exists. `gameId` is the ID of the game.
      *
@@ -375,10 +374,7 @@ library LibRankify {
      * - Decreases the game's payments balance by the refund amount.
      * - Transfers the remaining balance of the game to `beneficiary`.
      * - Deletes the game.
-     */ function cancelGame(
-        uint256 gameId,
-        function(uint256, address) onPlayerLeftCallback
-    ) internal {
+     */ function cancelGame(uint256 gameId, function(uint256, address) onPlayerLeftCallback) internal {
         // Cancel the game for each player
         address[] memory players = gameId.getPlayers();
         for (uint256 i = 0; i < players.length; ++i) {
@@ -432,7 +428,9 @@ library LibRankify {
     function emitRankReward(uint256 gameId, address[] memory leaderboard, address rankTokenAddress) private {
         GameState storage game = getGameState(gameId);
         IRankToken rankTokenContract = IRankToken(rankTokenAddress);
-        rankTokenContract.burn(leaderboard[0], game.rank, 1);
+        if (game.rank > 1) {
+            rankTokenContract.burn(leaderboard[0], game.rank, 1);
+        }
         rankTokenContract.safeTransferFrom(address(this), leaderboard[0], game.rank + 1, 1, "");
     }
 

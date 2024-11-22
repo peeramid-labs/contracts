@@ -1454,7 +1454,7 @@ describe(scriptName, () => {
       });
     });
   });
-  describe.only('When there was multiple first rank games played so higher rank game can be filled', () => {
+  describe('When there was multiple first rank games played so higher rank game can be filled', () => {
     beforeEach(async () => {
       for (let numGames = 0; numGames < RInstanceSettings.RInstance_MAX_PLAYERS; numGames++) {
         const gameId = await createGame(rankifyInstance, adr.gameCreator1, adr.gameMaster1.wallet.address, 1, true);
@@ -1480,8 +1480,8 @@ describe(scriptName, () => {
         .balanceOf(adr.player1.wallet.address, 2)
         .then(balance => balances.push(balance.toNumber()));
       expect(await rankToken.balanceOf(adr.player1.wallet.address, 2)).to.be.equal(1);
-      expect(await rankToken.balanceOf(adr.player2.wallet.address, 2)).to.be.equal(1);
       expect(await rankToken.balanceOf(adr.player3.wallet.address, 2)).to.be.equal(1);
+      expect(await rankToken.balanceOf(adr.player2.wallet.address, 2)).to.be.equal(1);
       expect(await rankToken.balanceOf(adr.player4.wallet.address, 2)).to.be.equal(1);
       expect(await rankToken.balanceOf(adr.player5.wallet.address, 2)).to.be.equal(1);
       expect(await rankToken.balanceOf(adr.player6.wallet.address, 2)).to.be.equal(1);
