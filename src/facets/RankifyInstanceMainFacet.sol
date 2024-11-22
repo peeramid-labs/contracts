@@ -14,7 +14,7 @@ import "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "../abstracts/draft-EIP712Diamond.sol";
 import "hardhat/console.sol";
-import { IErrors } from "../interfaces/IErrors.sol";
+import {IErrors} from "../interfaces/IErrors.sol";
 
 contract RankifyInstanceMainFacet is
     IRankifyInstance,
@@ -28,7 +28,6 @@ contract RankifyInstanceMainFacet is
     using LibTBG for uint256;
     using LibTBG for LibTBG.Settings;
     using LibRankify for uint256;
-
 
     /**
      * @dev Creates a new game with the provided game master, game ID, and game rank. Optionally, additional ranks can be provided. `gameMaster` is the address of the game master. `gameId` is the ID of the new game. `gameRank` is the rank of the new game. `additionalRanks` is the array of additional ranks.

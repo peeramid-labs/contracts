@@ -108,7 +108,10 @@ library LibTBG {
         require(newSettings.minPlayerCnt > 1, IErrors.invalidConfiguration("LibTBG::init->settings.minPlayerCnt"));
         require(newSettings.maxTurns != 0, IErrors.invalidConfiguration("LibTBG::init->settings.maxTurns"));
         require(newSettings.timeToJoin != 0, IErrors.invalidConfiguration("LibTBG::init->timeToJoin"));
-        require(settings.minPlayerCnt < newSettings.maxPlayerCnt, IErrors.invalidConfiguration("LibTBG::init->maxPlayerCnt"));
+        require(
+            settings.minPlayerCnt < newSettings.maxPlayerCnt,
+            IErrors.invalidConfiguration("LibTBG::init->maxPlayerCnt")
+        );
         require(newSettings.gameMaster != address(0), IErrors.invalidConfiguration("LibTBG::init->gameMaster"));
         tbg.instances[gameId].settings = newSettings;
     }

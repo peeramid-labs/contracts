@@ -96,7 +96,11 @@ abstract contract LockableERC1155 is ERC1155BurnableUpgradeable, ILockableERC115
         super._update(from, to, ids, values);
     }
 
-    function burn(address account, uint256 id, uint256 value) public virtual override(ERC1155BurnableUpgradeable,ILockableERC1155) {
+    function burn(
+        address account,
+        uint256 id,
+        uint256 value
+    ) public virtual override(ERC1155BurnableUpgradeable, ILockableERC1155) {
         if (getLockableERC1155Storage().lockedAmounts[account][id] + value > balanceOf(account, id))
             revert insufficient(
                 id,

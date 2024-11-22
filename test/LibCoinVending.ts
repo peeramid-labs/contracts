@@ -1,4 +1,3 @@
-const { assert } = require('chai');
 import { deployments, ethers } from 'hardhat';
 import { expect } from 'chai';
 import { MockERC1155, MockVendingMachine, MockERC20, MockERC721 } from '../types/src/mocks';

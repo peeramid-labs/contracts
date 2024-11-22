@@ -97,11 +97,11 @@ contract MAODistribution is IDistribution, CodeIndexer {
         _distributionVersion = LibSemver.toUint256(distributionVersion);
         _rankTokenBase = getContractsIndex().get(rankTokenCodeId);
 
-        if(beneficiary == address(0)) {
+        if (beneficiary == address(0)) {
             revert("Beneficiary not found");
         }
         _beneficiary = beneficiary;
-        if(paymentToken == address(0)) {
+        if (paymentToken == address(0)) {
             revert("Payment token not found");
         }
         _paymentToken = paymentToken;

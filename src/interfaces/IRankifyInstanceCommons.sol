@@ -5,9 +5,6 @@ import {LibTBG} from "../libraries/LibTurnBasedGame.sol";
 import {LibQuadraticVoting} from "../libraries/LibQuadraticVoting.sol";
 
 interface IRankifyInstance {
-
-
-
     event RegistrationOpen(uint256 indexed gameId);
     event PlayerJoined(uint256 indexed gameId, address participant);
     event GameStarted(uint256 indexed gameId);
