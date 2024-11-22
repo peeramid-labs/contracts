@@ -28,6 +28,7 @@ const scriptName = path.basename(__filename);
 
 import { getCodeIdFromArtifact } from '../scripts/getCodeId';
 import { MAODistribution } from '../types/src/distributions/MAODistribution';
+import generateDistributorData from '../scripts/libraries/generateDistributorData';
 let votes: MockVotes;
 let proposalsStruct: ProposalSubmission[];
 let adr: AdrSetupResult;
@@ -314,12 +315,7 @@ describe(scriptName, () => {
     };
     // const abi = import('../abi/src/distributions/MAODistribution.sol/MAODistribution.json');
     // Encode the arguments
-    const data = ethers.utils.defaultAbiCoder.encode(
-      [
-        'tuple(tuple(string daoURI, string subdomain, bytes metadata, string tokenName, string tokenSymbol) DAOSEttings, tuple(uint256 principalCost, uint256 principalTimeConstant, string metadata, string rankTokenURI, string RankTokenContractURI) RankifySettings)',
-      ],
-      [distributorArguments],
-    );
+    const data = generateDistributorData(distributorArguments);
     const maoCode = await hre.ethers.provider.getCode(env.maoDistribution.address);
     const maoId = ethers.utils.keccak256(maoCode);
     const distributorsDistId = await env.distributor['calculateDistributorId(bytes32,address)'](

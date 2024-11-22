@@ -21,7 +21,7 @@ contract RankifyInstanceEventMock {
         uint256[][] votes
     );
 
-    // event GameOver(uint256 indexed gameId, address[] indexed players, uint256[] indexed scores);
+    event GameOver(uint256 indexed gameId, address[] indexed players, uint256[] indexed scores);
 
     event ProposalSubmitted(
         uint256 indexed gameId,
@@ -74,7 +74,7 @@ contract RankifyInstanceEventMock {
         emit LastTurn(1);
         emit ProposalScore(1, 2, "0x1233123131", "Some kind of proposal", 0);
         emit TurnEnded(1, 2, players, scores, newProposals, scores, votes);
-        // emit GameOver(1, players, new uint256[](0));
+        emit GameOver(1, players, new uint256[](0));
         emit ProposalSubmitted(1, 2, address(12), bytes32(0), "0x1289031301");
         emit VoteSubmitted(1, 2, address(12), "0x123131");
         emit RegistrationOpen(1);
