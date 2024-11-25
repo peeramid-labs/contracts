@@ -722,7 +722,7 @@ export const mockVotes = async ({
   gm: SignerIdentity;
   verifierAddress: string;
   players: [SignerIdentity, SignerIdentity, ...SignerIdentity[]];
-  distribution: 'ftw' | 'semiUniform' | 'equal';
+  distribution: 'ftw' | 'semiUniform' | 'equal' | 'zeros';
 }): Promise<MockVotes> => {
   const votes: Array<{
     // proof: string;
@@ -733,6 +733,8 @@ export const mockVotes = async ({
   for (let k = 0; k < players.length; k++) {
     let creditsLeft = RInstance_VOTE_CREDITS;
     let playerVote: BigNumberish[] = [];
+    if(distribution == 'zeros') {
+      playerVote = players.map(() => 0);}
     if (distribution == 'ftw') {
       playerVote = players.map((proposer, idx) => {
         if (k !== idx) {
