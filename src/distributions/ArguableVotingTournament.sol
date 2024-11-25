@@ -101,7 +101,7 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
             action: IDiamondCut.FacetCutAction.Add,
             functionSelectors: EIP712InspectorFacetSelectors
         });
-        bytes4[] memory RankifyInstanceMainFacetSelectors = new bytes4[](26);
+        bytes4[] memory RankifyInstanceMainFacetSelectors = new bytes4[](27);
         RankifyInstanceMainFacetSelectors[0] = RankifyInstanceMainFacet.cancelGame.selector;
         RankifyInstanceMainFacetSelectors[1] = RankifyInstanceMainFacet.gameCreator.selector;
         RankifyInstanceMainFacetSelectors[2] = RankifyInstanceMainFacet.createGame.selector;
@@ -128,6 +128,7 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
         RankifyInstanceMainFacetSelectors[23] = RankifyInstanceMainFacet.isPlayerTurnComplete.selector;
         RankifyInstanceMainFacetSelectors[24] = RankifyInstanceMainFacet.getPlayerVotedArray.selector;
         RankifyInstanceMainFacetSelectors[25] = RankifyInstanceMainFacet.getPlayersMoved.selector;
+        RankifyInstanceMainFacetSelectors[26] = RankifyInstanceMainFacet.estimateGamePrice.selector;
 
         facetCuts[2] = IDiamondCut.FacetCut({
             facetAddress: address(_RankifyMainFacet),

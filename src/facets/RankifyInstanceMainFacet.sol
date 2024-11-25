@@ -29,7 +29,6 @@ contract RankifyInstanceMainFacet is
     using LibTBG for LibTBG.Settings;
     using LibRankify for uint256;
 
-
     function createGame(LibRankify.NewGameParams memory params) private nonReentrant {
         LibRankify.newGame(params);
         LibCoinVending.ConfigPosition memory emptyConfig;
@@ -255,6 +254,11 @@ contract RankifyInstanceMainFacet is
 
     function getGameRank(uint256 gameId) public view returns (uint256) {
         return gameId.getGameState().rank;
+    }
+
+    function estimateGamePrice(uint128 minGameTime) public pure returns (uint256) {
+        LibRankify.InstanceState memory state = LibRankify.instanceState();
+        return LibRankify.getGamePrice(minGameTime, state.commonParams);
     }
 
     function getPlayers(uint256 gameId) public view returns (address[] memory) {

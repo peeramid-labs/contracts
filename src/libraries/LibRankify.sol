@@ -135,6 +135,14 @@ library LibRankify {
         uint128 timeToJoin;
     }
 
+    function getGamePrice(uint128 minGameTime,CommonParams memory commonParams) internal pure returns (uint256) {
+        return Math.mulDiv(
+            uint256(commonParams.principalCost),
+            uint256(commonParams.principalTimeConstant),
+            uint256(minGameTime)
+        );
+    }
+
     /**
      * @dev Creates a new game with the given parameters. `gameId` is the ID of the new game. `gameMaster` is the address of the game master. `gameRank` is the rank of the game. `creator` is the address of the creator of the game.
      *
@@ -194,14 +202,10 @@ library LibRankify {
                 uint256(commonParams.principalTimeConstant) * 16,
             "Min game time out of bounds"
         );
-        uint256 principalGamePrice = Math.mulDiv(
-            uint256(commonParams.principalCost),
-            uint256(commonParams.principalTimeConstant),
-            uint256(params.minGameTime)
-        );
-
+        uint256 principalGamePrice = getGamePrice(params.minGameTime, commonParams);
         uint256 burnAmount = Math.mulDiv(principalGamePrice, 9, 10);
         uint256 daoAmount = principalGamePrice - burnAmount;
+        address beneficiary = commonParams.beneficiary;
 
         Rankify(commonParams.gamePaymentToken).burnFrom(params.creator, burnAmount);
         Rankify(commonParams.gamePaymentToken).transferFrom(params.creator, beneficiary, daoAmount);
