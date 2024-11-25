@@ -44,7 +44,6 @@ library LibRankify {
         uint256 numOngoingProposals;
         uint256 numPrevProposals;
         uint256 numCommitments;
-        address[] additionalRanks;
         uint256 paymentsBalance;
         uint256 numVotesThisTurn;
         uint256 numVotesPrevTurn;
@@ -405,16 +404,12 @@ library LibRankify {
      * Modifies:
      *
      * - Locks the rank token(s) of `player` in the rank token contract.
-     * - If the game has additional ranks, locks the additional ranks of `player` in the respective rank token contracts.
      */
     function fulfillRankRq(uint256 gameId, address player) internal {
         InstanceState storage instance = instanceState();
         GameState storage game = getGameState(gameId);
         if (game.rank > 1) {
             _fulfillRankRq(player, game.rank, instance.commonParams.rankTokenAddress);
-            for (uint256 i = 0; i < game.additionalRanks.length; ++i) {
-                _fulfillRankRq(player, game.rank, game.additionalRanks[i]);
-            }
         }
     }
 
@@ -428,7 +423,7 @@ library LibRankify {
     function emitRankReward(uint256 gameId, address[] memory leaderboard, address rankTokenAddress) private {
         GameState storage game = getGameState(gameId);
         IRankToken rankTokenContract = IRankToken(rankTokenAddress);
-        if (game.rank > 1) {
+            if (game.rank > 1) {
             rankTokenContract.burn(leaderboard[0], game.rank, 1);
         }
         rankTokenContract.safeTransferFrom(address(this), leaderboard[0], game.rank + 1, 1, "");
@@ -442,12 +437,8 @@ library LibRankify {
      * - Calls `emitRankReward` for the main rank and each additional rank in the game.
      */
     function emitRankRewards(uint256 gameId, address[] memory leaderboard) internal {
-        GameState storage game = getGameState(gameId);
         InstanceState storage instance = LibRankify.instanceState();
         emitRankReward(gameId, leaderboard, instance.commonParams.rankTokenAddress);
-        for (uint256 i = 0; i < game.additionalRanks.length; ++i) {
-            emitRankReward(gameId, leaderboard, game.additionalRanks[i]);
-        }
     }
 
     /**
@@ -472,7 +463,7 @@ library LibRankify {
      * Modifies:
      *
      * - Removes `player` from the game.
-     * - If the game rank is greater than 1, unlocks the game rank token for `player` in the rank token contract and unlocks each additional rank token for `player` in the respective rank token contracts.
+     * - If the game rank is greater than 1, unlocks the game rank token for `player` in the rank token contract.
      */
     function removeAndUnlockPlayer(uint256 gameId, address player) internal {
         enforceGameExists(gameId);
@@ -481,9 +472,6 @@ library LibRankify {
         GameState storage game = getGameState(gameId);
         if (game.rank > 1) {
             _releaseRankToken(player, game.rank, instance.commonParams.rankTokenAddress);
-            for (uint256 i = 0; i < game.additionalRanks.length; ++i) {
-                _releaseRankToken(player, game.rank, game.additionalRanks[i]);
-            }
         }
     }
 

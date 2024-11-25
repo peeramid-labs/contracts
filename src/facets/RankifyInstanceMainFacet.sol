@@ -29,20 +29,7 @@ contract RankifyInstanceMainFacet is
     using LibTBG for LibTBG.Settings;
     using LibRankify for uint256;
 
-    /**
-     * @dev Creates a new game with the provided game master, game ID, and game rank. Optionally, additional ranks can be provided. `gameMaster` is the address of the game master. `gameId` is the ID of the new game. `gameRank` is the rank of the new game. `additionalRanks` is the array of additional ranks.
-     *
-     * emits a _GameCreated_ event.
-     *
-     * Requirements:
-     *  There are some game price requirments that must be met under gameId.newGame function that are set during the contract initialization and refer to the contract maintainer benefits.
-     *
-     * Modifies:
-     *
-     * - Calls the `newGame` function with `gameMaster`, `gameRank`, and `msg.sender`.
-     * - Configures the coin vending with `gameId` and an empty configuration.
-     * - If `additionalRanks` is not empty, mints rank tokens for each additional rank and sets the additional ranks of the game with `gameId` to `additionalRanks`.
-     */
+
     function createGame(LibRankify.NewGameParams memory params) private nonReentrant {
         LibRankify.newGame(params);
         LibCoinVending.ConfigPosition memory emptyConfig;

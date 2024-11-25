@@ -17,7 +17,6 @@ import { LibCoinVending } from '../types/src/facets/RankifyInstanceRequirementsF
 import { IRankifyInstance } from '../types/src/facets/RankifyInstanceMainFacet';
 import { deployments, ethers, getNamedAccounts } from 'hardhat';
 const path = require('path');
-// import { TokenMust, TokenTypes } from "../types/enums";
 import { BigNumber, BigNumberish } from 'ethers';
 import { assert } from 'console';
 import { solidityKeccak256 } from 'ethers/lib/utils';
@@ -139,54 +138,6 @@ const runToOvertime = async (
   );
 };
 
-// const runToTheEnd = async (
-//   gameId: BigNumberish,
-//   gameContract: RankifyDiamondInstance,
-//   gameMaster: SignerIdentity,
-//   players: [SignerIdentity, SignerIdentity, ...SignerIdentity[]]
-// ) => {
-
-// await runToLastTurn(gameId, gameContract, gameMaster, players);
-
-// await mockValidVotes(players, gameContract, gameId, gameMaster, true, "ftw");
-// let turn = await gameContract.getTurn(gameId);
-// console.log("attempt to finish last turn", turn.toString());
-// await gameContract.connect(gameMaster.wallet).endTurn(
-//   gameId,
-//   getTurnSalt({
-//     gameId: gameId,
-//     turn: turn,
-//   }),
-//   votersAddresses,
-//   votes.map((vote) => vote.vote)
-// );
-// turn = await gameContract.getTurn(gameId);
-// const isOvertime = await rankifyInstance.isOvertime(gameId);
-// const isGameOver = await rankifyInstance.isGameOver(gameId);
-// while (!isGameOver) {
-//   console.log("running isGameOver", isGameOver, isOvertime, turn.toString());
-//   assert(isOvertime, "should be overtime, now?");
-//   await mockValidVotes(
-//     players,
-//     gameContract,
-//     gameId,
-//     gameMaster,
-//     true,
-//     "ftw"
-//   );
-//   await mockValidProposals(players, gameContract, gameMaster, gameId, true);
-//   await gameContract.connect(gameMaster.wallet).endTurn(
-//     gameId,
-//     getTurnSalt({
-//       gameId: gameId,
-//       turn: turn,
-//     }),
-//     votersAddresses,
-//     votes.map((vote) => vote.vote)
-//   );
-// }
-// console.log("runToTheEnd", turn);
-// };
 
 const mockValidVotes = async (
   players: [SignerIdentity, SignerIdentity, ...SignerIdentity[]],
@@ -218,18 +169,12 @@ const mockValidVotes = async (
 
 const startGame = async (
   gameId: BigNumberish,
-  // players: [SignerIdentity, SignerIdentity, ...SignerIdentity[]]
 ) => {
   const currentT = await time.latest();
   await time.setNextBlockTimestamp(currentT + Number(RInstanceSettings.RInstance_TIME_TO_JOIN) + 1);
   await mineBlocks(RInstanceSettings.RInstance_TIME_TO_JOIN + 1);
   await rankifyInstance.connect(adr.gameMaster1.wallet).startGame(gameId);
-  // proposalsStruct = await mockProposals({
-  //   players: players,
-  //   gameId: 1,
-  //   turn: 1,
-  //   verifierAddress: rankifyInstance.address,
-  // });
+
 };
 
 const mockValidProposals = async (
@@ -241,7 +186,6 @@ const mockValidProposals = async (
 ) => {
   const turn = await gameContract.getTurn(gameId);
 
-  // getPlayers(adr, RInstanceSettings.RInstance_MAX_PLAYERS)
   proposalsStruct = await mockProposals({
     players: players,
     gameId: gameId,
@@ -266,7 +210,6 @@ const fillParty = async (
   gameMaster?: SignerIdentity,
 ) => {
   for (let i = 0; i < players.length; i++) {
-    // let name = `player${i}` as any as keyof AdrSetupResult;
     if (!env.rankTokenBase.address) throw new Error('Rank token undefined or unemployed');
     await rankToken.connect(players[i].wallet).setApprovalForAll(rankifyInstance.address, true);
     await gameContract.connect(players[i].wallet).joinGame(gameId, { value: ethers.utils.parseEther('0.4') });
@@ -313,8 +256,6 @@ describe(scriptName, () => {
         principalTimeConstant: RInstanceSettings.PRINCIPAL_TIME_CONSTANT,
       },
     };
-    // const abi = import('../abi/src/distributions/MAODistribution.sol/MAODistribution.json');
-    // Encode the arguments
     const data = generateDistributorData(distributorArguments);
     const maoCode = await hre.ethers.provider.getCode(env.maoDistribution.address);
     const maoId = ethers.utils.keccak256(maoCode);
@@ -406,11 +347,6 @@ describe(scriptName, () => {
     expect(state.commonParams.principalCost).to.be.equal(RInstanceSettings.PRINCIPAL_COST);
     expect(state.commonParams.beneficiary).to.be.equal(DAO);
     expect(state.commonParams.rankTokenAddress).to.be.equal(rankToken.address);
-    // expect(state.TBGSEttings.maxTurns).to.be.equal(RInstanceSettings.RInstance_MAX_TURNS);
-    // expect(state.TBGSEttings.timePerTurn).to.be.equal(RInstanceSettings.RInstance_TIME_PER_TURN);
-    // expect(state.TBGSEttings.minPlayerCnt).to.be.equal(RInstanceSettings.RInstance_MIN_PLAYERS);
-    // expect(state.TBGSEttings.timeToJoin).to.be.equal(RInstanceSettings.RInstance_TIME_TO_JOIN);
-    // expect(state.TBGSEttings.maxTurns).to.be.equal(RInstanceSettings.RInstance_MAX_TURNS);
   });
   it('Ownership is renounced', async () => {
     expect(await rankifyInstance.owner()).to.be.equal(ethers.constants.AddressZero);
@@ -483,20 +419,7 @@ describe(scriptName, () => {
     await expect(rankifyInstance.connect(adr.gameMaster1.wallet).openRegistration(1)).to.be.revertedWith(
       'game not found',
     );
-    // await expect(
-    //   rankifyInstance.connect(adr.gameMaster1.wallet).addJoinRequirements(0, {
-    //     token: { tokenAddress: ZERO_ADDRESS, tokenType: 0, tokenId: 1 },
-    //     amount: 1,
-    //     must: 0,
-    //     requireParticularERC721: false,
-    //   })
-    // ).to.be.revertedWith("game not found");
-    // await expect(
-    //   rankifyInstance.connect(adr.gameMaster1.wallet).removeJoinRequirement(0, 0)
-    // ).to.be.revertedWith("game not found");
-    // await expect(
-    //   rankifyInstance.connect(adr.gameMaster1.wallet).popJoinRequirements(0)
-    // ).to.be.revertedWith("game not found");
+
     await expect(rankifyInstance.connect(adr.gameMaster1.wallet).joinGame(0)).to.be.revertedWith('game not found');
     await expect(rankifyInstance.connect(adr.gameMaster1.wallet).startGame(0)).to.be.revertedWith('game not found');
     const proposals = await mockProposals({
@@ -598,11 +521,6 @@ describe(scriptName, () => {
           'addPlayer->party full',
         );
       });
-      // it('Game cannot start too early', async () => {
-      //   await expect(rankifyInstance.connect(adr.gameMaster1.wallet).startGame(1)).to.be.revertedWith(
-      //     'startGame->Still Can Join',
-      //   );
-      // });
       it('Game methods beside join and start are inactive', async () => {
         await expect(
           rankifyInstance.connect(adr.gameMaster1.wallet).submitProposal({
@@ -868,59 +786,6 @@ describe(scriptName, () => {
                     ethers.BigNumber.from('0'),
                   ]);
               });
-              // it("throws if player voting himself", async () => {
-              //   proposalsStruct = await mockValidProposals(
-              //     getPlayers(adr, RInstanceSettings.RInstance_MIN_PLAYERS),
-              //     rankifyInstance,
-              //     adr.gameMaster1,
-              //     1,
-              //     true
-              //   );
-              //   const badVote = await mockVote({
-              //     voter: adr.player1,
-              //     gm: adr.gameMaster1,
-              //     gameId: 1,
-              //     verifierAddress: rankifyInstance.address,
-              //     turn: 2,
-              //     vote: [0, 1, 2],
-              //   });
-
-              //   const badVotes = await mockVotes({
-              //     gameId: 1,
-              //     turn: 2,
-              //     verifierAddress: rankifyInstance.address,
-              //     players: getPlayers(adr, RInstanceSettings.RInstance_MIN_PLAYERS),
-              //     gm: adr.gameMaster1,
-              //     distribution: "semiUniform",
-              //   });
-              //   badVotes[0] = badVote;
-              //   votersAddresses = getPlayers(
-              //     adr,
-              //     RInstanceSettings.RInstance_MIN_PLAYERS
-              //   ).map((player, idx) => player.wallet.address);
-              //   for (let i = 0; i < votersAddresses.length; i++) {
-              //     let name = `player${i + 1}` as any as keyof AdrSetupResult;
-
-              //     await rankifyInstance
-              //       .connect(adr[`${name}`].wallet)
-              //       .submitVote(
-              //         1,
-              //         badVotes[i].voteHidden,
-              //         badVotes[i].proof,
-              //         badVotes[i].publicSignature
-              //       );
-              //   }
-
-              //   await mineBlocks(RInstanceSettings.RInstance_TIME_PER_TURN + 1);
-              //   await expect(
-              //     rankifyInstance.connect(adr.gameMaster1.wallet).endTurn(
-              //       1,
-              //       badVotes.map((vote) => vote.vote),
-              //       proposalsStruct.map((p) => p.proposal),
-              //       proposalsStruct.map((p, idx) => idx)
-              //     )
-              //   ).to.be.revertedWith("voted for himself");
-              // });
               describe('When all players voted', () => {
                 beforeEach(async () => {
                   votes = await mockValidVotes(
@@ -945,14 +810,12 @@ describe(scriptName, () => {
                   ).to.be.revertedWith('nextTurn->CanEndEarly');
                 });
                 it('Can end turn if timeout reached', async () => {
-                  // await mineBlocks(RInstanceSettings.RInstance_TIME_PER_TURN + 1);
                   const currentT = await time.latest();
                   await time.setNextBlockTimestamp(currentT + Number(RInstanceSettings.RInstance_TIME_PER_TURN) + 1);
                   expect(await rankifyInstance.getTurn(1)).to.be.equal(2);
                   const players = getPlayers(adr, RInstanceSettings.RInstance_MIN_PLAYERS);
                   const expectedScores: number[] = players.map(v => 0);
                   for (let i = 0; i < players.length; i++) {
-                    // expectedScores[i] = 0;
                     if (votes.length > i) {
                       votes[i].vote.forEach((vote, idx) => {
                         expectedScores[idx] += Number(vote);
@@ -961,18 +824,6 @@ describe(scriptName, () => {
                       //somebody did not vote at all
                     }
                   }
-                  // console.log(
-                  //   'expectedScores',
-                  //   expectedScores,
-                  //   votes.map(vote => vote.vote),
-                  // );
-                  // const tx = await rankifyInstance.connect(adr.gameMaster1.wallet).endTurn(
-                  //   1,
-                  //   votes.map(vote => vote.vote),
-                  //   [],
-                  //   votersAddresses.map((p, idx) => idx),
-                  // );
-                  // console.log((await tx.wait(1)).events?.find(e => e.event === 'TurnEnded').args);
                   await expect(
                     rankifyInstance.connect(adr.gameMaster1.wallet).endTurn(
                       1,
@@ -999,7 +850,6 @@ describe(scriptName, () => {
                   const players = getPlayers(adr, RInstanceSettings.RInstance_MIN_PLAYERS);
                   const expectedScores: number[] = players.map(v => 0);
                   for (let i = 0; i < players.length; i++) {
-                    // expectedScores[i] = 0;
                     if (votes.length > i) {
                       votes[i].vote.forEach((vote, idx) => {
                         expectedScores[idx] += Number(vote);
@@ -1037,14 +887,12 @@ describe(scriptName, () => {
                   expect(expectedScores).to.be.eql(scores);
                 });
                 it('Emits correct ProposalScore event values', async () => {
-                  // await mineBlocks(RInstanceSettings.RInstance_TIME_PER_TURN + 1);
                   const currentT = await time.latest();
                   await time.setNextBlockTimestamp(currentT + Number(RInstanceSettings.RInstance_TIME_PER_TURN) + 1);
                   expect(await rankifyInstance.getTurn(1)).to.be.equal(2);
                   const players = getPlayers(adr, RInstanceSettings.RInstance_MIN_PLAYERS);
                   const expectedScores: number[] = players.map(v => 0);
                   for (let i = 0; i < players.length; i++) {
-                    // expectedScores[i] = 0;
                     if (votes.length > i) {
                       votes[i].vote.forEach((vote, idx) => {
                         expectedScores[idx] += Number(vote);
@@ -1097,88 +945,6 @@ describe(scriptName, () => {
         it('Allows player to leave the game', async () => {
           await expect(rankifyInstance.connect(adr.player1.wallet).leaveGame(1)).to.emit(rankifyInstance, 'PlayerLeft');
         });
-      });
-    });
-    describe('When registration was open with additional join requirements', () => {
-      beforeEach(async () => {
-        await rankifyInstance.connect(adr.gameCreator1.wallet).setJoinRequirements(1, requirement);
-        await rankifyInstance.connect(adr.gameCreator1.wallet).openRegistration(1);
-        const players = getPlayers(adr, RInstance_MAX_PLAYERS, 0);
-        for (let i = 0; i < players.length; i++) {
-          await env.mockERC1155
-            .connect(adr.contractDeployer.wallet)
-            .mint(players[i].wallet.address, ethers.utils.parseEther('10'), '1', '0x');
-          await env.mockERC20
-            .connect(adr.contractDeployer.wallet)
-            .mint(players[i].wallet.address, ethers.utils.parseEther('10'));
-          await env.mockERC721.connect(adr.contractDeployer.wallet).mint(players[i].wallet.address, i + 1, '0x');
-          await env.mockERC20
-            .connect(players[i].wallet)
-            .approve(rankifyInstance.address, ethers.utils.parseEther('100'));
-          await env.mockERC1155.connect(players[i].wallet).setApprovalForAll(rankifyInstance.address, true);
-          await env.mockERC721.connect(players[i].wallet).setApprovalForAll(rankifyInstance.address, true);
-        }
-      });
-      it('Fulfills funding requirement on join', async () => {
-        await env.mockERC20
-          .connect(adr.player1.wallet)
-          .approve(rankifyInstance.address, ethers.utils.parseEther('100'));
-        const balance1155 = await env.mockERC1155.balanceOf(rankifyInstance.address, '1');
-        await rankifyInstance.connect(adr.player1.wallet).joinGame(1, { value: ethers.utils.parseEther('0.4') });
-        expect(await env.mockERC1155.balanceOf(rankifyInstance.address, '1')).to.be.equal(
-          ethers.utils.parseEther('0.4'),
-        );
-        expect(await env.mockERC20.balanceOf(rankifyInstance.address)).to.be.equal(ethers.utils.parseEther('0.4'));
-      });
-      it('Returns requirements on leave', async () => {
-        await env.mockERC20
-          .connect(adr.player1.wallet)
-          .approve(rankifyInstance.address, ethers.utils.parseEther('100'));
-        await rankifyInstance.connect(adr.player1.wallet).joinGame(1, { value: ethers.utils.parseEther('0.4') });
-        await rankifyInstance.connect(adr.player1.wallet).leaveGame(1);
-        expect(await env.mockERC1155.balanceOf(adr.player1.wallet.address, '1')).to.be.equal(
-          ethers.utils.parseEther('10'),
-        );
-        expect(await env.mockERC20.balanceOf(adr.player1.wallet.address)).to.be.equal(ethers.utils.parseEther('10'));
-      });
-      it('Returns requirements on game closed', async () => {
-        await env.mockERC20
-          .connect(adr.player1.wallet)
-          .approve(rankifyInstance.address, ethers.utils.parseEther('100'));
-        await rankifyInstance.connect(adr.player1.wallet).joinGame(1, { value: ethers.utils.parseEther('0.4') });
-        expect(await rankifyInstance.connect(adr.gameCreator1.wallet).cancelGame(1)).to.changeEtherBalance(
-          adr.player1.wallet.address,
-          ethers.utils.parseEther('0.4'),
-        );
-        expect(await env.mockERC1155.balanceOf(adr.player1.wallet.address, '1')).to.be.equal(
-          ethers.utils.parseEther('10'),
-        );
-        expect(await env.mockERC20.balanceOf(adr.player1.wallet.address)).to.be.equal(ethers.utils.parseEther('10'));
-      });
-      it('Distributes rewards correctly when game is over', async () => {
-        await fillParty(getPlayers(adr, RInstance_MIN_PLAYERS, 0), rankifyInstance, 1, true, true, adr.gameMaster1);
-        const balanceBefore1155 = await env.mockERC1155.balanceOf(adr.player1.wallet.address, '1');
-        const balanceBefore20 = await env.mockERC20.balanceOf(adr.player1.wallet.address);
-        const creatorBalanceBefore20 = await env.mockERC20.balanceOf(adr.gameCreator1.wallet.address);
-
-        const creatorBalanceBefore1155 = await env.mockERC1155.balanceOf(adr.gameCreator1.wallet.address, '1');
-        await runToTheEnd(1, rankifyInstance, adr.gameMaster1, getPlayers(adr, RInstance_MIN_PLAYERS, 0), 'ftw');
-        expect(await env.mockERC20.balanceOf(adr.player1.wallet.address)).to.be.equal(
-          balanceBefore20
-            .add(ethers.utils.parseEther('0.1').mul(RInstance_MIN_PLAYERS))
-            .add(ethers.utils.parseEther('0.1')), // Value to lock
-        );
-        expect(await env.mockERC20.balanceOf(adr.gameCreator1.wallet.address)).to.be.equal(
-          creatorBalanceBefore20.add(ethers.utils.parseEther('0.1').mul(RInstance_MIN_PLAYERS)),
-        );
-        expect(await env.mockERC1155.balanceOf(adr.player1.wallet.address, '1')).to.be.equal(
-          balanceBefore1155
-            .add(ethers.utils.parseEther('0.1').mul(RInstance_MIN_PLAYERS))
-            .add(ethers.utils.parseEther('0.1')), // Value to lock
-        );
-        expect(await env.mockERC1155.balanceOf(adr.gameCreator1.wallet.address, '1')).to.be.equal(
-          creatorBalanceBefore1155.add(ethers.utils.parseEther('0.1').mul(RInstance_MIN_PLAYERS)),
-        );
       });
     });
     describe('When it is last turn and equal scores', () => {
@@ -1395,18 +1161,6 @@ describe(scriptName, () => {
     });
     describe('When a game was played till end', () => {
       beforeEach(async () => {
-        // const params: IRankifyInstance.NewGameParamsInputStruct = {
-        //   gameMaster: adr.gameMaster1.wallet.address,
-        //   gameRank: 3,
-        //   maxPlayerCnt: RInstanceSettings.RInstance_MAX_PLAYERS,
-        //   minPlayerCnt: RInstanceSettings.RInstance_MIN_PLAYERS,
-        //   timeToJoin: RInstanceSettings.RInstance_TIME_TO_JOIN,
-        //   minGameTime: RInstanceSettings.RInstance_MIN_GAME_TIME,
-        //   voteCredits: RInstanceSettings.RInstance_VOTE_CREDITS,
-        //   nTurns: RInstanceSettings.RInstance_MAX_TURNS,
-        //   timePerTurn: RInstanceSettings.RInstance_TIME_PER_TURN,
-        // };
-        // await rankifyInstance.connect(adr.gameCreator1.wallet).createGame(params);
         const state = await rankifyInstance.getContractState();
         await rankifyInstance.connect(adr.gameCreator1.wallet).openRegistration(state.numGames);
         await fillParty(
