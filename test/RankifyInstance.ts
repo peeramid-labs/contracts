@@ -442,9 +442,97 @@ describe(scriptName, () => {
     ).to.be.revertedWith('game not found');
   });
   describe('When a game of first rank was created', () => {
+    let initialCreatorBalance: BigNumber;
+    let initialBeneficiaryBalance: BigNumber;
+    let initialTotalSupply: BigNumber;
+    let gamePrice: BigNumber;
+
     beforeEach(async () => {
+      // Get initial balances
+      initialCreatorBalance = await env.rankifyToken.balanceOf(adr.gameCreator1.wallet.address);
+      initialBeneficiaryBalance = await env.rankifyToken.balanceOf(
+        await rankifyInstance.getContractState().then(s => s.commonParams.beneficiary),
+      );
+      initialTotalSupply = await env.rankifyToken.totalSupply();
+
+      // Get common params for price calculation
+      const { commonParams } = await rankifyInstance.getContractState();
+      const { principalTimeConstant } = commonParams;
+      const minGameTime = principalTimeConstant; // Using same value for simplicity
+      gamePrice = commonParams.principalCost.mul(principalTimeConstant).div(minGameTime);
+
+      // Create the game
       await createGame(rankifyInstance, adr.gameCreator1, adr.gameMaster1.wallet.address, 1);
     });
+
+    it('Should handle game creation costs and token distribution correctly', async () => {
+      const finalCreatorBalance = await env.rankifyToken.balanceOf(adr.gameCreator1.wallet.address);
+      const finalBeneficiaryBalance = await env.rankifyToken.balanceOf(
+        await rankifyInstance.getContractState().then(s => s.commonParams.beneficiary),
+      );
+      const finalTotalSupply = await env.rankifyToken.totalSupply();
+
+      // Check creator's balance is reduced by game cost
+      expect(finalCreatorBalance).to.equal(
+        initialCreatorBalance.sub(gamePrice),
+        "Creator's balance should be reduced by game cost",
+      );
+
+      // Check beneficiary receives 10% of game cost
+      const beneficiaryShare = gamePrice.mul(10).div(100);
+      expect(finalBeneficiaryBalance).to.equal(
+        initialBeneficiaryBalance.add(beneficiaryShare),
+        'Beneficiary should receive 10% of game cost',
+      );
+
+      // Check 90% of game cost is burned
+      const burnedAmount = gamePrice.mul(90).div(100);
+      expect(finalTotalSupply).to.equal(initialTotalSupply.sub(burnedAmount), '90% of game cost should be burned');
+    });
+
+    it('Should calculate game price correctly for different time parameters', async () => {
+      const { commonParams } = await rankifyInstance.getContractState();
+
+      // Test cases with different time parameters
+      const testCases = [
+        { minGameTime: commonParams.principalTimeConstant },
+        { minGameTime: commonParams.principalTimeConstant.mul(2) },
+        { minGameTime: commonParams.principalTimeConstant.div(2) },
+      ];
+
+      for (const testCase of testCases) {
+        const expectedPrice = commonParams.principalCost
+          .mul(commonParams.principalTimeConstant)
+          .div(testCase.minGameTime);
+
+        const params: IRankifyInstance.NewGameParamsInputStruct = {
+          gameMaster: adr.gameMaster1.wallet.address,
+          gameRank: 1,
+          maxPlayerCnt: RInstanceSettings.RInstance_MAX_PLAYERS,
+          minPlayerCnt: RInstanceSettings.RInstance_MIN_PLAYERS,
+          timePerTurn: RInstanceSettings.RInstance_TIME_PER_TURN,
+          timeToJoin: RInstanceSettings.RInstance_TIME_TO_JOIN,
+          nTurns: RInstance_MAX_TURNS,
+          voteCredits: RInstanceSettings.RInstance_VOTE_CREDITS,
+          minGameTime: testCase.minGameTime,
+        };
+        const { DAO } = await getNamedAccounts();
+        const totalSupplyBefore = await env.rankifyToken.totalSupply();
+        await expect(rankifyInstance.connect(adr.gameCreator1.wallet).createGame(params)).changeTokenBalances(
+          env.rankifyToken,
+          [adr.gameCreator1.wallet.address, DAO],
+          [expectedPrice.mul(-1), expectedPrice.mul(10).div(100)],
+        );
+        expect(await env.rankifyToken.totalSupply()).to.be.equal(totalSupplyBefore.sub(expectedPrice.mul(90).div(100)));
+        // Get actual game price
+        const actualPrice = await rankifyInstance.estimateGamePrice(testCase.minGameTime);
+
+        // Allow for small rounding differences due to division
+        const difference = expectedPrice.sub(actualPrice).abs();
+        expect(difference.lte(1)).to.be.true;
+      }
+    });
+
     it('GM is correct', async () => {
       expect(await rankifyInstance.getGM(1)).to.be.equal(adr.gameMaster1.wallet.address);
     });
@@ -454,7 +542,8 @@ describe(scriptName, () => {
     });
     it('Players cannot join until registration is open', async () => {
       await env.rankifyToken.connect(adr.player1.wallet).approve(rankifyInstance.address, ethers.constants.MaxUint256);
-      await expect(rankifyInstance.connect(adr.player1.wallet).joinGame(1)).to.be.revertedWith(
+      const gameId = await rankifyInstance.getContractState().then(s => s.numGames);
+      await expect(rankifyInstance.connect(adr.player1.wallet).joinGame(gameId)).to.be.revertedWith(
         'addPlayer->cant join now',
       );
     });
