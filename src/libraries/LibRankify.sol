@@ -200,7 +200,11 @@ library LibRankify {
             uint256(params.minGameTime)
         );
 
-        Rankify(commonParams.gamePaymentToken).burnFrom(params.creator, principalGamePrice);
+        uint256 burnAmount = Math.mulDiv(principalGamePrice, 9, 10);
+        uint256 daoAmount = principalGamePrice - burnAmount;
+
+        Rankify(commonParams.gamePaymentToken).burnFrom(params.creator, burnAmount);
+        Rankify(commonParams.gamePaymentToken).transferFrom(params.creator, beneficiary, daoAmount);
 
         require(params.gameRank != 0, IRankifyInstance.RankNotSpecified());
 
