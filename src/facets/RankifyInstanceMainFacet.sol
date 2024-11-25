@@ -102,7 +102,7 @@ contract RankifyInstanceMainFacet is
      * - Game must not be started.
      */
     function leaveGame(uint256 gameId) public nonReentrant {
-        gameId.quitGame(msg.sender, true, onPlayerQuit);
+        gameId.quitGame(msg.sender, onPlayerQuit);
     }
 
     /**

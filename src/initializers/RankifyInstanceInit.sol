@@ -76,17 +76,13 @@ contract RankifyInstanceInit is Initializable {
         commons.beneficiary = initData.beneficiary;
 
         LibRankify.InstanceState storage _RInstance = LibRankify.instanceState();
-        // _RInstance.voting = LibQuadraticVoting.precomputeValues(initData.voteCredits, initData.minPlayerCnt);
-        // _RInstance.gamePrice = initData.gamePrice;
-        // _RInstance.joinPrice = initData.joinPrice;
         require(initData.paymentToken != address(0), "initializer.paymentToken not set");
-        // _RInstance.gamePaymentToken = initData.paymentToken;
+    
         IRankToken rankContract = IRankToken(initData.rewardToken);
         require(
             rankContract.supportsInterface(type(IRankToken).interfaceId),
             "RankifyInstance->init: rank token address does not support Rank interface"
         );
-        // _RInstance.rankTokenAddress = initData.rewardToken;
         _RInstance.contractInitialized = true;
     }
 }

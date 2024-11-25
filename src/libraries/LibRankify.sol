@@ -2,9 +2,8 @@
 pragma solidity ^0.8.28;
 import {LibTBG} from "../libraries/LibTurnBasedGame.sol";
 import {IRankifyInstance} from "../interfaces/IRankifyInstance.sol";
-import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import {IRankToken} from "../interfaces/IRankToken.sol";
-import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
+import "../tokens/Rankify.sol";
 import {LibQuadraticVoting} from "./LibQuadraticVoting.sol";
 import "hardhat/console.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
@@ -37,14 +36,12 @@ library LibRankify {
     }
 
     struct GameState {
-        uint256 joinPrice;
         uint256 gamePrice;
         uint256 rank;
         address createdBy;
         uint256 numOngoingProposals;
         uint256 numPrevProposals;
         uint256 numCommitments;
-        uint256 paymentsBalance;
         uint256 numVotesThisTurn;
         uint256 numVotesPrevTurn;
         LibQuadraticVoting.qVotingStruct voting;
@@ -203,11 +200,7 @@ library LibRankify {
             uint256(params.minGameTime)
         );
 
-        IERC20(commonParams.gamePaymentToken).transferFrom(
-            params.creator,
-            commonParams.beneficiary,
-            principalGamePrice
-        );
+        Rankify(commonParams.gamePaymentToken).burnFrom(params.creator, principalGamePrice);
 
         require(params.gameRank != 0, IRankifyInstance.RankNotSpecified());
 
@@ -279,12 +272,6 @@ library LibRankify {
     function joinGame(uint256 gameId, address player) internal {
         enforceGameExists(gameId);
         fulfillRankRq(gameId, player);
-        GameState storage game = getGameState(gameId);
-        InstanceState storage state = instanceState();
-        if (game.joinPrice != 0) {
-            IERC20(state.commonParams.gamePaymentToken).transferFrom(player, address(this), game.joinPrice);
-            game.paymentsBalance += game.joinPrice;
-        }
         gameId.addPlayer(player);
     }
 
@@ -318,12 +305,6 @@ library LibRankify {
             playersGameEndedCallback(gameId, players[i]);
         }
         emitRankRewards(gameId, gameId.getLeaderBoard());
-        GameState storage game = LibRankify.getGameState(gameId);
-        InstanceState storage state = instanceState();
-        IERC20(state.commonParams.gamePaymentToken).transfer(
-            state.commonParams.beneficiary,
-            (game.joinPrice * players.length) + game.gamePrice
-        );
         return finalScores;
     }
 
@@ -343,18 +324,8 @@ library LibRankify {
     function quitGame(
         uint256 gameId,
         address player,
-        bool slash,
         function(uint256, address) onPlayerLeftCallback
     ) internal {
-        GameState storage state = getGameState(gameId);
-        InstanceState storage instance = instanceState();
-        if (state.joinPrice != 0) {
-            uint256 divideBy = slash ? 2 : 1;
-            uint256 paymentRefund = state.joinPrice / divideBy;
-            GameState storage game = getGameState(gameId);
-            game.paymentsBalance -= paymentRefund;
-            IERC20(instance.commonParams.gamePaymentToken).transfer(player, paymentRefund);
-        }
         removeAndUnlockPlayer(gameId, player); // this will throw if game has started or doesnt exist
         onPlayerLeftCallback(gameId, player);
     }
@@ -377,22 +348,8 @@ library LibRankify {
         // Cancel the game for each player
         address[] memory players = gameId.getPlayers();
         for (uint256 i = 0; i < players.length; ++i) {
-            quitGame(gameId, players[i], false, onPlayerLeftCallback); //this will throw if game has started or doesnt exist
+            quitGame(gameId, players[i], onPlayerLeftCallback); //this will throw if game has started or doesnt exist
         }
-
-        // Refund payment to the game creator
-        GameState storage game = getGameState(gameId);
-        InstanceState storage instance = instanceState();
-        uint256 paymentRefund = game.gamePrice / 2;
-        IERC20(instance.commonParams.gamePaymentToken).transfer(game.createdBy, paymentRefund);
-        game.paymentsBalance -= paymentRefund;
-
-        // Transfer remaining payments balance to the beneficiary
-        IERC20(instance.commonParams.gamePaymentToken).transfer(
-            instance.commonParams.beneficiary,
-            game.paymentsBalance
-        );
-        game.paymentsBalance = 0;
 
         // Delete the game
         gameId.deleteGame();
@@ -423,7 +380,7 @@ library LibRankify {
     function emitRankReward(uint256 gameId, address[] memory leaderboard, address rankTokenAddress) private {
         GameState storage game = getGameState(gameId);
         IRankToken rankTokenContract = IRankToken(rankTokenAddress);
-            if (game.rank > 1) {
+        if (game.rank > 1) {
             rankTokenContract.burn(leaderboard[0], game.rank, 1);
         }
         rankTokenContract.safeTransferFrom(address(this), leaderboard[0], game.rank + 1, 1, "");
