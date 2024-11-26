@@ -14,8 +14,11 @@ import "@peeramid-labs/eds/src/libraries/LibSemver.sol";
 
 /**
  * @title ArguableVotingTournament Distribution
- * @notice This contract implements a diamond distribution for Ethereum Distribution System. It is responsible to create new instance of ArguableVotingTournament.
- * @dev It is expected to be used ONLY by the Distributor contract.
+ * @notice This contract implements a diamond distribution for the Ethereum Distribution System (EDS).
+ *         It creates and manages instances of ArguableVotingTournament, enabling decentralized
+ *         tournament management with voting capabilities.
+ * @dev This contract follows the Diamond pattern and is designed to be used exclusively by the
+ *      Distributor contract. It manages facets for tournament operations, voting, and game master functions.
  * @author Peeramid Labs, 2024
  */
 contract ArguableVotingTournament is InitializedDiamondDistribution {
@@ -30,10 +33,19 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
     bytes32 private immutable distributionName;
     uint256 private immutable distributionVersion;
 
+    /**
+     * @dev Utility function to convert function signature strings to selectors
+     * @param signature The function signature as a string
+     * @return bytes4 The corresponding function selector
+     */
     function stringToSelector(string memory signature) private pure returns (bytes4) {
         return bytes4(keccak256(bytes(signature)));
     }
 
+    /**
+     * @dev Groups the addresses of all required facets for the tournament
+     * @notice This struct helps organize the deployment of the diamond proxy system
+     */
     struct ArguableTournamentAddresses {
         address loupeFacet;
         address inspectorFacet;
@@ -44,11 +56,11 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
     }
 
     /**
-     * @dev Constructor for the ArguableVotingTournament contract.
-     *
-     * Note Initializer function will be added as a regular facet to the Diamond Proxy,
-     * Since it is expected that initialization is done by distributor contract, the initializer will not be run, hence
-     * it is up for distributor to remove this facet upon successful initialization.
+     * @dev Constructor for the ArguableVotingTournament contract
+     * @notice Sets up the diamond proxy system with all required facets and initializes core components
+     * @dev The initializer function is added as a regular facet to the Diamond Proxy.
+     *      Since initialization is handled by the distributor contract, it's expected that
+     *      the distributor will remove this facet after successful initialization.
      */
     constructor(
         address initializer,

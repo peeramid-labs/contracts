@@ -9,6 +9,11 @@ import "hardhat/console.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {SignedMath} from "@openzeppelin/contracts/utils/math/SignedMath.sol";
 
+/**
+ * @title LibRankify
+ * @dev Core library for the Rankify protocol that handles game state management, voting, and player interactions
+ * @author Peeramid Labs, 2024
+ */
 library LibRankify {
     using LibTBG for LibTBG.Instance;
     using LibTBG for uint256;
@@ -16,12 +21,26 @@ library LibRankify {
     using LibTBG for LibTBG.State;
     using LibQuadraticVoting for LibQuadraticVoting.qVotingStruct;
 
+    /**
+     * @dev Main state structure for a Rankify instance
+     * @param numGames Total number of games created in this instance
+     * @param contractInitialized Whether the contract has been properly initialized
+     * @param commonParams Common parameters shared across all games in this instance
+     */
     struct InstanceState {
         uint256 numGames;
         bool contractInitialized;
         CommonParams commonParams;
     }
 
+    /**
+     * @dev Common parameters shared across all games in a Rankify instance
+     * @param principalCost Base cost for creating a game
+     * @param principalTimeConstant Time constant used for game duration calculations
+     * @param gamePaymentToken Address of the token used for game payments
+     * @param rankTokenAddress Address of the rank token contract
+     * @param beneficiary Address that receives a portion of game fees
+     */
     struct CommonParams {
         uint256 principalCost;
         uint96 principalTimeConstant;
@@ -30,11 +49,29 @@ library LibRankify {
         address beneficiary;
     }
 
+    /**
+     * @dev Structure for storing hidden votes with their proof
+     * @param hash Hash of the vote
+     * @param proof Cryptographic proof associated with the vote
+     */
     struct VoteHidden {
         bytes32 hash;
         bytes proof;
     }
 
+    /**
+     * @dev Comprehensive state structure for an individual game
+     * @param gamePrice Price paid to create this game
+     * @param rank Required rank level for participation
+     * @param minGameTime Minimum duration the game must run
+     * @param createdBy Address of the game creator
+     * @param numOngoingProposals Number of active proposals
+     * @param numPrevProposals Number of completed proposals
+     * @param numCommitments Number of vote commitments received
+     * @param numVotesThisTurn Vote count in current turn
+     * @param numVotesPrevTurn Vote count from previous turn
+     * @param voting Quadratic voting state for this game
+     */
     struct GameState {
         uint256 gamePrice;
         uint256 rank;
