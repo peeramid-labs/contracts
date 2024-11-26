@@ -1475,7 +1475,7 @@ describe(scriptName, () => {
     );
   });
 
-  it.only('should validate turn count is greater than 2', async () => {
+  it('should validate turn count is greater than 2', async () => {
     const params: IRankifyInstance.NewGameParamsInputStruct = {
       gameMaster: adr.gameMaster1.wallet.address,
       gameRank: 1,
