@@ -6,6 +6,7 @@ import { activeContractsList } from '@aragon/osx-ethers';
 import { CodeIndex } from '@peeramid-labs/eds/types';
 import CodeIndexAbi from '@peeramid-labs/eds/abi/src/CodeIndex.sol/CodeIndex.json';
 import { MintSettingsStruct } from '../types/src/tokens/DistributableGovernanceERC20.sol/DistributableGovernanceERC20';
+import { ArguableVotingTournament } from '../types/src/distributions/ArguableVotingTournament';
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployments, getNamedAccounts } = hre;
   const { deploy } = deployments;
@@ -17,7 +18,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     console.log('network', network, process.env.NODE_ENV);
   }
   if (!network) throw new Error('Network not provided');
-  const { deployer } = await getNamedAccounts();
+  const { deployer, DAO } = await getNamedAccounts();
   const codeIndexContract = (await ethers.getContractAt(
     CodeIndexAbi,
     '0xc0D31d398c5ee86C5f8a23FA253ee8a586dA03Ce',
@@ -101,34 +102,26 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     skipIfAlreadyDeployed: true,
   });
 
-  const RankifyOwnerFacetDeployment = await deploy('RankifyInstanceGameOwnersFacet', {
-    from: deployer,
-    skipIfAlreadyDeployed: true,
-  });
-
   const OwnershipFacetDeployment = await deploy('OwnershipFacet', {
     from: deployer,
     skipIfAlreadyDeployed: true,
   });
+
+  const addresses: ArguableVotingTournament.ArguableTournamentAddressesStruct = {
+    loupeFacet: loupeFacetDeployment.address,
+    inspectorFacet: inspectorFacetDeployment.address,
+    RankifyMainFacet: RankifyMainFacetDeployment.address,
+    RankifyReqsFacet: RankifyReqsFacetDeployment.address,
+    RankifyGMFacet: RankifyGMFacetDeployment.address,
+    OwnershipFacet: OwnershipFacetDeployment.address,
+  };
 
   const arguableVotingTournamentDeployment = await deploy('ArguableVotingTournament', {
     from: deployer,
     gasLimit: 8000000,
     estimatedGasLimit: 8000000,
     skipIfAlreadyDeployed: true,
-    args: [
-      initializerAdr,
-      initializerSelector,
-      distributionName,
-      version,
-      loupeFacetDeployment.address,
-      inspectorFacetDeployment.address,
-      RankifyMainFacetDeployment.address,
-      RankifyReqsFacetDeployment.address,
-      RankifyGMFacetDeployment.address,
-      RankifyOwnerFacetDeployment.address,
-      OwnershipFacetDeployment.address,
-    ],
+    args: [initializerAdr, initializerSelector, distributionName, version, addresses],
   });
   const arguableVotingTournamentDeploymentCode = await hre.ethers.provider.getCode(
     arguableVotingTournamentDeployment.address,
@@ -160,7 +153,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   }
   const govTokenCode = await hre.ethers.provider.getCode(govTokenDeployment.address);
   const govTokenCodeId = ethers.utils.keccak256(govTokenCode);
-
+  const rankifyToken = await deployments.get('Rankify');
   const result = await deploy('MAODistribution', {
     from: deployer,
     skipIfAlreadyDeployed: true,
@@ -168,6 +161,8 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       _tokenVotingPluginRepo,
       _daoFactory,
       _trustedForwarder,
+      rankifyToken.address,
+      DAO,
       rankTokenCodeId,
       arguableVotingTournamentCodeId,
       accessManagerId,
@@ -183,8 +178,8 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   if (MaoDistrCodeIdAddress === ethers.constants.AddressZero) {
     await codeIndexContract.register(result.address);
   }
-  const code = await hre.ethers.provider.getCode(result.address);
-  const codeId = ethers.utils.keccak256(code);
+  //   const code = await hre.ethers.provider.getCode(result.address);
+  //   const codeId = ethers.utils.keccak256(code);
   //   console.log('MAO deployed at', result.address, 'codeId', codeId);
   return;
 };

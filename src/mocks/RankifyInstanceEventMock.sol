@@ -17,7 +17,7 @@ contract RankifyInstanceEventMock {
         address[] players,
         uint256[] scores,
         string[] newProposals,
-        uint256[] proposerIndicies,
+        uint256[] proposerIndices,
         uint256[][] votes
     );
 

@@ -15,17 +15,17 @@ import {IERC173} from "../vendor/diamond/interfaces/IERC173.sol";
 import {IERC165} from "../vendor/diamond/interfaces/IERC165.sol";
 import {LibEIP712WithStorage} from "../libraries/LibEIP712Storage.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import {IRankifyInstanceCommons} from "../interfaces/IRankifyInstanceCommons.sol";
+import {IRankifyInstance} from "../interfaces/IRankifyInstance.sol";
 import {IRankToken} from "../interfaces/IRankToken.sol";
 import {LibTBG} from "../libraries/LibTurnBasedGame.sol";
 import {LibQuadraticVoting} from "../libraries/LibQuadraticVoting.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-
+import {LibRankify} from "../libraries/LibRankify.sol";
 // import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 
 // It is expected that this contract is customized if you want to deploy your diamond
 // with data from a deployment script. Use the init function to initialize state variables
-// of your diamond. Add parameters to the init funciton if you need to.
+// of your diamond. Add parameters to the init function if you need to.
 
 contract RankifyInstanceInit is Initializable {
     function _buildDomainSeparator(
@@ -36,25 +36,12 @@ contract RankifyInstanceInit is Initializable {
         return keccak256(abi.encode(typeHash, nameHash, versionHash, block.chainid, address(this)));
     }
 
-    function RInstanceStorage() internal pure returns (IRankifyInstanceCommons.RInstanceSettings storage bog) {
-        bytes32 position = LibTBG.getDataStorage();
-        assembly {
-            bog.slot := position
-        }
-    }
-
     struct contractInitializer {
-        uint256 timePerTurn;
-        uint256 maxPlayersSize;
-        uint256 minPlayersSize;
         address rewardToken;
-        uint256 timeToJoin;
-        uint256 gamePrice;
-        uint256 joinGamePrice;
-        uint256 maxTurns;
-        uint256 numWinners;
-        uint256 voteCredits;
+        uint256 principalCost;
+        uint96 principalTimeConstant;
         address paymentToken;
+        address beneficiary;
     }
 
     // You can add parameters to this function in order to pass in
@@ -80,34 +67,22 @@ contract RankifyInstanceInit is Initializable {
         ss._CACHED_THIS = address(this);
         ss._TYPE_HASH = typeHash;
 
-        IRankifyInstanceCommons.RInstanceSettings storage _RInstance = RInstanceStorage();
-        _RInstance.voting = LibQuadraticVoting.precomputeValues(initData.voteCredits, initData.minPlayersSize);
-        _RInstance.gamePrice = initData.gamePrice;
-        _RInstance.joinGamePrice = initData.joinGamePrice;
+        LibRankify.CommonParams storage commons = LibRankify.instanceState().commonParams;
+
+        commons.principalCost = initData.principalCost;
+        commons.principalTimeConstant = initData.principalTimeConstant;
+        commons.gamePaymentToken = initData.paymentToken;
+        commons.rankTokenAddress = initData.rewardToken;
+        commons.beneficiary = initData.beneficiary;
+
+        LibRankify.InstanceState storage _RInstance = LibRankify.instanceState();
         require(initData.paymentToken != address(0), "initializer.paymentToken not set");
-        _RInstance.gamePaymentToken = initData.paymentToken;
+
         IRankToken rankContract = IRankToken(initData.rewardToken);
         require(
             rankContract.supportsInterface(type(IRankToken).interfaceId),
             "RankifyInstance->init: rank token address does not support Rank interface"
         );
-        _RInstance.rankTokenAddress = initData.rewardToken;
         _RInstance.contractInitialized = true;
-
-        LibTBG.GameSettings memory settings;
-        settings.timePerTurn = initData.timePerTurn;
-        settings.maxPlayersSize = initData.maxPlayersSize;
-        settings.minPlayersSize = initData.minPlayersSize;
-        settings.timeToJoin = initData.timeToJoin;
-        settings.maxTurns = initData.maxTurns;
-        settings.numWinners = initData.numWinners;
-        LibTBG.init(settings);
-
-        // add your own state variables
-        // EIP-2535 specifies that the `diamondCut` function takes two optional
-        // arguments: address _init and bytes calldata _calldata
-        // These arguments are used to execute an arbitrary function using delegatecall
-        // in order to set state variables in the diamond during deployment or an upgrade
-        // More info here: https://eips.ethereum.org/EIPS/eip-2535#diamond-interface
     }
 }

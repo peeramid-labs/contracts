@@ -77,7 +77,7 @@ library LibDiamond {
         emit DiamondCut(_diamondCut, _init, _calldata);
         initializeDiamondCut(_init, _calldata);
     }
-
+    error DuplicateSignature(bytes4 _selector);
     function addFunctions(address _facetAddress, bytes4[] memory _functionSelectors) internal {
         require(_functionSelectors.length > 0, "LibDiamondCut: No selectors in facet to cut");
         DiamondStorage storage ds = diamondStorage();
@@ -91,6 +91,7 @@ library LibDiamond {
             bytes4 selector = _functionSelectors[selectorIndex];
             address oldFacetAddress = ds.selectorToFacetAndPosition[selector].facetAddress;
             require(oldFacetAddress == address(0), "LibDiamondCut: Can't add function that already exists");
+
             addFunction(ds, selector, selectorPosition, _facetAddress);
             selectorPosition++;
         }

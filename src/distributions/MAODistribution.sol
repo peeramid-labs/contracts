@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity =0.8.28;
 
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import "@peeramid-labs/eds/src/interfaces/IDistribution.sol";
@@ -12,27 +12,20 @@ import {RankToken} from "../tokens/RankToken.sol";
 import "../initializers/RankifyInstanceInit.sol";
 import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 import "@peeramid-labs/eds/src/abstracts/CodeIndexer.sol";
-
+import "hardhat/console.sol";
 import {TokenSettings, VotingMode, VotingSettings, IPluginRepo, IDAOFactory} from "../vendor/aragon/interfaces.sol";
 
 /**
  * @title MAODistribution
  * @dev This contract implements the IDistribution and CodeIndexer interfaces. It uses the Clones library for address cloning.
  *
- * @notice The contract is responsible for creating and managing DAOs and ACID distributions.
+ * @notice The contract is responsible for creating and managing DAOs and Rankify distributions.
  * @author Peeramid Labs, 2024
  */
 contract MAODistribution is IDistribution, CodeIndexer {
-    struct UserACIDSettings {
-        uint256 timePerTurn;
-        uint256 maxPlayersSize;
-        uint256 minPlayersSize;
-        uint256 timeToJoin;
-        uint256 maxTurns;
-        uint256 voteCredits;
-        uint256 gamePrice;
-        address paymentToken;
-        uint256 joinGamePrice;
+    struct UserRankifySettings {
+        uint256 principalCost;
+        uint96 principalTimeConstant;
         string metadata;
         string rankTokenURI;
         string RankTokenContractURI;
@@ -48,7 +41,7 @@ contract MAODistribution is IDistribution, CodeIndexer {
 
     struct DistributorArguments {
         OSxDistributionArguments DAOSEttings;
-        UserACIDSettings ACIDSettings;
+        UserRankifySettings RankifySettings;
     }
 
     using Clones for address;
@@ -58,9 +51,11 @@ contract MAODistribution is IDistribution, CodeIndexer {
     bytes32 private immutable _distributionName;
     uint256 private immutable _distributionVersion;
     address private immutable _rankTokenBase;
-    IDistribution private immutable _ACIDDistributionBase;
+    IDistribution private immutable _RankifyDistributionBase;
     address private immutable _governanceERC20Base;
     address private immutable _accessManagerBase;
+    address private immutable _paymentToken;
+    address private immutable _beneficiary;
 
     /**
      * @notice Initializes the contract with the provided parameters and performs necessary checks.
@@ -69,13 +64,13 @@ contract MAODistribution is IDistribution, CodeIndexer {
      * - EIP712 compatible name/version can be extracted with use of LibSemver
      *
      *
-     * WARNING: _trustedForwarder functionality hasn't been yet reviewed nor implemented for ACID distribution and if set will affect only OSx DAO setup.
+     * WARNING: _trustedForwarder functionality hasn't been yet reviewed nor implemented for Rankify distribution and if set will affect only OSx DAO setup.
      *
      * @param tokenVotingPluginRepo Address of the token voting plugin repository.
      * @param daoFactory Address of the Aragons DAO factory.
      * @param trustedForwarder Address of the trusted forwarder.
      * @param rankTokenCodeId Identifier for the rank token code.
-     * @param ACIDDIistributionId Identifier for the ACID distribution.
+     * @param RankifyDIistributionId Identifier for the Rankify distribution.
      * @param accessManagerId Identifier for the access manager.
      * @param governanceERC20BaseId Identifier for the governance ERC20 base.
      * @param distributionName Name of the distribution.
@@ -85,8 +80,10 @@ contract MAODistribution is IDistribution, CodeIndexer {
         address tokenVotingPluginRepo,
         address daoFactory,
         address trustedForwarder,
+        address paymentToken,
+        address beneficiary,
         bytes32 rankTokenCodeId,
-        bytes32 ACIDDIistributionId,
+        bytes32 RankifyDIistributionId,
         bytes32 accessManagerId,
         bytes32 governanceERC20BaseId,
         bytes32 distributionName,
@@ -99,12 +96,21 @@ contract MAODistribution is IDistribution, CodeIndexer {
         _distributionName = distributionName;
         _distributionVersion = LibSemver.toUint256(distributionVersion);
         _rankTokenBase = getContractsIndex().get(rankTokenCodeId);
+
+        if (beneficiary == address(0)) {
+            revert("Beneficiary not found");
+        }
+        _beneficiary = beneficiary;
+        if (paymentToken == address(0)) {
+            revert("Payment token not found");
+        }
+        _paymentToken = paymentToken;
         if (_rankTokenBase == address(0)) {
             revert("Rank token base not found");
         }
-        _ACIDDistributionBase = IDistribution(getContractsIndex().get(ACIDDIistributionId));
-        if (address(_ACIDDistributionBase) == address(0)) {
-            revert("ACID distribution base not found");
+        _RankifyDistributionBase = IDistribution(getContractsIndex().get(RankifyDIistributionId));
+        if (address(_RankifyDistributionBase) == address(0)) {
+            revert("Rankify distribution base not found");
         }
 
         _accessManagerBase = getContractsIndex().get(accessManagerId);
@@ -155,8 +161,8 @@ contract MAODistribution is IDistribution, CodeIndexer {
         SimpleAccessManager.SimpleAccessManagerInitializer[]
             memory govTokenAccessSettings = new SimpleAccessManager.SimpleAccessManagerInitializer[](1);
         govTokenAccessSettings[0].selector = DistributableGovernanceERC20.mint.selector;
-        govTokenAccessSettings[0].dissallowedAddresses = new address[](1);
-        govTokenAccessSettings[0].dissallowedAddresses[0] = createdDao;
+        govTokenAccessSettings[0].disallowedAddresses = new address[](1);
+        govTokenAccessSettings[0].disallowedAddresses[0] = createdDao;
         govTokenAccessSettings[0].distributionComponentsOnly = true;
 
         SimpleAccessManager govTokenAccessManager = SimpleAccessManager(_accessManagerBase.clone());
@@ -178,8 +184,8 @@ contract MAODistribution is IDistribution, CodeIndexer {
         return (returnValue, "OSxDistribution", 1);
     }
 
-    function createACID(
-        UserACIDSettings memory args,
+    function createRankify(
+        UserRankifySettings memory args,
         address dao
     ) internal returns (address[] memory instances, bytes32, uint256) {
         address rankToken = _rankTokenBase.clone();
@@ -191,28 +197,29 @@ contract MAODistribution is IDistribution, CodeIndexer {
         rankTokenSelectors[3] = RankToken.batchMint.selector;
         rankTokenSelectors[4] = RankToken.setURI.selector;
         rankTokenSelectors[5] = RankToken.setContractURI.selector;
+        SimpleAccessManager rankTokenAccessManager = SimpleAccessManager(_accessManagerBase.clone());
 
         SimpleAccessManager.SimpleAccessManagerInitializer[]
             memory RankTokenAccessSettings = new SimpleAccessManager.SimpleAccessManagerInitializer[](6);
 
         RankTokenAccessSettings[0].selector = RankToken.mint.selector;
-        RankTokenAccessSettings[0].dissallowedAddresses = new address[](1);
-        RankTokenAccessSettings[0].dissallowedAddresses[0] = dao;
+        RankTokenAccessSettings[0].disallowedAddresses = new address[](1);
+        RankTokenAccessSettings[0].disallowedAddresses[0] = dao;
         RankTokenAccessSettings[0].distributionComponentsOnly = true;
 
         RankTokenAccessSettings[1].selector = RankToken.lock.selector;
-        RankTokenAccessSettings[1].dissallowedAddresses = new address[](1);
-        RankTokenAccessSettings[1].dissallowedAddresses[0] = dao;
+        RankTokenAccessSettings[1].disallowedAddresses = new address[](1);
+        RankTokenAccessSettings[1].disallowedAddresses[0] = dao;
         RankTokenAccessSettings[1].distributionComponentsOnly = true;
 
         RankTokenAccessSettings[2].selector = RankToken.unlock.selector;
-        RankTokenAccessSettings[2].dissallowedAddresses = new address[](1);
-        RankTokenAccessSettings[2].dissallowedAddresses[0] = dao;
+        RankTokenAccessSettings[2].disallowedAddresses = new address[](1);
+        RankTokenAccessSettings[2].disallowedAddresses[0] = dao;
         RankTokenAccessSettings[2].distributionComponentsOnly = true;
 
         RankTokenAccessSettings[3].selector = RankToken.batchMint.selector;
-        RankTokenAccessSettings[3].dissallowedAddresses = new address[](1);
-        RankTokenAccessSettings[3].dissallowedAddresses[0] = dao;
+        RankTokenAccessSettings[3].disallowedAddresses = new address[](1);
+        RankTokenAccessSettings[3].disallowedAddresses[0] = dao;
         RankTokenAccessSettings[3].distributionComponentsOnly = true;
 
         RankTokenAccessSettings[4].selector = RankToken.setURI.selector;
@@ -221,44 +228,36 @@ contract MAODistribution is IDistribution, CodeIndexer {
         RankTokenAccessSettings[5].selector = RankToken.setContractURI.selector;
         RankTokenAccessSettings[5].distributionComponentsOnly = true;
 
-        SimpleAccessManager rankTokenAccessManager = SimpleAccessManager(_accessManagerBase.clone());
-
         rankTokenAccessManager.initialize(RankTokenAccessSettings, rankToken, IDistributor(msg.sender)); // msg.sender must be IDistributor or it will revert
-
         RankToken(rankToken).initialize(args.rankTokenURI, args.RankTokenContractURI, address(rankTokenAccessManager));
-        (
-            address[] memory ACIDDistrAddresses,
-            bytes32 ACIDDistributionname,
-            uint256 ACIDDistributionVersion
-        ) = _ACIDDistributionBase.instantiate(abi.encode(dao, rankToken, args.metadata));
 
-        RankifyInstanceInit.contractInitializer memory ACIDInit = RankifyInstanceInit.contractInitializer({
-            timePerTurn: args.timePerTurn,
-            maxPlayersSize: args.maxPlayersSize,
-            minPlayersSize: args.minPlayersSize,
+        (
+            address[] memory RankifyDistrAddresses,
+            bytes32 RankifyDistributionName,
+            uint256 RankifyDistributionVersion
+        ) = _RankifyDistributionBase.instantiate(abi.encode(dao, rankToken, args.metadata));
+
+        RankifyInstanceInit.contractInitializer memory RankifyInit = RankifyInstanceInit.contractInitializer({
             rewardToken: rankToken,
-            timeToJoin: args.timeToJoin,
-            gamePrice: args.gamePrice,
-            joinGamePrice: args.joinGamePrice,
-            maxTurns: args.maxTurns,
-            numWinners: 1,
-            voteCredits: args.voteCredits,
-            paymentToken: args.paymentToken
+            principalCost: args.principalCost,
+            principalTimeConstant: args.principalTimeConstant,
+            paymentToken: _paymentToken,
+            beneficiary: _beneficiary
         });
 
-        RankifyInstanceInit(ACIDDistrAddresses[0]).init(
-            string(abi.encodePacked(ACIDDistributionname)),
-            LibSemver.toString(LibSemver.parse(ACIDDistributionVersion)),
-            ACIDInit
+        RankifyInstanceInit(RankifyDistrAddresses[0]).init(
+            string(abi.encodePacked(RankifyDistributionName)),
+            LibSemver.toString(LibSemver.parse(RankifyDistributionVersion)),
+            RankifyInit
         );
-        address[] memory returnValue = new address[](ACIDDistrAddresses.length + 2);
-        for (uint256 i; i < ACIDDistrAddresses.length; ++i) {
-            returnValue[i] = ACIDDistrAddresses[i];
+        address[] memory returnValue = new address[](RankifyDistrAddresses.length + 2);
+        for (uint256 i; i < RankifyDistrAddresses.length; ++i) {
+            returnValue[i] = RankifyDistrAddresses[i];
         }
-        returnValue[ACIDDistrAddresses.length] = address(rankTokenAccessManager);
-        returnValue[ACIDDistrAddresses.length + 1] = rankToken;
+        returnValue[RankifyDistrAddresses.length] = address(rankTokenAccessManager);
+        returnValue[RankifyDistrAddresses.length + 1] = rankToken;
 
-        return (returnValue, ACIDDistributionname, ACIDDistributionVersion);
+        return (returnValue, RankifyDistributionName, RankifyDistributionVersion);
     }
 
     /**
@@ -267,7 +266,7 @@ contract MAODistribution is IDistribution, CodeIndexer {
      * @return instances An array of addresses representing the new instances.
      * @return distributionName A bytes32 value representing the name of the distribution.
      * @return distributionVersion A uint256 value representing the version of the distribution.
-     * @dev `instances` array contents: DAO, GovernanceToken, Gov Token AccessManager, ACID Diamond, 8x ACID Diamond facets, RankTokenAccessManager, RankToken
+     * @dev `instances` array contents: DAO, GovernanceToken, Gov Token AccessManager, Rankify Diamond, 8x Rankify Diamond facets, RankTokenAccessManager, RankToken
      */
     function instantiate(
         bytes memory data
@@ -275,15 +274,15 @@ contract MAODistribution is IDistribution, CodeIndexer {
         DistributorArguments memory args = abi.decode(data, (DistributorArguments));
 
         (address[] memory DAOInstances, , ) = createOSxDAO(args.DAOSEttings);
-        (address[] memory ACIDInstances, , ) = createACID(args.ACIDSettings, DAOInstances[0]);
+        (address[] memory RankifyInstances, , ) = createRankify(args.RankifySettings, DAOInstances[0]);
 
-        address[] memory returnValue = new address[](DAOInstances.length + ACIDInstances.length);
+        address[] memory returnValue = new address[](DAOInstances.length + RankifyInstances.length);
 
         for (uint256 i; i < DAOInstances.length; ++i) {
             returnValue[i] = DAOInstances[i];
         }
-        for (uint256 i; i < ACIDInstances.length; ++i) {
-            returnValue[DAOInstances.length + i] = ACIDInstances[i];
+        for (uint256 i; i < RankifyInstances.length; ++i) {
+            returnValue[DAOInstances.length + i] = RankifyInstances[i];
         }
         return (returnValue, _distributionName, _distributionVersion);
     }
@@ -298,7 +297,7 @@ contract MAODistribution is IDistribution, CodeIndexer {
         srcs[1] = address(_daoFactory);
         srcs[2] = address(_trustedForwarder);
         srcs[3] = address(_rankTokenBase);
-        srcs[4] = address(_ACIDDistributionBase);
+        srcs[4] = address(_RankifyDistributionBase);
         srcs[6] = address(_governanceERC20Base);
         srcs[7] = address(_accessManagerBase);
         return (srcs, _distributionName, _distributionVersion);
@@ -313,7 +312,7 @@ contract MAODistribution is IDistribution, CodeIndexer {
         return
             DistributorArguments({
                 DAOSEttings: OSxDistributionArguments("", "", "", "", ""),
-                ACIDSettings: UserACIDSettings(0, 0, 0, 0, 0, 0, 0, address(0), 0, "", "", "")
+                RankifySettings: UserRankifySettings(0, 0, "", "", "")
             });
     }
 }

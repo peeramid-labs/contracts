@@ -23,7 +23,9 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const codeId = ethers.utils.keccak256(code);
   const registerAddress = await codeIndexContract.get(codeId);
   if (registerAddress == ethers.constants.AddressZero) {
-    console.warn('registering contract', registerAddress, sacmDeployment.address, codeId);
+    if (process.env.NODE_ENV !== 'TEST') {
+      console.warn('registering contract', registerAddress, sacmDeployment.address, codeId);
+    }
     await codeIndexContract.register(sacmDeployment.address);
   }
 };

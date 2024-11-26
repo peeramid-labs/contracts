@@ -9,11 +9,11 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 
 /**
  * @dev This library is used to simulate the vending machine coin acceptor state machine that:
- *  - Supports large number of positions; Each represents requirements to acess different goods of the virtual vending machine.
+ *  - Supports large number of positions; Each represents requirements to access different goods of the virtual vending machine.
  *  - Accepts multiple assets of following types: Native (Eth), ERC20, ERC721, and ERC1155 tokens that can be stacked together.
  *  - Allows for each individual asset action promise can be one of following:
  *      - Lock: The asset is locked in the acceptor with promise that asset will be returned to the sender at release funds time.
- *      - Bet: The asset is locked in the acceptor with promise that asset will be awarded to benificiary at release funds time.
+ *      - Bet: The asset is locked in the acceptor with promise that asset will be awarded to beneficiary at release funds time.
  *      - Pay: The asset is locked in the acceptor with promise that asset will be paid to payee at release funds time.
  *      - Burn: The asset is locked in the acceptor with promise that asset will be destroyed at release funds time.
  *  - Maintains each position balance, hence allowing multiple participants to line up for the same position.
@@ -28,7 +28,7 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
  *      - Returning locked assets back to sender
  *
  * This library DOES enforces that any position can only be refunded or processed only within amount funded boundaries
- * This library DOES NOT store the addresses of senders, nor benificiaries, nor payees.
+ * This library DOES NOT store the addresses of senders, nor beneficiaries, nor payees.
  * This is to be stored within implementation contract.
  *
  *
@@ -42,13 +42,13 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
  *  1. fund position with assets via fund(...)
  *  2. release or refund assets via release(...) or refund(...)
  *  3. repeat steps 1 and 2 as needed.
- *  Position can be recofigured at any time when it's effective balance is zero: `timesFunded - timesRefuned - timesReleased = 0`
+ *  Position can be reconfigured at any time when it's effective balance is zero: `timesFunded - timesRefund - timesReleased = 0`
  *
  *
  * Test state:
  * This library most functionality has been tested: see ../tests/LibCoinVending.ts and ../tests/report.md for details.
  *
- * ERC721 token is checked only for "HAVE" condition since putting requirements on non fungable token id yet to be resolved.
+ * ERC721 token is checked only for "HAVE" condition since putting requirements on non fungible token id yet to be resolved.
  * (see ERC721 section in the code below)
  *
  * This library has not been yet audited

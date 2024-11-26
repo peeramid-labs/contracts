@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.28;
 
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
-error quadraticVotingError(string paramter, uint256 arg, uint256 arg2);
+error quadraticVotingError(string parameter, uint256 arg, uint256 arg2);
 
 /**
  * @title LibQuadraticVoting
@@ -12,7 +12,7 @@ library LibQuadraticVoting {
     struct qVotingStruct {
         uint256 voteCredits;
         uint256 maxQuadraticPoints;
-        uint256 minQuadraticPositons;
+        uint256 minQuadraticPositions;
     }
 
     /**
@@ -39,13 +39,13 @@ library LibQuadraticVoting {
         } while (accumulator < voteCredits);
         // This enforces requirement that all vote credits can indeed be spended (no leftovers)
         if (accumulator != voteCredits) require(false, "quadraticVotingError: voteCredits bust be i^2 series"); //revert quadraticVotingError("voteCredits bust be i^2 series", accumulator, voteCredits);
-        q.minQuadraticPositons = iterator;
-        // In order to spend all vote credits there must be at least minQuadraticPositons+1 (becuase proposer is also a player and cannot vote for himself)
-        if (minExpectedVoteItems <= q.minQuadraticPositons)
+        q.minQuadraticPositions = iterator;
+        // In order to spend all vote credits there must be at least minQuadraticPositions+1 (becuase proposer is also a player and cannot vote for himself)
+        if (minExpectedVoteItems <= q.minQuadraticPositions)
             require(false, "quadraticVotingError: Minimum Voting positions above min players");
         // revert quadraticVotingError(
         //     "Minimum Voting positions above min players",
-        //     q.minQuadraticPositons,
+        //     q.minQuadraticPositions,
         //     minExpectedVoteItems
         // );
         q.voteCredits = voteCredits;
@@ -63,7 +63,7 @@ library LibQuadraticVoting {
         qVotingStruct memory q,
         uint256[][] memory VotersVotes,
         bool[] memory voterVoted,
-        uint256 notVotedGivesEveyone,
+        uint256 notVotedGivesEveryone,
         uint256 proposalsLength
     ) internal pure returns (uint256[] memory) {
         uint256[] memory scores = new uint256[](proposalsLength);
@@ -77,13 +77,16 @@ library LibQuadraticVoting {
                 uint256[] memory voterVotes = VotersVotes[vi];
                 if (!voterVoted[vi]) {
                     // Check if voter wasn't voting
-                    scores[proposalIdx] += notVotedGivesEveyone; // Gives benefits to everyone but himself
+                    scores[proposalIdx] += notVotedGivesEveryone; // Gives benefits to everyone but himself
                     creditsUsed[vi] = q.voteCredits;
                 } else {
                     //If voter voted
                     scores[proposalIdx] += voterVotes[proposalIdx];
                     creditsUsed[vi] += voterVotes[proposalIdx] ** 2;
-                    if (creditsUsed[vi] > q.voteCredits) require(false, "quadraticVotingError"); // revert quadraticVotingError("Quadratic: vote credits overrun", q.voteCredits, creditsUsed[vi]);
+                    require(
+                        creditsUsed[vi] <= q.voteCredits,
+                        quadraticVotingError("Quadratic: vote credits overrun", q.voteCredits, creditsUsed[vi])
+                    );
                 }
             }
         }

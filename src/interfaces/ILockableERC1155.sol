@@ -36,4 +36,6 @@ interface ILockableERC1155 is IERC1155 {
      * - The unlocked balance of tokens.
      */
     function unlockedBalanceOf(address account, uint256 id) external view returns (uint256);
+
+    function burn(address account, uint256 id, uint256 value) external;
 }

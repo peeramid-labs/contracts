@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity =0.8.28;
 
 import {LibTBG} from "../libraries/LibTurnBasedGame.sol";
 import {LibRankify} from "../libraries/LibRankify.sol";
-import {IRankifyInstanceCommons} from "../interfaces/IRankifyInstanceCommons.sol";
+import {IRankifyInstance} from "../interfaces/IRankifyInstance.sol";
 import "../abstracts/DiamondReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
@@ -16,9 +16,8 @@ import "../vendor/diamond/libraries/LibDiamond.sol";
 contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
     using LibTBG for uint256;
     using LibRankify for uint256;
-    using LibTBG for LibTBG.GameInstance;
+    using LibTBG for LibTBG.State;
     event OverTime(uint256 indexed gameId);
-    event LastTurn(uint256 indexed gameId);
     event ProposalScore(
         uint256 indexed gameId,
         uint256 indexed turn,
@@ -32,12 +31,11 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
         address[] players,
         uint256[] scores,
         string[] newProposals,
-        uint256[] proposerIndicies,
+        uint256[] proposerIndices,
         uint256[][] votes
     );
-
+    event LastTurn(uint256 indexed gameId);
     event GameOver(uint256 indexed gameId, address[] players, uint256[] scores);
-
     event ProposalSubmitted(
         uint256 indexed gameId,
         uint256 indexed turn,
@@ -62,7 +60,7 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
      * - Releases the coins for the game with `gameId`, the game creator, the top player, and `player`.
      */
     function onPlayersGameEnd(uint256 gameId, address player) private {
-        IRankifyInstanceCommons.RInstance storage game = gameId.getGameStorage();
+        LibRankify.GameState storage game = gameId.getGameState();
         LibCoinVending.release(bytes32(gameId), game.createdBy, gameId.getLeaderBoard()[0], player);
     }
 
@@ -87,7 +85,7 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
         require(!gameId.isGameOver(), "Game over");
         gameId.enforceIsPlayingGame(voter);
         require(gameId.getTurn() > 1, "No proposals exist at turn 1: cannot vote");
-        IRankifyInstanceCommons.RInstance storage game = gameId.getGameStorage();
+        LibRankify.GameState storage game = gameId.getGameState();
         require(!game.playerVoted[voter], "Already voted");
         game.numVotesThisTurn += 1;
         game.playerVoted[voter] = true;
@@ -109,7 +107,7 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
         require(!proposalData.gameId.isGameOver(), "Game over");
         proposalData.gameId.enforceHasStarted();
 
-        IRankifyInstanceCommons.RInstance storage game = proposalData.gameId.getGameStorage();
+        LibRankify.GameState storage game = proposalData.gameId.getGameState();
         require(LibTBG.getPlayersGame(proposalData.proposer) == proposalData.gameId, "not a player");
         // require(!proposalData.gameId.isLastTurn(), "Cannot propose in last turn");
         require(bytes(proposalData.encryptedProposal).length != 0, "Cannot propose empty");
@@ -136,7 +134,7 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
      * - Increments the number of ongoing proposals of the game with `gameId` by the number of `newProposals`.
      */
     function _afterNextTurn(uint256 gameId, string[] memory newProposals) private {
-        IRankifyInstanceCommons.RInstance storage game = gameId.getGameStorage();
+        LibRankify.GameState storage game = gameId.getGameState();
         for (uint256 i = 0; i < newProposals.length; ++i) {
             game.ongoingProposals[i] = newProposals[i];
         }
@@ -162,7 +160,7 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
             emit LastTurn(gameId);
         }
         if (_isGameOver) {
-            uint256[] memory finalScores = gameId.closeGame(LibDiamond.contractOwner(), onPlayersGameEnd);
+            uint256[] memory finalScores = gameId.closeGame(onPlayersGameEnd);
             address[] memory players = gameId.getPlayers();
             emit GameOver(gameId, players, finalScores);
         }
@@ -172,7 +170,7 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
     /**
      * @dev Ends the current turn of a game with the provided game ID. `gameId` is the ID of the game. `votes` is the array of votes.
      *  `newProposals` is the array of new proposals for the upcoming voting round.
-     *  `proposerIndicies` is the array of indices of the proposers in the previous voting round.
+     *  `proposerIndices` is the array of indices of the proposers in the previous voting round.
      *
      * emits a _ProposalScore_ event for each player if the turn is not the first.
      * emits a _TurnEnded_ event.
@@ -189,18 +187,18 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
      * - The game with `gameId` must have started.
      * - The game with `gameId` must not be over.
      * -  newProposals array MUST be sorted randomly to ensure privacy
-     * votes and proposerIndicies MUST correspond to players array from game.getPlayers()
+     * votes and proposerIndices MUST correspond to players array from game.getPlayers()
      */
     function endTurn(
         uint256 gameId,
         uint256[][] memory votes,
         string[] memory newProposals, //REFERRING TO UPCOMING VOTING ROUND
-        uint256[] memory proposerIndicies //REFERRING TO game.players index in PREVIOUS VOTING ROUND
+        uint256[] memory proposerIndices //REFERRING TO game.players index in PREVIOUS VOTING ROUND
     ) public {
         gameId.enforceIsGM(msg.sender);
         gameId.enforceHasStarted();
         gameId.enforceIsNotOver();
-        IRankifyInstanceCommons.RInstance storage game = gameId.getGameStorage();
+        LibRankify.GameState storage game = gameId.getGameState();
         uint256 turn = gameId.getTurn();
 
         address[] memory players = gameId.getPlayers();
@@ -210,7 +208,7 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
                 votesSorted[player] = new uint256[](players.length);
             }
             for (uint256 votee = 0; votee < players.length; ++votee) {
-                uint256 voteesColumn = proposerIndicies[votee];
+                uint256 voteesColumn = proposerIndices[votee];
                 if (voteesColumn < players.length) {
                     // if index is above length of players array, it means the player did not propose
                     for (uint256 voter = 0; voter < players.length; voter++) {
@@ -219,14 +217,14 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
                 }
             }
 
-            (, uint256[] memory roundScores) = gameId.calculateScoresQuadratic(votesSorted, proposerIndicies);
+            (, uint256[] memory roundScores) = gameId.calculateScoresQuadratic(votesSorted, proposerIndices);
             for (uint256 i = 0; i < players.length; ++i) {
-                string memory proposal = game.ongoingProposals[proposerIndicies[i]];
+                string memory proposal = game.ongoingProposals[proposerIndices[i]];
                 emit ProposalScore(gameId, turn, proposal, proposal, roundScores[i]);
             }
         }
         (, uint256[] memory scores) = gameId.getScores();
-        emit TurnEnded(gameId, gameId.getTurn(), players, scores, newProposals, proposerIndicies, votes);
+        emit TurnEnded(gameId, gameId.getTurn(), players, scores, newProposals, proposerIndices, votes);
 
         // Clean up game instance for upcoming round
 

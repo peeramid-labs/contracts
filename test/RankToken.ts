@@ -6,6 +6,7 @@ import { RankifyDiamondInstance, RankToken, Rankify } from '../types';
 import addDistribution from '../scripts/playbooks/addDistribution';
 import { getCodeIdFromArtifact } from '../scripts/getCodeId';
 import { MAODistribution } from '../types/src/distributions/MAODistribution';
+import generateDistributorData from '../scripts/libraries/generateDistributorData';
 
 let adr: AdrSetupResult;
 let env: EnvSetupResult;
@@ -27,33 +28,21 @@ describe('Rank Token Test', async function () {
         tokenName: 'tokenName',
         tokenSymbol: 'tokenSymbol',
       },
-      ACIDSettings: {
+      RankifySettings: {
         RankTokenContractURI: 'https://example.com/rank',
-        gamePrice: RInstanceSettings.RInstance_GAME_PRICE,
-        joinGamePrice: RInstanceSettings.RInstance_JOIN_GAME_PRICE,
-        maxPlayersSize: RInstanceSettings.RInstance_MAX_PLAYERS,
-        maxTurns: RInstanceSettings.RInstance_MAX_TURNS,
+        principalCost: RInstanceSettings.PRINCIPAL_COST,
+        principalTimeConstant: RInstanceSettings.PRINCIPAL_TIME_CONSTANT,
         metadata: ethers.utils.hexlify(ethers.utils.toUtf8Bytes('metadata')),
-        minPlayersSize: RInstanceSettings.RInstance_MIN_PLAYERS,
-        paymentToken: env.rankifyToken.address,
         rankTokenURI: 'https://example.com/rank',
-        timePerTurn: RInstanceSettings.RInstance_TIME_PER_TURN,
-        timeToJoin: RInstanceSettings.RInstance_TIME_TO_JOIN,
-        voteCredits: RInstanceSettings.RInstance_VOTE_CREDITS,
       },
     };
-    // const abi = import('../abi/src/distributions/MAODistribution.sol/MAODistribution.json');
-    // Encode the arguments
-    const data = ethers.utils.defaultAbiCoder.encode(
-      [
-        'tuple(tuple(string daoURI, string subdomain, bytes metadata, string tokenName, string tokenSymbol) DAOSEttings, tuple(uint256 timePerTurn, uint256 maxPlayersSize, uint256 minPlayersSize, uint256 timeToJoin, uint256 maxTurns, uint256 voteCredits, uint256 gamePrice, address paymentToken, uint256 joinGamePrice, string metadata, string rankTokenURI, string RankTokenContractURI) ACIDSettings)',
-      ],
-      [distributorArguments],
-    );
+    // Use generateDistributorData to encode the arguments
+    const data = generateDistributorData(distributorArguments);
     const maoCode = await hre.ethers.provider.getCode(env.maoDistribution.address);
     const maoId = ethers.utils.keccak256(maoCode);
-    const distributorsDistId = ethers.utils.keccak256(
-      ethers.utils.defaultAbiCoder.encode(['bytes32', 'address'], [maoId, ethers.constants.AddressZero]),
+    const distributorsDistId = await env.distributor['calculateDistributorId(bytes32,address)'](
+      maoId,
+      ethers.constants.AddressZero,
     );
     const token = await deployments.get('Rankify');
     const { owner } = await getNamedAccounts();
@@ -89,7 +78,7 @@ describe('Rank Token Test', async function () {
     await env.rankifyToken.connect(adr.player9.wallet).approve(rankifyInstance.address, ethers.constants.MaxUint256);
     await env.rankifyToken.connect(adr.player10.wallet).approve(rankifyInstance.address, ethers.constants.MaxUint256);
 
-    rankToken = (await ethers.getContractAt('RankToken', evts[0].args.instances[13])) as RankToken;
+    rankToken = (await ethers.getContractAt('RankToken', evts[0].args.instances[12])) as RankToken;
   });
   //   it('Allows only owner to set rankingInstance', async () => {
   //     await expect(rankToken.connect(deployer).updateRankingInstance(adr.gameCreator1.wallet.address))

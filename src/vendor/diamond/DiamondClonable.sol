@@ -7,8 +7,8 @@ pragma solidity ^0.8.0;
 import {LibDiamond} from "./libraries/LibDiamond.sol";
 import {IDiamondCut} from "./interfaces/IDiamondCut.sol";
 
-contract DiamondCloneable {
-    error fucntionDoesNotExist(bytes4 selector);
+contract DiamondClonable {
+    error functionDoesNotExist(bytes4 selector);
     address private immutable cutFacet;
 
     constructor(address _contractOwner, address _diamondCutFacet) payable {
@@ -54,7 +54,7 @@ contract DiamondCloneable {
                 LibDiamond.diamondCut(facets, target, data);
                 return;
             } else {
-                revert fucntionDoesNotExist(msg.sig);
+                revert functionDoesNotExist(msg.sig);
             }
         }
 

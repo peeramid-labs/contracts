@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity =0.8.28;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {IRankToken} from "../interfaces/IRankToken.sol";
@@ -7,6 +7,7 @@ import "../abstracts/LockableERC1155.sol";
 import "@peeramid-labs/eds/src/abstracts/ERC7746Middleware.sol";
 import "@peeramid-labs/eds/src/libraries/LibMiddleware.sol";
 import {IERC1155} from "@openzeppelin/contracts/interfaces/IERC1155.sol";
+import {IERC165} from "@openzeppelin/contracts/interfaces/IERC165.sol";
 
 //ToDo: it was planned to make it track for highest token users hold (their rank), right now it's not implemented. Yet.
 
@@ -122,5 +123,13 @@ contract RankToken is LockableERC1155, IRankToken, ERC7746Middleware {
         bytes4 interfaceId
     ) public view virtual override(IERC165, ERC1155Upgradeable) returns (bool) {
         return interfaceId == type(IRankToken).interfaceId || super.supportsInterface(interfaceId);
+    }
+
+    function burn(
+        address account,
+        uint256 id,
+        uint256 value
+    ) public override(LockableERC1155, ILockableERC1155) ERC7746C(msg.sig, msg.sender, msg.data, 0) {
+        super.burn(account, id, value);
     }
 }
