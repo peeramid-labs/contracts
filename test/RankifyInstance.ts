@@ -68,13 +68,16 @@ const runToTheEnd = async (
   distribution?: 'ftw' | 'semiUniform' | 'equal',
 ) => {
   let isGameOver = await rankifyInstance.isGameOver(gameId);
+  let isLastTurn = await rankifyInstance.isLastTurn(gameId);
   while (!isGameOver) {
+    isLastTurn = await rankifyInstance.isLastTurn(gameId);
     const turn = await rankifyInstance.getTurn(gameId).then(r => r.toNumber());
     if (turn !== 1) {
       votes = await mockValidVotes(players, gameContract, gameId, gameMaster, true, distribution ?? 'ftw');
     }
 
     const proposals = await mockValidProposals(players, gameContract, gameMaster, gameId, true);
+    if (isLastTurn) await time.increase(RInstanceSettings.RInstance_MIN_GAME_TIME + 1);
     await gameContract.connect(gameMaster.wallet).endTurn(
       gameId,
       turn == 1 ? [] : votes?.map(vote => vote.vote),
@@ -1123,6 +1126,7 @@ describe(scriptName, () => {
             1,
             true,
           );
+          await time.increase(Number(RInstanceSettings.RInstance_MIN_GAME_TIME) + 1);
           expect(
             await rankifyInstance.connect(adr.gameMaster1.wallet).endTurn(
               1,
@@ -1271,6 +1275,7 @@ describe(scriptName, () => {
           true,
           adr.gameMaster1,
         );
+        console.warn('opened');
         await runToTheEnd(
           state.numGames,
           rankifyInstance,
