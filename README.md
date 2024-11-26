@@ -88,19 +88,28 @@ const tx = await distributorContract.instantiate(distributorsDistId, data);
 
 In order to get `distributorsDistId` you can call `getDistributions` at `PeeramidLabsDistributor` contract and look for. We will host a public API to get the list of distributions soon.
 
-### ACID distribution
+### ACID Distribution (Autonomous Competence Identification Distribution)
 
-[ArguableVotingTournament.sol](./src/distributions/ArguableVotingTournament.sol) is used to distribute governance tokens to the participants of the MAO by conducting autonomous competence identification tournaments.
+[ArguableVotingTournament.sol](./src/distributions/ArguableVotingTournament.sol) implements a sophisticated tournament system for autonomous competence identification. It uses the Diamond pattern to provide a modular and upgradeable smart contract architecture.
 
-This distribution deploys the Diamond Proxy that contains the following facets:
+#### Core Components
 
-- [EIP712InspectorFacet](./src/facets/EIP712InspectorFacet.sol) - Facet that contains the main logic of the distribution.
-- [RankifyInstanceMainFacet](./src/facets//RankifyInstanceMainFacet.sol) - Facet that contains the main logic of the distribution.
-- [RankifyGameMastersFacetFacet](./src/facets/RankifyInstanceGameMastersFacet.sol) - Facet that contains the main logic of the distribution.
-- [RankifyInstanceGameOwnersFacet](./src/facets/RankifyInstanceGameOwnersFacet.sol) - Facet that contains the ownable logic of the distribution. (NB this will be deprecated)
-- [RankifyInstanceRequirementsFacet](./src/facets/RankifyInstanceRequirementsFacet.sol) - Facet that contains the requirements logic of the distribution.
+The distribution deploys a Diamond Proxy with the following facets:
 
-To understand how it works further please refer to [docs.rankify.it](https://docs.rankify.it/governance) or ask us a question in [Discord](https://discord.gg/EddGgGUuWC)
+- **EIP712InspectorFacet**: Handles message signing and verification using EIP-712 standard
+- **RankifyInstanceMainFacet**: Core tournament logic including game creation, joining, and management
+- **RankifyInstanceGameMastersFacet**: Manages voting and proposal submission mechanics
+- **RankifyInstanceRequirementsFacet**: Handles participation requirements and constraints
+- **DiamondLoupeFacet**: Standard Diamond pattern implementation for facet introspection
+- **OwnershipFacet**: Manages contract ownership and permissions
+
+#### Key Features
+
+- Turn-based game mechanics with voting and proposal systems
+- EIP-712 compliant message signing for secure interactions
+- Modular architecture allowing for future upgrades
+- Built-in reentrancy protection
+- Integrated with the Rankify protocol for rank token management
 
 ## Contributing
 
