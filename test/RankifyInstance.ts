@@ -1433,4 +1433,67 @@ describe(scriptName, () => {
       });
     });
   });
+  it('should reject game creation with zero minimum time', async () => {
+    const params: IRankifyInstance.NewGameParamsInputStruct = {
+      gameMaster: adr.gameMaster1.wallet.address,
+      gameRank: 1,
+      maxPlayerCnt: RInstance_MAX_PLAYERS,
+      minPlayerCnt: RInstance_MIN_PLAYERS,
+      voteCredits: RInstanceSettings.RInstance_VOTE_CREDITS,
+      nTurns: RInstance_MAX_TURNS,
+      minGameTime: 0,
+      timePerTurn: RInstanceSettings.RInstance_TIME_PER_TURN,
+      timeToJoin: RInstanceSettings.RInstance_TIME_TO_JOIN,
+    };
+
+    await env.rankifyToken
+      .connect(adr.gameCreator1.wallet)
+      .approve(rankifyInstance.address, ethers.constants.MaxUint256);
+    await expect(rankifyInstance.connect(adr.gameCreator1.wallet).createGame(params)).to.be.revertedWith(
+      'LibRankify::newGame->Min game time zero',
+    );
+  });
+  it('should validate minGameTime is divisible by number of turns', async () => {
+    const params: IRankifyInstance.NewGameParamsInputStruct = {
+      gameMaster: adr.gameMaster1.wallet.address,
+      gameRank: 1,
+      maxPlayerCnt: RInstance_MAX_PLAYERS,
+      minPlayerCnt: RInstance_MIN_PLAYERS,
+      voteCredits: RInstanceSettings.RInstance_VOTE_CREDITS,
+      nTurns: 5,
+      minGameTime: 3601, // Not divisible by 5
+      timePerTurn: RInstanceSettings.RInstance_TIME_PER_TURN,
+      timeToJoin: RInstanceSettings.RInstance_TIME_TO_JOIN,
+    };
+
+    await env.rankifyToken
+      .connect(adr.gameCreator1.wallet)
+      .approve(rankifyInstance.address, ethers.constants.MaxUint256);
+    await expect(rankifyInstance.connect(adr.gameCreator1.wallet).createGame(params)).to.be.revertedWithCustomError(
+      rankifyInstance,
+      'NoDivisionReminderAllowed',
+    );
+  });
+
+  it.only('should validate turn count is greater than 2', async () => {
+    const params: IRankifyInstance.NewGameParamsInputStruct = {
+      gameMaster: adr.gameMaster1.wallet.address,
+      gameRank: 1,
+      maxPlayerCnt: RInstance_MAX_PLAYERS,
+      minPlayerCnt: RInstance_MIN_PLAYERS,
+      voteCredits: RInstanceSettings.RInstance_VOTE_CREDITS,
+      nTurns: 2,
+      minGameTime: 3600,
+      timePerTurn: RInstanceSettings.RInstance_TIME_PER_TURN,
+      timeToJoin: RInstanceSettings.RInstance_TIME_TO_JOIN,
+    };
+
+    await env.rankifyToken
+      .connect(adr.gameCreator1.wallet)
+      .approve(rankifyInstance.address, ethers.constants.MaxUint256);
+    await expect(rankifyInstance.connect(adr.gameCreator1.wallet).createGame(params)).to.be.revertedWithCustomError(
+      rankifyInstance,
+      'invalidTurnCount',
+    );
+  });
 });
