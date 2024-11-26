@@ -38,6 +38,7 @@ library LibRankify {
     struct GameState {
         uint256 gamePrice;
         uint256 rank;
+        uint256 minGameTime;
         address createdBy;
         uint256 numOngoingProposals;
         uint256 numPrevProposals;
@@ -215,6 +216,7 @@ library LibRankify {
         game.createdBy = params.creator;
         state.numGames += 1;
         game.rank = params.gameRank;
+        game.minGameTime = params.minGameTime;
 
         IRankToken rankTokenContract = IRankToken(state.commonParams.rankTokenAddress);
         rankTokenContract.mint(address(this), 1, params.gameRank + 1, "");
@@ -306,6 +308,15 @@ library LibRankify {
         function(uint256, address) playersGameEndedCallback
     ) internal returns (uint256[] memory) {
         enforceGameExists(gameId);
+
+        // Get game state and check minimum time
+        GameState storage game = getGameState(gameId);
+        LibTBG.State storage tbgState = gameId._getState();
+        require(
+            block.timestamp - tbgState.startedAt >= game.minGameTime,
+            "Game duration less than minimum required time"
+        );
+
         (, uint256[] memory finalScores) = gameId.getScores();
         address[] memory players = gameId.getPlayers();
         for (uint256 i = 0; i < players.length; ++i) {

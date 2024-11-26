@@ -110,8 +110,7 @@ const runToLastTurn = async (
 };
 
 const endTurn = async (gameId: BigNumberish, gameContract: RankifyDiamondInstance) => {
-  const turn = await gameContract.getTurn(gameId);
-  await gameContract.connect(adr.gameMaster1.wallet).endTurn(
+  return gameContract.connect(adr.gameMaster1.wallet).endTurn(
     gameId,
     votes.map(vote => vote.vote),
     proposalsStruct.map(prop => prop.proposal),
@@ -137,7 +136,6 @@ const runToOvertime = async (
     proposals.map((prop, idx) => idx),
   );
 };
-
 
 const mockValidVotes = async (
   players: [SignerIdentity, SignerIdentity, ...SignerIdentity[]],
@@ -167,14 +165,11 @@ const mockValidVotes = async (
   return votes;
 };
 
-const startGame = async (
-  gameId: BigNumberish,
-) => {
+const startGame = async (gameId: BigNumberish) => {
   const currentT = await time.latest();
   await time.setNextBlockTimestamp(currentT + Number(RInstanceSettings.RInstance_TIME_TO_JOIN) + 1);
   await mineBlocks(RInstanceSettings.RInstance_TIME_TO_JOIN + 1);
   await rankifyInstance.connect(adr.gameMaster1.wallet).startGame(gameId);
-
 };
 
 const mockValidProposals = async (
@@ -572,6 +567,7 @@ describe(scriptName, () => {
       beforeEach(async () => {
         await rankifyInstance.connect(adr.gameCreator1.wallet).openRegistration(1);
       });
+
       it('Mutating join requirements is no longer possible', async () => {
         await expect(
           rankifyInstance.connect(adr.gameCreator1.wallet).setJoinRequirements(1, requirement),
@@ -730,6 +726,21 @@ describe(scriptName, () => {
           });
           it('First turn has started', async () => {
             expect(await rankifyInstance.connect(adr.player1.wallet).getTurn(1)).to.be.equal(1);
+          });
+          it('Cannot end game before minimum game time', async () => {
+            const players = getPlayers(adr, RInstanceSettings.RInstance_MIN_PLAYERS);
+            await runToLastTurn(1, rankifyInstance, adr.gameMaster1, players);
+            await mockValidVotes(players, rankifyInstance, 1, adr.gameMaster1, true, 'ftw');
+            await mockValidProposals(players, rankifyInstance, adr.gameMaster1, 1, true);
+            await expect(endTurn(1, rankifyInstance)).to.be.revertedWith(
+              'Game duration less than minimum required time',
+            );
+            await time.increase(RInstanceSettings.RInstance_MIN_GAME_TIME - 100);
+            await expect(endTurn(1, rankifyInstance)).to.be.revertedWith(
+              'Game duration less than minimum required time',
+            );
+            await time.increase(101);
+            await expect(endTurn(1, rankifyInstance)).to.not.be.reverted;
           });
           it('Accepts only proposals and no votes', async () => {
             const proposals = await mockProposals({

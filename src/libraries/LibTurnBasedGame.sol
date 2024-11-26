@@ -43,6 +43,7 @@ library LibTBG {
         uint256 currentTurn;
         uint256 turnStartedAt;
         uint256 registrationOpenAt;
+        uint256 startedAt;
         bool hasStarted;
         bool hasEnded;
         EnumerableSet.AddressSet players;
@@ -521,6 +522,7 @@ library LibTBG {
         state.hasEnded = false;
         state.currentTurn = 1;
         state.turnStartedAt = block.timestamp;
+        state.startedAt = block.timestamp;
         _resetPlayerStates(state);
     }
 
