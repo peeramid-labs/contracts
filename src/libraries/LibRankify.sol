@@ -136,12 +136,13 @@ library LibRankify {
         uint128 timeToJoin;
     }
 
-    function getGamePrice(uint128 minGameTime,CommonParams memory commonParams) internal pure returns (uint256) {
-        return Math.mulDiv(
-            uint256(commonParams.principalCost),
-            uint256(commonParams.principalTimeConstant),
-            uint256(minGameTime)
-        );
+    function getGamePrice(uint128 minGameTime, CommonParams memory commonParams) internal pure returns (uint256) {
+        return
+            Math.mulDiv(
+                uint256(commonParams.principalCost),
+                uint256(commonParams.principalTimeConstant),
+                uint256(minGameTime)
+            );
     }
 
     /**
@@ -340,11 +341,7 @@ library LibRankify {
      * - Removes and unlocks `player` from the game.
      * - Calls `onPlayerLeftCallback` for `player`.
      */
-    function quitGame(
-        uint256 gameId,
-        address player,
-        function(uint256, address) onPlayerLeftCallback
-    ) internal {
+    function quitGame(uint256 gameId, address player, function(uint256, address) onPlayerLeftCallback) internal {
         removeAndUnlockPlayer(gameId, player); // this will throw if game has started or doesnt exist
         onPlayerLeftCallback(gameId, player);
     }

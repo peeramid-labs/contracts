@@ -77,7 +77,7 @@ contract RankifyInstanceInit is Initializable {
 
         LibRankify.InstanceState storage _RInstance = LibRankify.instanceState();
         require(initData.paymentToken != address(0), "initializer.paymentToken not set");
-    
+
         IRankToken rankContract = IRankToken(initData.rewardToken);
         require(
             rankContract.supportsInterface(type(IRankToken).interfaceId),

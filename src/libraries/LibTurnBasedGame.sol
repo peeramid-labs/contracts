@@ -508,16 +508,12 @@ library LibTBG {
      * @param state The game state storage reference
      * @param tbg The TBG storage reference
      */
-    function _performGameStart(
-        uint256 gameId,
-        State storage state,
-        TBGStorageStruct storage tbg
-    ) private {
+    function _performGameStart(uint256 gameId, State storage state, TBGStorageStruct storage tbg) private {
         require(state.hasStarted == false, "startGame->already started");
         require(state.registrationOpenAt != 0, "startGame->Game registration was not yet open");
         require(gameId != 0, "startGame->Game not found");
         require(state.players.length() >= tbg.instances[gameId].settings.minPlayerCnt, "startGame->Not enough players");
-        
+
         state.hasStarted = true;
         state.hasEnded = false;
         state.currentTurn = 1;
@@ -546,13 +542,13 @@ library LibTBG {
     function startGameEarly(uint256 gameId) internal {
         State storage state = _getState(gameId);
         TBGStorageStruct storage tbg = TBGStorage();
-        
+
         require(
             (state.players.length() == tbg.instances[gameId].settings.maxPlayerCnt) ||
                 (block.timestamp > state.registrationOpenAt + tbg.instances[gameId].settings.timeToJoin),
             "startGame->Not enough players"
         );
-        
+
         _performGameStart(gameId, state, tbg);
     }
 
@@ -574,12 +570,12 @@ library LibTBG {
     function startGame(uint256 gameId) internal {
         State storage state = _getState(gameId);
         TBGStorageStruct storage tbg = TBGStorage();
-        
+
         require(
             block.timestamp > state.registrationOpenAt + tbg.instances[gameId].settings.timeToJoin,
             "startGame->Still Can Join"
         );
-        
+
         _performGameStart(gameId, state, tbg);
     }
 
