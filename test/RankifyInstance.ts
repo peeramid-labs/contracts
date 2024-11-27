@@ -727,6 +727,74 @@ describe(scriptName, () => {
           beforeEach(async () => {
             await startGame(1);
           });
+          it('Can finish turn early if previous turn participant did not made a move', async () => {
+            proposalsStruct = await mockValidProposals(
+              getPlayers(adr, RInstanceSettings.RInstance_MIN_PLAYERS),
+              rankifyInstance,
+              adr.gameMaster1,
+              1,
+              false,
+            );
+            for (let i = 0; i < proposalsStruct.length; i++) {
+              const { params } = proposalsStruct[i];
+              if (i !== 0) {
+                await rankifyInstance.connect(adr.gameMaster1.wallet).submitProposal(params);
+              } else {
+                console.log('skipped proposal', i);
+              }
+            }
+
+            await time.increase(Number(RInstanceSettings.RInstance_TIME_PER_TURN) + 1);
+            votes = [];
+            await endTurn(1, rankifyInstance);
+            proposalsStruct = await mockValidProposals(
+              getPlayers(adr, RInstanceSettings.RInstance_MIN_PLAYERS),
+              rankifyInstance,
+              adr.gameMaster1,
+              1,
+              false,
+            );
+            for (let i = 0; i < proposalsStruct.length; i++) {
+              const { params } = proposalsStruct[i];
+              if (i !== 0) {
+                await rankifyInstance.connect(adr.gameMaster1.wallet).submitProposal(params);
+              }
+            }
+            votes = await mockValidVotes(
+              getPlayers(adr, RInstanceSettings.RInstance_MIN_PLAYERS),
+              rankifyInstance,
+              1,
+              adr.gameMaster1,
+              false,
+            );
+            const players = getPlayers(adr, RInstanceSettings.RInstance_MIN_PLAYERS);
+            for (let i = 0; i < votes.length; i++) {
+              if (i !== 0) {
+                await rankifyInstance
+                  .connect(adr.gameMaster1.wallet)
+                  .submitVote(1, votes[i].voteHidden, players[i].wallet.address);
+              }
+            }
+
+            await time.increase(Number(RInstanceSettings.RInstance_TIME_PER_TURN) + 1);
+            await expect(endTurn(1, rankifyInstance)).to.emit(rankifyInstance, 'TurnEnded');
+            await mockValidVotes(
+              getPlayers(adr, RInstanceSettings.RInstance_MIN_PLAYERS),
+              rankifyInstance,
+              1,
+              adr.gameMaster1,
+              true,
+            );
+            expect(await rankifyInstance.isActive(1, proposalsStruct[0].params.proposer)).to.be.false;
+            proposalsStruct = await mockValidProposals(players, rankifyInstance, adr.gameMaster1, 1, false);
+            for (let i = 0; i < proposalsStruct.length; i++) {
+              if (i !== 1) {
+                await rankifyInstance.connect(adr.gameMaster1.wallet).submitProposal(proposalsStruct[i].params);
+              }
+            }
+            expect(await rankifyInstance.isActive(1, proposalsStruct[0].params.proposer)).to.be.true;
+            await expect(endTurn(1, rankifyInstance)).to.be.revertedWith('nextTurn->CanEndEarly');
+          });
           it('First turn has started', async () => {
             expect(await rankifyInstance.connect(adr.player1.wallet).getTurn(1)).to.be.equal(1);
           });
