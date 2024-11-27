@@ -368,7 +368,6 @@ library LibTBG {
         _;
     }
 
-
     /**
      * @dev Resets the states of the players in a game. `State` is the state.
      *
