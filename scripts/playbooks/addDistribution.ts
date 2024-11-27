@@ -1,5 +1,5 @@
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
-import { ethers } from 'hardhat';
+// import { ethers } from 'hardhat';
 import { Signer } from '@ethersproject/abstract-signer';
 import { DAODistributor } from '../../types';
 
@@ -7,15 +7,15 @@ export const addDistributionNoChecks =
   (hre: HardhatRuntimeEnvironment) => async (distrId: string, signer: Signer, initializer?: string) => {
     const { deployments } = hre;
     const DAODistributor = await deployments.get('DAODistributor');
-    const distributorContract = new ethers.Contract(DAODistributor.address, DAODistributor.abi, signer);
-    return distributorContract.addDistribution(distrId, initializer ?? ethers.constants.AddressZero);
+    const distributorContract = new hre.ethers.Contract(DAODistributor.address, DAODistributor.abi, signer);
+    return distributorContract.addDistribution(distrId, initializer ?? hre.ethers.constants.AddressZero);
   };
 
 export const addDistribution =
   (hre: HardhatRuntimeEnvironment) => async (distrId: string, signer: Signer, initializer?: string) => {
     const { deployments } = hre;
     const DAODistributor = await deployments.get('DAODistributor');
-    const distributorContract = new ethers.Contract(
+    const distributorContract = new hre.ethers.Contract(
       DAODistributor.address,
       DAODistributor.abi,
       signer,
@@ -23,7 +23,7 @@ export const addDistribution =
     const distributionsLengthBefore = (await distributorContract.getDistributions()).length;
     const receipt = await distributorContract['addDistribution(bytes32,address)'](
       distrId,
-      initializer ?? ethers.constants.AddressZero,
+      initializer ?? hre.ethers.constants.AddressZero,
     );
 
     const distributorsId = await distributorContract.getDistributions();

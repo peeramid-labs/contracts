@@ -2,4 +2,4 @@
 
 rm -rf ./deployments/localhost
 export NODE_ENV=TEST
-pnpm hardhat deploy --tags multipass,rankify --network localhost
+pnpm hardhat deploy --tags MAO,rankify --network localhost
