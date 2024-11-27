@@ -205,7 +205,7 @@ export class DiamondChanges {
 
   /**
    * Presents the Diamond `cut` changeset to the user as a table of
-   * "added"/"replaces"/"removed" and prompts them to approve the changest.
+   * "added"/"replaces"/"removed" and prompts them to approve the changeset.
    *
    * If they approve the changeset, the returned promise is resolved with `true`, or
    * `false` if it isn't approved.

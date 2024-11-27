@@ -160,7 +160,7 @@ library LibCoinVending {
      *
      * - The token balances of the `from` and `to` addresses, or the total supply of tokens if `to` is the zero address.
      */
-    function trasferFromAny(address erc20Addr, address from, address to, uint256 value) private {
+    function transferFromAny(address erc20Addr, address from, address to, uint256 value) private {
         MockERC20 token = MockERC20(erc20Addr);
         if (value != 0) {
             if (from == address(this)) {
@@ -201,10 +201,10 @@ library LibCoinVending {
         address burnAddress,
         address lockAddress
     ) private {
-        trasferFromAny(erc20Addr, from, lockAddress, tokenReq.lock.amount);
-        trasferFromAny(erc20Addr, from, burnAddress, tokenReq.burn.amount);
-        trasferFromAny(erc20Addr, from, payee, tokenReq.pay.amount);
-        trasferFromAny(erc20Addr, from, beneficiary, tokenReq.bet.amount);
+        transferFromAny(erc20Addr, from, lockAddress, tokenReq.lock.amount);
+        transferFromAny(erc20Addr, from, burnAddress, tokenReq.burn.amount);
+        transferFromAny(erc20Addr, from, payee, tokenReq.pay.amount);
+        transferFromAny(erc20Addr, from, beneficiary, tokenReq.bet.amount);
         MockERC20 token = MockERC20(erc20Addr);
         uint256 value = tokenReq.have.amount;
         if (value != 0 && from != address(this)) {
@@ -226,15 +226,15 @@ library LibCoinVending {
      *
      * Notes:
      *
-     * Due to non fungable nature it's an open question how to implement this method correctly for lock/burn/pay/bet cases.
+     * Due to non fungible nature it's an open question how to implement this method correctly for lock/burn/pay/bet cases.
      * In this library I assume that requirements are for multiple members, hence it makes no sense to put requirement on particular tokenId for ERC721.
      * I think best approach would be to split in to two methods:
      *  1. fulfillERC72Balance: Treats tokens as fungible - requires one to lock/burn/pay/bet ANY token id, but in total should be equal to desired value.
      *  2. fulfillERC721Ids: Requires one to lock/burn/pay/bet specific token id. (useful when requirements are unique per applicant).
      * fulfillERC72Balance is easy. fulfillERC721Ids brings up a question of how to select those ID's(since must specify for ERC721 contract on transfer method).
      *  Two possible solutions:
-     *  1: modify fund() method to accept array of address+id pairs of NFT's and parse trough it. Compucationaly inefficient.
-     *  2: implement onERC721Received such that there is NFT vault in the contract, later fill funding position from that vault. That way applicant could pre-send NFT's to the contract and callfing fund later would pull those out from the vault.
+     *  1: modify fund() method to accept array of address+id pairs of NFT's and parse trough it. computationally inefficient.
+     *  2: implement onERC721Received such that there is NFT vault in the contract, later fill funding position from that vault. That way applicant could pre-send NFT's to the contract and calling fund later would pull those out from the vault.
 
      */
     function fulfillERC72Balance(address erc721addr, ContractCondition storage tokenReq, address from) private view {
@@ -283,7 +283,6 @@ library LibCoinVending {
         }
         value = tokenReq.pay.amount;
         if (value != 0) {
-            // token.transfe
             token.safeTransferFrom(from, payee, id, value, tokenReq.pay.data);
         }
         value = tokenReq.bet.amount;
@@ -389,7 +388,7 @@ library LibCoinVending {
     }
 
     /**
-     * @dev Returns all position requirements back to fundee. `position` is the identifier of the condition. `to` is the address to refund the balance to.
+     * @dev Returns all position requirements back to founder. `position` is the identifier of the condition. `to` is the address to refund the balance to.
      *
      * Requirements:
      *
@@ -406,7 +405,7 @@ library LibCoinVending {
     }
 
     /**
-     * @dev Returns all position requirements back to multiple fundees. `position` is the identifier of the condition. `returnAddresses` is an array of addresses to refund the balance to.
+     * @dev Returns all position requirements back to multiple founders. `position` is the identifier of the condition. `returnAddresses` is an array of addresses to refund the balance to.
      *
      * Requirements:
      *
@@ -473,9 +472,9 @@ library LibCoinVending {
         }
     }
 
-    function _fund(Condition storage reqPos, address funder) private {
+    function _fund(Condition storage reqPos, address founder) private {
         require(reqPos._isConfigured, "Position does not exist");
-        fulfill(reqPos, funder, address(this), address(this), address(this), address(this));
+        fulfill(reqPos, founder, address(this), address(this), address(this), address(this));
         reqPos.timesFunded += 1;
     }
 

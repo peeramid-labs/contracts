@@ -16,7 +16,7 @@ library LibQuadraticVoting {
     }
 
     /**
-     * @dev Precomputes the values for quadratic voting. `voteCredits` is the total number of vote credits. `minExpectedVoteItems` is the minimum expected number of vote items.
+     * @dev Pre-computes the values for quadratic voting. `voteCredits` is the total number of vote credits. `minExpectedVoteItems` is the minimum expected number of vote items.
      *
      * Returns:
      *
@@ -37,10 +37,10 @@ library LibQuadraticVoting {
             accumulator += (q.maxQuadraticPoints - iterator) ** 2;
             iterator++;
         } while (accumulator < voteCredits);
-        // This enforces requirement that all vote credits can indeed be spended (no leftovers)
+        // This enforces requirement that all vote credits can indeed be spent (no leftovers)
         if (accumulator != voteCredits) require(false, "quadraticVotingError: voteCredits bust be i^2 series"); //revert quadraticVotingError("voteCredits bust be i^2 series", accumulator, voteCredits);
         q.minQuadraticPositions = iterator;
-        // In order to spend all vote credits there must be at least minQuadraticPositions+1 (becuase proposer is also a player and cannot vote for himself)
+        // In order to spend all vote credits there must be at least minQuadraticPositions+1 (because proposer is also a player and cannot vote for himself)
         if (minExpectedVoteItems <= q.minQuadraticPositions)
             require(false, "quadraticVotingError: Minimum Voting positions above min players");
         // revert quadraticVotingError(
@@ -53,7 +53,7 @@ library LibQuadraticVoting {
     }
 
     /**
-     * @dev Computes the scores for each proposal by voter preference index. `q` is the precomputed quadratic voting values. `VotersVotes` is a 2D array of votes, where each row corresponds to a voter and each column corresponds to a proposal. `isActive` is an array indicating whether each voter has voted. `notVotedGivesEveyone` is the number of points to distribute to each proposal for each voter that did not vote. `proposalsLength` is the number of proposals.
+     * @dev Computes the scores for each proposal by voter preference index. `q` is the precomputed quadratic voting values. `VotersVotes` is a 2D array of votes, where each row corresponds to a voter and each column corresponds to a proposal. `isActive` is an array indicating whether each voter has voted.
      *
      * Returns:
      *
