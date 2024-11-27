@@ -1,5 +1,4 @@
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
-// import { ethers } from 'hardhat';
 import { Signer } from '@ethersproject/abstract-signer';
 import { DAODistributor } from '../../types';
 
