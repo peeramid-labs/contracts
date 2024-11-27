@@ -379,7 +379,7 @@ library LibRankify {
      * - Calls `onPlayerLeftCallback` for `player`.
      */
     function quitGame(uint256 gameId, address player, function(uint256, address) onPlayerLeftCallback) internal {
-        removeAndUnlockPlayer(gameId, player); // this will throw if game has started or doesnt exist
+        removeAndUnlockPlayer(gameId, player); // this will throw if game has started or doesn't exist
         onPlayerLeftCallback(gameId, player);
     }
 
@@ -401,7 +401,7 @@ library LibRankify {
         // Cancel the game for each player
         address[] memory players = gameId.getPlayers();
         for (uint256 i = 0; i < players.length; ++i) {
-            quitGame(gameId, players[i], onPlayerLeftCallback); //this will throw if game has started or doesnt exist
+            quitGame(gameId, players[i], onPlayerLeftCallback); //this will throw if game has started or doesn't exist
         }
 
         // Delete the game
@@ -424,7 +424,7 @@ library LibRankify {
     }
 
     /**
-     * @dev Emits rank rewards to the top three addresses in the leaderboard. `gameId` is the ID of the game. `leaderboard` is an array of addresses representing the leaderboard sorted in descendign order. `rankTokenAddress` is the address of the rank token contract.
+     * @dev Emits rank rewards to the top three addresses in the leaderboard. `gameId` is the ID of the game. `leaderboard` is an array of addresses representing the leaderboard sorted in descending order. `rankTokenAddress` is the address of the rank token contract.
      *
      * Modifies:
      *
@@ -503,8 +503,8 @@ library LibRankify {
         GameState storage game = getGameState(gameId);
         bool expectVote = true;
         bool expectProposal = true;
-        if (turn == 1) expectVote = false; //Dont expect votes at firt turn
-        // else if (gameId.isLastTurn()) expectProposal = false; // For now easiest solution is to keep collecting proposals as that is less complicated boundry case
+        if (turn == 1) expectVote = false; // Don't expect votes at first turn
+        // else if (gameId.isLastTurn()) expectProposal = false; // For now easiest solution is to keep collecting proposals as that is less complicated boundary case
         if (game.numPrevProposals < game.voting.minQuadraticPositions) expectVote = false; // If there is not enough proposals then round is skipped votes cannot be filled
         bool madeMove = true;
         if (expectVote && !game.playerVoted[player]) madeMove = false;

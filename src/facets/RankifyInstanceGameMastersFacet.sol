@@ -234,7 +234,7 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
             game.playerVoted[players[i]] = false;
             game.votesHidden[players[i]].hash = bytes32(0);
         }
-        // This data is to needed to correctly detetermine "PlayerMove" conditions during next turn
+        // This data is to needed to correctly determine "PlayerMove" conditions during next turn
         game.numVotesPrevTurn = game.numVotesThisTurn;
         game.numVotesThisTurn = 0;
         game.numPrevProposals = game.numCommitments;

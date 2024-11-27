@@ -22,7 +22,7 @@ import {IErrors} from "../interfaces/IErrors.sol";
  *
  * ***WARNING*** Some limitations:
  * - This library is still under development and its interfaces may change.
- * - getting game data (which has own storage assigement and can be encapsulated from library) however there is no storage slot collision checks in place
+ * - getting game data (which has own storage assignment and can be encapsulated from library) however there is no storage slot collision checks in place
  *
  */
 library LibTBG {
@@ -359,7 +359,7 @@ library LibTBG {
      * - The current turn in the game with `gameId` must be able to end.
      */
     modifier onlyInTurnTime(uint256 gameId) {
-        require(isTurnTimedOut(gameId) == false, "onlyInTurnTime -> turn timedout");
+        require(isTurnTimedOut(gameId) == false, "onlyInTurnTime -> turn timeout");
         _;
     }
 
