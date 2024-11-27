@@ -368,20 +368,6 @@ library LibTBG {
         _;
     }
 
-    /**
-     * @dev Clears the current moves in a game. `state` is the State.
-     *
-     * Modifies:
-     *
-     * - Sets the madeMove of each player in `game` to false.
-     */
-    // function _clearCurrentMoves(State storage state) internal {
-    //     for (uint256 i = 0; i < state.players.length(); ++i) {
-    //         address player = state.players.at(i);
-    //         state.madeMove[player] = false;
-    //     }
-    //     state.numPlayersMadeMove = 0;
-    // }
 
     /**
      * @dev Resets the states of the players in a game. `State` is the state.
@@ -531,7 +517,7 @@ library LibTBG {
         state.turnStartedAt = block.timestamp;
         state.startedAt = block.timestamp;
         _resetPlayerStates(state);
-        
+
         // Initialize all players as active
         uint256 playerCount = state.players.length();
         state.numActivePlayers = playerCount;
@@ -769,7 +755,6 @@ library LibTBG {
         uint256 playerCount = state.players.length();
         state.numActivePlayers = 0;
 
-        // _clearCurrentMoves(state);
         for (uint256 i = 0; i < playerCount; i++) {
             address player = state.players.at(i);
             // If player didn't make a move this turn, mark them as inactive
