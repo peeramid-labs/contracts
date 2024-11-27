@@ -2,7 +2,7 @@ import { task } from 'hardhat/config';
 import getSuperInterface from './getSuperInterface';
 import fs from 'fs';
 import path from 'path';
-import { Fragment, FunctionFragment, EventFragment } from '@ethersproject/abi';
+import { FunctionFragment, EventFragment } from '@ethersproject/abi';
 
 task('generate-selector-docs', 'Generates markdown documentation for all selectors').setAction(async _ => {
   // Get all interfaces
