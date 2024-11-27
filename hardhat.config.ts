@@ -15,6 +15,7 @@ import 'solidity-docgen';
 import './playbook/createGame';
 import getSuperInterface from './scripts/getSuperInterface';
 import { ErrorFragment, EventFragment, FunctionFragment } from '@ethersproject/abi';
+import './scripts/generateSelectorDocs';
 
 task('accounts', 'Prints the list of accounts', async (taskArgs, hre) => {
   const accounts = await hre.ethers.getSigners();

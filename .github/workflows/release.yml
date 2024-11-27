@@ -8,7 +8,7 @@ on:
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 permissions: {}
-env: 
+env:
   FORK_RPC_URL: ${{ secrets.FORK_RPC_URL }}
 jobs:
   release:
@@ -28,6 +28,8 @@ jobs:
         run: pnpm install
       - name: generate docs
         run: pnpm hardhat docgen
+      - name: generate doc selectors
+        run: pnpm hardhat generate-selector-docs
       - name: Create Release Pull Request or Publish to npm
         uses: changesets/action@v1
         with:
