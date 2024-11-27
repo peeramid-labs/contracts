@@ -530,14 +530,13 @@ library LibRankify {
         uint256[] memory scores = new uint256[](players.length);
         bool[] memory playerVoted = new bool[](players.length);
         GameState storage game = getGameState(gameId);
-        // Convert mappiing to array to pass it to libQuadratic
+        // Convert mapping to array to pass it to libQuadratic
         for (uint256 i = 0; i < players.length; ++i) {
-            playerVoted[i] = game.playerVoted[players[i]];
+            playerVoted[i] = gameId._getState().isActive[players[i]];
         }
         uint256[] memory roundScores = game.voting.computeScoresByVPIndex(
             votesRevealed,
             playerVoted,
-            game.voting.maxQuadraticPoints,
             proposerIndices.length
         );
         for (uint256 playerIdx = 0; playerIdx < players.length; playerIdx++) {

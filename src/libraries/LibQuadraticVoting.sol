@@ -53,7 +53,7 @@ library LibQuadraticVoting {
     }
 
     /**
-     * @dev Computes the scores for each proposal by voter preference index. `q` is the precomputed quadratic voting values. `VotersVotes` is a 2D array of votes, where each row corresponds to a voter and each column corresponds to a proposal. `voterVoted` is an array indicating whether each voter has voted. `notVotedGivesEveyone` is the number of points to distribute to each proposal for each voter that did not vote. `proposalsLength` is the number of proposals.
+     * @dev Computes the scores for each proposal by voter preference index. `q` is the precomputed quadratic voting values. `VotersVotes` is a 2D array of votes, where each row corresponds to a voter and each column corresponds to a proposal. `isActive` is an array indicating whether each voter has voted. `notVotedGivesEveyone` is the number of points to distribute to each proposal for each voter that did not vote. `proposalsLength` is the number of proposals.
      *
      * Returns:
      *
@@ -62,10 +62,10 @@ library LibQuadraticVoting {
     function computeScoresByVPIndex(
         qVotingStruct memory q,
         uint256[][] memory VotersVotes,
-        bool[] memory voterVoted,
-        uint256 notVotedGivesEveryone,
+        bool[] memory isActive,
         uint256 proposalsLength
     ) internal pure returns (uint256[] memory) {
+        uint256 notVotedGivesEveryone = q.maxQuadraticPoints;
         uint256[] memory scores = new uint256[](proposalsLength);
         uint256[] memory creditsUsed = new uint256[](VotersVotes.length);
 
@@ -75,7 +75,7 @@ library LibQuadraticVoting {
             for (uint256 vi = 0; vi < VotersVotes.length; vi++) {
                 // For each potential voter
                 uint256[] memory voterVotes = VotersVotes[vi];
-                if (!voterVoted[vi]) {
+                if (!isActive[vi]) {
                     // Check if voter wasn't voting
                     scores[proposalIdx] += notVotedGivesEveryone; // Gives benefits to everyone but himself
                     creditsUsed[vi] = q.voteCredits;

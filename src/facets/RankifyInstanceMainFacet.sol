@@ -382,4 +382,8 @@ contract RankifyInstanceMainFacet is
         }
         return (playersMoved, game.numPlayersMadeMove);
     }
+
+    function isActive(uint256 gameId, address player) public view returns (bool) {
+        return gameId.isActive(player);
+    }
 }
