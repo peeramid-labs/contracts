@@ -6,13 +6,11 @@ import 'hardhat-abi-exporter';
 import { toSignature, isIncluded } from './scripts/diamond';
 import { cutFacets, replaceFacet } from './scripts/libraries/diamond';
 import 'hardhat-gas-reporter';
-// import * as ipfsUtils from "./utils/ipfs";
-// import fs from "fs";
 import 'hardhat-contract-sizer';
 import 'hardhat-deploy';
 import 'hardhat-tracer';
 import 'solidity-docgen';
-import './playbook';
+// import './playbook';
 import getSuperInterface from './scripts/getSuperInterface';
 import { ErrorFragment, EventFragment, FunctionFragment } from '@ethersproject/abi';
 import './scripts/generateSelectorDocs';
@@ -104,7 +102,7 @@ export default {
       default: '0x520E00225C4a43B6c55474Db44a4a44199b4c3eE',
       anvil: '0x507c2d32185667156de5B4C440FEEf3800078bDb',
     },
-    registrar: {
+    gameMaster: {
       localhost: '0xaA63aA2D921F23f204B6Bcb43c2844Fb83c82eb9',
     },
     defaultPlayer: {

@@ -74,5 +74,18 @@ task('createSubject', 'Creates a new subject with MAO distribution')
     console.log('Token Symbol:', taskArgs.tokenSymbol);
     console.log('instances created', parsedLog.args.instances);
     console.log('instance id', parsedLog.args.newInstanceId);
-    return { instances, newInstanceId: parsedLog.args.newInstanceId, receipt };
+    return {
+      instances,
+      newInstanceId: parsedLog.args.newInstanceId,
+      receipt,
+      instancesParsed: {
+        rankToken: parsedLog.args.instances[12],
+        rankifyInstance: parsedLog.args.instances[3],
+        daoInstance: parsedLog.args.instances[0],
+        govToken: parsedLog.args.instances[1],
+        govTokenAccessManager: parsedLog.args.instances[2],
+        acidInstance: parsedLog.args.instances[3],
+        acidAccessManager: parsedLog.args.instances[11],
+      },
+    };
   });
