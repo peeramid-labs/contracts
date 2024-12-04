@@ -57,6 +57,7 @@ describe('Rank Token Test', async function () {
       'RankifyDiamondInstance',
       evts[0].args.instances[3],
     )) as RankifyDiamondInstance;
+    await network.provider.send('hardhat_setBalance', [rankifyInstance.address, '0x9000000000000000000']);
     await env.rankifyToken
       .connect(adr.gameCreator1.wallet)
       .approve(rankifyInstance.address, ethers.constants.MaxUint256);
