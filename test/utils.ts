@@ -75,7 +75,7 @@ export const setupAddresses = async (
   getNamedAccounts: () => Promise<{
     [name: string]: string;
   }>,
-  _eth: typeof import('/Users/t/GitHub/daocacao/node_modules/ethers/lib/ethers') & HardhatEthersHelpers,
+  _eth: typeof import('ethers/lib/ethers') & HardhatEthersHelpers,
 ): Promise<AdrSetupResult> => {
   const [
     ,
@@ -104,11 +104,11 @@ export const setupAddresses = async (
   const { deployer, owner } = await getNamedAccounts();
 
   const createRandomIdentityAndSeedEth = async (name: string) => {
-    let newWallet = await ethers.Wallet.createRandom();
-    newWallet = newWallet.connect(ethers.provider);
+    let newWallet = await _eth.Wallet.createRandom();
+    newWallet = newWallet.connect(_eth.provider);
     await _player1.sendTransaction({
       to: newWallet.address,
-      value: ethers.utils.parseEther('1'),
+      value: ethers.utils.parseEther('10'),
     });
 
     const newIdentity: SignerIdentity = {
@@ -291,6 +291,7 @@ export const RInstanceSettings = {
 };
 
 export const setupTest = deployments.createFixture(async ({ deployments, getNamedAccounts, ethers: _eth }, options) => {
+  await deployments.fixture(['MAO']);
   const adr = await setupAddresses(getNamedAccounts, _eth);
   const { deployer, owner } = await hre.getNamedAccounts();
 
@@ -302,7 +303,6 @@ export const setupTest = deployments.createFixture(async ({ deployments, getName
     to: owner,
     value: _eth.utils.parseEther('1'),
   });
-  await deployments.fixture(['MAO']);
   const MockERC20F = await _eth.getContractFactory('MockERC20', adr.contractDeployer.wallet);
   const mockERC20 = (await MockERC20F.deploy('Mock ERC20', 'MCK20', adr.contractDeployer.wallet.address)) as MockERC20;
   await mockERC20.deployed();
@@ -733,8 +733,9 @@ export const mockVotes = async ({
   for (let k = 0; k < players.length; k++) {
     let creditsLeft = RInstance_VOTE_CREDITS;
     let playerVote: BigNumberish[] = [];
-    if(distribution == 'zeros') {
-      playerVote = players.map(() => 0);}
+    if (distribution == 'zeros') {
+      playerVote = players.map(() => 0);
+    }
     if (distribution == 'ftw') {
       playerVote = players.map((proposer, idx) => {
         if (k !== idx) {
