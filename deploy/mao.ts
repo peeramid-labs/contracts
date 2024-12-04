@@ -2,7 +2,6 @@ import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
 import { ethers, hardhatArguments } from 'hardhat';
 import { LibSemver } from '../types/src/distributions/MAODistribution';
-// import { activeContractsList } from '@aragon/osx-ethers';
 import { CodeIndex } from '@peeramid-labs/eds/types';
 import CodeIndexAbi from '@peeramid-labs/eds/abi/src/CodeIndex.sol/CodeIndex.json';
 import { MintSettingsStruct } from '../types/src/tokens/DistributableGovernanceERC20.sol/DistributableGovernanceERC20';
