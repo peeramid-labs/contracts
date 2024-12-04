@@ -132,7 +132,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const govTokenDeployment = await deploy('DistributableGovernanceERC20', {
     from: deployer,
     skipIfAlreadyDeployed: true,
-    args: [ethers.constants.AddressZero, 'TokenName', 'tkn', mintSettings, ethers.constants.AddressZero],
+    args: ['TokenName', 'tkn', mintSettings, ethers.constants.AddressZero],
   });
 
   const govTokenDeploymentCode = await hre.ethers.provider.getCode(govTokenDeployment.address);

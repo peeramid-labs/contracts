@@ -59,15 +59,12 @@ In order to instantiate the MAO distribution, you don't need to deploy a thing. 
 ```ts
 import { MAODistribution } from 'rankify-contracts/types';
 const distributorArguments: MAODistribution.DistributorArgumentsStruct = {
-  DAOSEttings: {
-    daoURI: 'https://example.com/dao',
-    subdomain: 'example',
-    metadata: ethers.utils.hexlify(ethers.utils.toUtf8Bytes('metadata')),
+  tokenSettings: {
     tokenName: 'tokenName',
     tokenSymbol: 'tokenSymbol',
   },
-  RankifySettings: {
-    RankTokenContractURI: 'https://example.com/rank',
+  rankifySettings: {
+    rankTokenContractURI: 'https://example.com/rank',
     principalCost: RInstanceSettings.PRINCIPAL_COST,
     principalTimeConstant: RInstanceSettings.PRINCIPAL_TIME_CONSTANT,
     metadata: ethers.utils.hexlify(ethers.utils.toUtf8Bytes('metadata')),
@@ -78,7 +75,7 @@ const distributorArguments: MAODistribution.DistributorArgumentsStruct = {
 // Encode the arguments
 const data = ethers.utils.defaultAbiCoder.encode(
   [
-    'tuple(tuple(string daoURI, string subdomain, bytes metadata, string tokenName, string tokenSymbol) DAOSEttings, tuple(uint256 principalCost, uint256 principalTimeConstant, string metadata, string rankTokenURI, string RankTokenContractURI) RankifySettings)',
+    'tuple(tuple(string tokenName, string tokenSymbol) tokenSettings, tuple(uint256 principalCost, uint256 principalTimeConstant, string metadata, string rankTokenURI, string rankTokenContractURI) rankifySettings)',
   ],
   [distributorArguments],
 );

@@ -22,12 +22,11 @@ export const instantiateMAO = async ({
   const instances = evts[0].args.instances;
 
   return {
-    daoAddress: instances[0],
-    govToken: instances[1],
-    govTokenAccessManager: instances[2],
-    ACIDInstance: instances[3],
-    ACIDAccessManager: instances[11],
-    rankToken: instances[12],
+    govToken: instances[0],
+    govTokenAccessManager: instances[1],
+    ACIDInstance: instances[2],
+    ACIDAccessManager: instances[10],
+    rankToken: instances[11],
     instanceId: evts[0].args.newInstanceId,
     distributorsId: evts[0].args.distributionId,
   };

@@ -21,15 +21,12 @@ describe('Rank Token Test', async function () {
 
     await addDistribution(hre)(await getCodeIdFromArtifact(hre)('MAODistribution'), adr.gameOwner.wallet);
     const distributorArguments: MAODistribution.DistributorArgumentsStruct = {
-      DAOSEttings: {
-        daoURI: 'https://example.com/dao',
-        subdomain: 'example',
-        metadata: ethers.utils.hexlify(ethers.utils.toUtf8Bytes('metadata')),
+      tokenSettings: {
         tokenName: 'tokenName',
         tokenSymbol: 'tokenSymbol',
       },
-      RankifySettings: {
-        RankTokenContractURI: 'https://example.com/rank',
+      rankifySettings: {
+        rankTokenContractURI: 'https://example.com/rank',
         principalCost: RInstanceSettings.PRINCIPAL_COST,
         principalTimeConstant: RInstanceSettings.PRINCIPAL_TIME_CONSTANT,
         metadata: ethers.utils.hexlify(ethers.utils.toUtf8Bytes('metadata')),
@@ -78,7 +75,7 @@ describe('Rank Token Test', async function () {
     await env.rankifyToken.connect(adr.player9.wallet).approve(rankifyInstance.address, ethers.constants.MaxUint256);
     await env.rankifyToken.connect(adr.player10.wallet).approve(rankifyInstance.address, ethers.constants.MaxUint256);
 
-    rankToken = (await ethers.getContractAt('RankToken', evts[0].args.instances[12])) as RankToken;
+    rankToken = (await ethers.getContractAt('RankToken', evts[0].args.instances[11])) as RankToken;
   });
   //   it('Allows only owner to set rankingInstance', async () => {
   //     await expect(rankToken.connect(deployer).updateRankingInstance(adr.gameCreator1.wallet.address))
