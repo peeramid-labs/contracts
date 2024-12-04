@@ -52,13 +52,8 @@ contract DistributableGovernanceERC20 is
     /// @param _name The name of the [ERC-20](https://eips.ethereum.org/EIPS/eip-20) governance token.
     /// @param _symbol The symbol of the [ERC-20](https://eips.ethereum.org/EIPS/eip-20) governance token.
     /// @param _mintSettings The token mint settings struct containing the `receivers` and `amounts`.
-    constructor(
-        string memory _name,
-        string memory _symbol,
-        MintSettings memory _mintSettings,
-        address _accessManager
-    ) {
-        initialize( _name, _symbol, _mintSettings, _accessManager);
+    constructor(string memory _name, string memory _symbol, MintSettings memory _mintSettings, address _accessManager) {
+        initialize(_name, _symbol, _mintSettings, _accessManager);
     }
 
     /// @notice Initializes the contract and mints tokens to a list of receivers.
@@ -125,5 +120,4 @@ contract DistributableGovernanceERC20 is
             _delegate(to, to);
         }
     }
-
 }
