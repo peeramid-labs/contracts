@@ -239,15 +239,12 @@ describe(scriptName, () => {
     env = setup.env;
     await addDistribution(hre)(await getCodeIdFromArtifact(hre)('MAODistribution'), adr.gameOwner.wallet);
     const distributorArguments: MAODistribution.DistributorArgumentsStruct = {
-      DAOSEttings: {
-        daoURI: 'https://example.com/dao',
-        subdomain: 'example',
-        metadata: ethers.utils.hexlify(ethers.utils.toUtf8Bytes('metadata')),
+      tokenSettings: {
         tokenName: 'tokenName',
         tokenSymbol: 'tokenSymbol',
       },
-      RankifySettings: {
-        RankTokenContractURI: 'https://example.com/rank',
+      rankifySettings: {
+        rankTokenContractURI: 'https://example.com/rank',
         metadata: ethers.utils.hexlify(ethers.utils.toUtf8Bytes('metadata')),
         rankTokenURI: 'https://example.com/rank',
         principalCost: RInstanceSettings.PRINCIPAL_COST,
@@ -274,7 +271,7 @@ describe(scriptName, () => {
     const evts = await env.distributor.queryFilter(filter);
     rankifyInstance = (await ethers.getContractAt(
       'RankifyDiamondInstance',
-      evts[0].args.instances[3],
+      evts[0].args.instances[2],
     )) as RankifyDiamondInstance;
 
     await env.rankifyToken
@@ -297,7 +294,7 @@ describe(scriptName, () => {
     await env.rankifyToken.connect(adr.player9.wallet).approve(rankifyInstance.address, ethers.constants.MaxUint256);
     await env.rankifyToken.connect(adr.player10.wallet).approve(rankifyInstance.address, ethers.constants.MaxUint256);
 
-    rankToken = (await ethers.getContractAt('RankToken', evts[0].args.instances[12])) as RankToken;
+    rankToken = (await ethers.getContractAt('RankToken', evts[0].args.instances[11])) as RankToken;
 
     requirement.contracts = [];
     requirement.contracts.push({
@@ -739,8 +736,6 @@ describe(scriptName, () => {
               const { params } = proposalsStruct[i];
               if (i !== 0) {
                 await rankifyInstance.connect(adr.gameMaster1.wallet).submitProposal(params);
-              } else {
-                console.log('skipped proposal', i);
               }
             }
 

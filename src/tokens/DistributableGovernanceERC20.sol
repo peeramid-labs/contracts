@@ -10,12 +10,9 @@ import {ERC20VotesUpgradeable} from "@openzeppelin/contracts-upgradeable/token/E
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {ERC165Upgradeable} from "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/governance/utils/VotesUpgradeable.sol";
-import {DaoAuthorizableUpgradeable} from "@aragon/osx/core/plugin/dao-authorizable/DaoAuthorizableUpgradeable.sol";
 import "@peeramid-labs/eds/src/abstracts/ERC7746Middleware.sol";
 import "@peeramid-labs/eds/src/libraries/LibMiddleware.sol";
-import {IDAO} from "@aragon/osx/core/dao/IDAO.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
-// import {IERC20MintableUpgradeable} from "@aragon/osx/token/ERC20/IERC20MintableUpgradeable.sol";
 
 /// @notice The settings for the initial mint of the token.
 /// @param receivers The receivers of the tokens.
@@ -35,15 +32,14 @@ interface IERC20MintableUpgradeable {
     function mint(address _to, uint256 _amount) external;
 }
 
-/// @title GovernanceERC20
-/// @author Aragon Association
+/// @title DistributableGovernanceERC20
+/// @author Peeramid Labs, adapted version from Aragon Association
 /// @notice An [OpenZeppelin `Votes`](https://docs.openzeppelin.com/contracts/4.x/api/governance#Votes) compatible [ERC-20](https://eips.ethereum.org/EIPS/eip-20) token that can be used for voting and is managed by a DAO.
 contract DistributableGovernanceERC20 is
     IERC20MintableUpgradeable,
     Initializable,
     ERC165Upgradeable,
     ERC20VotesUpgradeable,
-    DaoAuthorizableUpgradeable,
     ERC7746Middleware,
     ReentrancyGuardUpgradeable
 {
@@ -53,27 +49,18 @@ contract DistributableGovernanceERC20 is
     error MintSettingsArrayLengthMismatch(uint256 receiversArrayLength, uint256 amountsArrayLength);
 
     /// @notice Calls the initialize function.
-    /// @param _dao The managing DAO.
     /// @param _name The name of the [ERC-20](https://eips.ethereum.org/EIPS/eip-20) governance token.
     /// @param _symbol The symbol of the [ERC-20](https://eips.ethereum.org/EIPS/eip-20) governance token.
     /// @param _mintSettings The token mint settings struct containing the `receivers` and `amounts`.
-    constructor(
-        IDAO _dao,
-        string memory _name,
-        string memory _symbol,
-        MintSettings memory _mintSettings,
-        address _accessManager
-    ) {
-        initialize(_dao, _name, _symbol, _mintSettings, _accessManager);
+    constructor(string memory _name, string memory _symbol, MintSettings memory _mintSettings, address _accessManager) {
+        initialize(_name, _symbol, _mintSettings, _accessManager);
     }
 
     /// @notice Initializes the contract and mints tokens to a list of receivers.
-    /// @param _dao The managing DAO.
     /// @param _name The name of the [ERC-20](https://eips.ethereum.org/EIPS/eip-20) governance token.
     /// @param _symbol The symbol of the [ERC-20](https://eips.ethereum.org/EIPS/eip-20) governance token.
     /// @param _mintSettings The token mint settings struct containing the `receivers` and `amounts`.
     function initialize(
-        IDAO _dao,
         string memory _name,
         string memory _symbol,
         MintSettings memory _mintSettings,
@@ -94,7 +81,6 @@ contract DistributableGovernanceERC20 is
         }
 
         __ERC20_init(_name, _symbol);
-        __DaoAuthorizableUpgradeable_init(_dao);
 
         for (uint256 i; i < _mintSettings.receivers.length; ++i) {
             _mint(_mintSettings.receivers[i], _mintSettings.amounts[i]);
@@ -134,13 +120,4 @@ contract DistributableGovernanceERC20 is
             _delegate(to, to);
         }
     }
-
-    // event RankExchanged(address indexed account, uint256 rankTokenId, uint256 amount);
-    // function exchangeRankToGov(IERC1155 rankTokenAddress, uint256 rankTokenId, uint256 amount) external nonReentrant ERC7746C {
-    //     require(rankTokens.contains(address(rankTokenAddress)), "Rank token not supported");
-    //     rankTokenAddress.safeTransferFrom(msg.sender, address(this), rankTokenId, amount, "");
-    //     uint256 principal = minimumParticipantCount ** rankTokenId;
-    //     _mint(msg.sender, principal * amount);
-    //     emit RankExchanged(msg.sender, rankTokenId, amount);
-    // }
 }

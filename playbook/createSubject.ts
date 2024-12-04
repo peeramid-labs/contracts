@@ -79,13 +79,12 @@ task('createSubject', 'Creates a new subject with MAO distribution')
       newInstanceId: parsedLog.args.newInstanceId,
       receipt,
       instancesParsed: {
-        rankToken: parsedLog.args.instances[12],
-        rankifyInstance: parsedLog.args.instances[3],
-        daoInstance: parsedLog.args.instances[0],
-        govToken: parsedLog.args.instances[1],
-        govTokenAccessManager: parsedLog.args.instances[2],
-        acidInstance: parsedLog.args.instances[3],
-        acidAccessManager: parsedLog.args.instances[11],
+        rankToken: parsedLog.args.instances[11],
+        rankifyInstance: parsedLog.args.instances[2],
+        govToken: parsedLog.args.instances[0],
+        govTokenAccessManager: parsedLog.args.instances[1],
+        acidInstance: parsedLog.args.instances[2],
+        acidAccessManager: parsedLog.args.instances[10],
       },
     };
   });

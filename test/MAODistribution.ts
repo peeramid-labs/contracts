@@ -3,8 +3,8 @@
 import { deployments, ethers, getNamedAccounts } from 'hardhat';
 import hre from 'hardhat';
 import { expect } from 'chai';
-import { IDAO, MAODistribution, DAODistributor, Rankify, RankifyDiamondInstance } from '../types';
-import utils, { AdrSetupResult, setupTest } from './utils';
+import { MAODistribution, DAODistributor, Rankify, RankifyDiamondInstance } from '../types';
+import { AdrSetupResult, setupTest } from './utils';
 import { getCodeIdFromArtifact } from '../scripts/getCodeId';
 import addDistribution from '../scripts/playbooks/addDistribution';
 import generateDistributorData from '../scripts/libraries/generateDistributorData';
@@ -43,22 +43,18 @@ describe('MAODistribution', async function () {
     });
     it('Can instantiate a distribution', async () => {
       const distributorArguments: MAODistribution.DistributorArgumentsStruct = {
-        DAOSEttings: {
-          daoURI: 'https://example.com/dao',
-          subdomain: 'example',
-          metadata: ethers.utils.hexlify(ethers.utils.toUtf8Bytes('metadata')),
+        tokenSettings: {
           tokenName: 'tokenName',
           tokenSymbol: 'tokenSymbol',
         },
-        RankifySettings: {
-          RankTokenContractURI: 'https://example.com/rank',
+        rankifySettings: {
+          rankTokenContractURI: 'https://example.com/rank',
           metadata: ethers.utils.hexlify(ethers.utils.toUtf8Bytes('metadata')),
           rankTokenURI: 'https://example.com/rank',
           principalCost: 1,
           principalTimeConstant: 1,
         },
       };
-
       // Encode the arguments using generateDistributorData
       const data = generateDistributorData(distributorArguments);
 
@@ -79,12 +75,10 @@ describe('MAODistribution', async function () {
       const filter = distributorContract.filters.Instantiated();
       const evts = await distributorContract.queryFilter(filter);
       expect(evts.length).to.equal(1);
-      const daoContract = (await ethers.getContractAt('IDAO', evts[0].args.instances[0])) as IDAO;
-      expect((await daoContract.functions.getTrustedForwarder())[0]).to.equal(ethers.constants.AddressZero);
 
       const ACIDContract = (await ethers.getContractAt(
         'RankifyDiamondInstance',
-        evts[0].args.instances[3],
+        evts[0].args.instances[2],
       )) as RankifyDiamondInstance;
       expect((await ACIDContract.functions['getGM(uint256)'](0))[0]).to.equal(ethers.constants.AddressZero);
     });

@@ -2,7 +2,6 @@ import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
 import { ethers, hardhatArguments } from 'hardhat';
 import { LibSemver } from '../types/src/distributions/MAODistribution';
-import { activeContractsList } from '@aragon/osx-ethers';
 import { CodeIndex } from '@peeramid-labs/eds/types';
 import CodeIndexAbi from '@peeramid-labs/eds/abi/src/CodeIndex.sol/CodeIndex.json';
 import { MintSettingsStruct } from '../types/src/tokens/DistributableGovernanceERC20.sol/DistributableGovernanceERC20';
@@ -10,23 +9,13 @@ import { ArguableVotingTournament } from '../types/src/distributions/ArguableVot
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployments, getNamedAccounts } = hre;
   const { deploy } = deployments;
-  const network: keyof typeof activeContractsList =
-    process.env.NODE_ENV === 'TEST' || hardhatArguments.network == 'localhost'
-      ? 'arbitrum'
-      : (hardhatArguments.network as keyof typeof activeContractsList);
-  if (process.env.NODE_ENV !== 'TEST') {
-    console.log('network', network, process.env.NODE_ENV);
-  }
-  if (!network) throw new Error('Network not provided');
+
   const { deployer, DAO } = await getNamedAccounts();
   const codeIndexContract = (await ethers.getContractAt(
     CodeIndexAbi,
     '0xc0D31d398c5ee86C5f8a23FA253ee8a586dA03Ce',
   )) as CodeIndex;
 
-  let _tokenVotingPluginRepo = activeContractsList[network]['token-voting-repo'];
-  let _daoFactory = activeContractsList[network].DAOFactory;
-  //   let govBase = activeContractsList[network].g
   let _trustedForwarder = ethers.constants.AddressZero;
   let _distributionName = ethers.utils.formatBytes32String('MAO');
   let _distributionVersion: LibSemver.VersionStruct = {
@@ -142,7 +131,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const govTokenDeployment = await deploy('DistributableGovernanceERC20', {
     from: deployer,
     skipIfAlreadyDeployed: true,
-    args: [ethers.constants.AddressZero, 'TokenName', 'tkn', mintSettings, ethers.constants.AddressZero],
+    args: ['TokenName', 'tkn', mintSettings, ethers.constants.AddressZero],
   });
 
   const govTokenDeploymentCode = await hre.ethers.provider.getCode(govTokenDeployment.address);
@@ -158,8 +147,6 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     from: deployer,
     skipIfAlreadyDeployed: true,
     args: [
-      _tokenVotingPluginRepo,
-      _daoFactory,
       _trustedForwarder,
       rankifyToken.address,
       DAO,
@@ -178,9 +165,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   if (MaoDistrCodeIdAddress === ethers.constants.AddressZero) {
     await codeIndexContract.register(result.address);
   }
-  //   const code = await hre.ethers.provider.getCode(result.address);
-  //   const codeId = ethers.utils.keccak256(code);
-  //   console.log('MAO deployed at', result.address, 'codeId', codeId);
+
   return;
 };
 
