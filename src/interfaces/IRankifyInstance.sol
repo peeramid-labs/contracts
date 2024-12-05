@@ -47,5 +47,12 @@ interface IRankifyInstance {
         uint256 numPlayersMadeMove;
         uint256 numActivePlayers;
         bool isOvertime;
+        uint256 timePerTurn;
+        uint256 maxPlayerCnt;
+        uint256 minPlayerCnt;
+        uint256 timeToJoin;
+        uint256 maxTurns;
+        uint256 voteCredits;
+        address gameMaster;
     }
 }

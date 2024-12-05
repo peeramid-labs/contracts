@@ -408,7 +408,14 @@ contract RankifyInstanceMainFacet is
             hasEnded: tbgInstanceState.state.hasEnded,
             numPlayersMadeMove: tbgInstanceState.state.numPlayersMadeMove,
             numActivePlayers: tbgInstanceState.state.numActivePlayers,
-            isOvertime: tbgInstanceState.state.isOvertime
+            isOvertime: tbgInstanceState.state.isOvertime,
+            timePerTurn: tbgInstanceState.settings.timePerTurn,
+            maxPlayerCnt: tbgInstanceState.settings.maxPlayerCnt,
+            minPlayerCnt: tbgInstanceState.settings.minPlayerCnt,
+            timeToJoin: tbgInstanceState.settings.timeToJoin,
+            maxTurns: tbgInstanceState.settings.maxTurns,
+            voteCredits: tbgInstanceState.settings.voteCredits,
+            gameMaster: tbgInstanceState.settings.gameMaster,
         });
     }
 }
