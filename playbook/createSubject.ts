@@ -3,11 +3,8 @@ import { task } from 'hardhat/config';
 import { getCodeIdFromArtifact } from '../scripts/getCodeId';
 import { DAODistributor, MAODistribution, Rankify } from '../types';
 import generateDistributorData from '../scripts/libraries/generateDistributorData';
-import { InstantiatedEvent } from '../types/src/distributors/DAODistributor';
 
 task('createSubject', 'Creates a new subject with MAO distribution')
-  .addOptionalParam('daoUri', 'URI for the DAO metadata', 'https://example.com/dao')
-  .addOptionalParam('subdomain', 'Subdomain for the DAO. NB: Must be unique', 'example')
   .addOptionalParam('metadata', 'Metadata for the DAO', 'metadata')
   .addOptionalParam('tokenName', 'Name of the token', 'tokenName')
   .addOptionalParam('tokenSymbol', 'Symbol of the token', 'tokenSymbol')
@@ -20,15 +17,12 @@ task('createSubject', 'Creates a new subject with MAO distribution')
     const distributorDeployment = await hre.deployments.get('DAODistributor');
 
     const distributorArguments: MAODistribution.DistributorArgumentsStruct = {
-      DAOSEttings: {
-        daoURI: taskArgs.daoUri,
-        subdomain: taskArgs.subdomain,
-        metadata: hre.ethers.utils.hexlify(hre.ethers.utils.toUtf8Bytes(taskArgs.metadata)),
+      tokenSettings: {
         tokenName: taskArgs.tokenName,
         tokenSymbol: taskArgs.tokenSymbol,
       },
-      RankifySettings: {
-        RankTokenContractURI: taskArgs.rankTokenContractUri,
+      rankifySettings: {
+        rankTokenContractURI: taskArgs.rankTokenContractUri,
         metadata: hre.ethers.utils.hexlify(hre.ethers.utils.toUtf8Bytes(taskArgs.metadata)),
         rankTokenURI: taskArgs.rankTokenUri,
         principalCost: taskArgs.principalCost,
