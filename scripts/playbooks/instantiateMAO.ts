@@ -1,6 +1,6 @@
 import { Distributor } from '../../types';
 import { BytesLike } from 'ethers';
-import { Signer } from '@ethersproject/abstract-signer';
+import { Signer } from 'ethers';
 
 export const instantiateMAO = async ({
   distributor,

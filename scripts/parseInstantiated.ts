@@ -15,5 +15,3 @@ export const parseInstantiated = (instances: string[]): MAOInstances => {
     rankToken: instances[11],
   };
 };
-
-export default { parseInstantiated };
