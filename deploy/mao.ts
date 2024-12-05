@@ -6,6 +6,7 @@ import { CodeIndex } from '@peeramid-labs/eds/types';
 import CodeIndexAbi from '@peeramid-labs/eds/abi/src/CodeIndex.sol/CodeIndex.json';
 import { MintSettingsStruct } from '../types/src/tokens/DistributableGovernanceERC20.sol/DistributableGovernanceERC20';
 import { ArguableVotingTournament } from '../types/src/distributions/ArguableVotingTournament';
+
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployments, getNamedAccounts } = hre;
   const { deploy } = deployments;
@@ -24,6 +25,14 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     patch: 0,
   };
 
+  const log = (message: string) => {
+    if (process.env.NODE_ENV !== 'TEST') {
+      console.log(`[MAO Deploy] ${message}`);
+    }
+  };
+
+  log('Starting MAO deployment...');
+
   const SACMDeployment = await deployments.get('SimpleAccessManager');
   const accessManagerCode = await hre.ethers.provider.getCode(SACMDeployment.address);
   const accessManagerId = ethers.utils.keccak256(accessManagerCode);
@@ -38,11 +47,16 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     ],
   });
 
+  log('RankToken deployed, registering code...');
+
   const rankTokenCode = await hre.ethers.provider.getCode(rankTokenDeployment.address);
   const rankTokenCodeId = ethers.utils.keccak256(rankTokenCode);
   const registerAddress = await codeIndexContract.get(rankTokenCodeId);
   if (registerAddress === ethers.constants.AddressZero) {
-    await codeIndexContract.register(rankTokenDeployment.address);
+    log('Registering RankToken in CodeIndex...');
+    (await codeIndexContract.register(rankTokenDeployment.address)).wait(1);
+  } else {
+    log('RankToken already registered in CodeIndex');
   }
 
   const initializerDeployment = await deploy('RankifyInstanceInit', {
@@ -50,12 +64,17 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     skipIfAlreadyDeployed: true,
   });
 
+  log('Deploying RankifyInstanceInit...');
+
   const initializerDeploymentCode = await hre.ethers.provider.getCode(initializerDeployment.address);
   const initializerDeploymentCodeId = ethers.utils.keccak256(initializerDeploymentCode);
   const initializerDeploymentCodeIdAddress = await codeIndexContract.get(initializerDeploymentCodeId);
   if (initializerDeploymentCodeIdAddress === ethers.constants.AddressZero) {
     await (await codeIndexContract.register(initializerDeployment.address)).wait(1);
+  } else {
+    log('Initializer already registered in CodeIndex');
   }
+
   const initializerAdr = initializerDeployment.address;
   const initializerSelector = '0x00000000';
 
@@ -112,6 +131,9 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     skipIfAlreadyDeployed: true,
     args: [initializerAdr, initializerSelector, distributionName, version, addresses],
   });
+
+  log('Deploying ArguableVotingTournament...');
+
   const arguableVotingTournamentDeploymentCode = await hre.ethers.provider.getCode(
     arguableVotingTournamentDeployment.address,
   );
@@ -120,8 +142,12 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     arguableVotingTournamentDeploymentCodeId,
   );
   if (arguableVotingTournamentDeploymentRegisterAddress === ethers.constants.AddressZero) {
-    await codeIndexContract.register(arguableVotingTournamentDeployment.address);
+    log('Registering ArguableVotingTournament in CodeIndex...');
+    await (await codeIndexContract.register(arguableVotingTournamentDeployment.address)).wait(1);
+  } else {
+    log('ArguableVotingTournament already registered in CodeIndex');
   }
+
   const arguableVotingTournamentCode = await hre.ethers.provider.getCode(arguableVotingTournamentDeployment.address);
   const arguableVotingTournamentCodeId = ethers.utils.keccak256(arguableVotingTournamentCode);
   const mintSettings: MintSettingsStruct = {
@@ -134,14 +160,18 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     args: ['TokenName', 'tkn', mintSettings, ethers.constants.AddressZero],
   });
 
+  log('Deploying GovernanceToken...');
+
   const govTokenDeploymentCode = await hre.ethers.provider.getCode(govTokenDeployment.address);
   const govTokenDeploymentCodeId = ethers.utils.keccak256(govTokenDeploymentCode);
   const govTokenDeploymentCodeIdAddress = await codeIndexContract.get(govTokenDeploymentCodeId);
   if (govTokenDeploymentCodeIdAddress === ethers.constants.AddressZero) {
-    await codeIndexContract.register(govTokenDeployment.address);
+    log('Registering GovernanceToken in CodeIndex...');
+    await (await codeIndexContract.register(govTokenDeployment.address)).wait(1);
+  } else {
+    log('GovernanceToken already registered in CodeIndex');
   }
-  const govTokenCode = await hre.ethers.provider.getCode(govTokenDeployment.address);
-  const govTokenCodeId = ethers.utils.keccak256(govTokenCode);
+
   const rankifyToken = await deployments.get('Rankify');
   const result = await deploy('MAODistribution', {
     from: deployer,
@@ -153,18 +183,25 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       rankTokenCodeId,
       arguableVotingTournamentCodeId,
       accessManagerId,
-      govTokenCodeId,
+      govTokenDeploymentCodeId,
       _distributionName,
       _distributionVersion,
     ],
   });
 
+  log('Deploying MAODistribution...');
+
   const MaoDistrCode = await hre.ethers.provider.getCode(result.address);
   const MaoDistrCodeId = ethers.utils.keccak256(MaoDistrCode);
   const MaoDistrCodeIdAddress = await codeIndexContract.get(MaoDistrCodeId);
   if (MaoDistrCodeIdAddress === ethers.constants.AddressZero) {
-    await codeIndexContract.register(result.address);
+    log('Registering MAODistribution in CodeIndex...');
+    await (await codeIndexContract.register(result.address)).wait(1);
+  } else {
+    log('MAODistribution already registered in CodeIndex');
   }
+
+  log('MAO deployment completed successfully!');
 
   return;
 };

@@ -6,7 +6,7 @@ import { RankifyDiamondInstance, RankToken, Rankify } from '../types';
 import addDistribution from '../scripts/playbooks/addDistribution';
 import { getCodeIdFromArtifact } from '../scripts/getCodeId';
 import { MAODistribution } from '../types/src/distributions/MAODistribution';
-import generateDistributorData from '../scripts/libraries/generateDistributorData';
+import { generateDistributorData } from '../scripts/libraries/generateDistributorData';
 
 let adr: AdrSetupResult;
 let env: EnvSetupResult;
@@ -19,7 +19,10 @@ describe('Rank Token Test', async function () {
     adr = setup.adr;
     env = setup.env;
 
-    await addDistribution(hre)(await getCodeIdFromArtifact(hre)('MAODistribution'), adr.gameOwner.wallet);
+    await addDistribution(hre)({
+      distrId: await getCodeIdFromArtifact(hre)('MAODistribution'),
+      signer: adr.gameOwner.wallet,
+    });
     const distributorArguments: MAODistribution.DistributorArgumentsStruct = {
       tokenSettings: {
         tokenName: 'tokenName',
@@ -37,16 +40,16 @@ describe('Rank Token Test', async function () {
     const data = generateDistributorData(distributorArguments);
     const maoCode = await hre.ethers.provider.getCode(env.maoDistribution.address);
     const maoId = ethers.utils.keccak256(maoCode);
-    const distributorsDistId = await env.distributor['calculateDistributorId(bytes32,address)'](
-      maoId,
-      ethers.constants.AddressZero,
-    );
+
     const token = await deployments.get('Rankify');
     const { owner } = await getNamedAccounts();
     const oSigner = await ethers.getSigner(owner);
     const tokenContract = new ethers.Contract(token.address, token.abi, oSigner) as Rankify;
     await tokenContract.mint(oSigner.address, ethers.utils.parseEther('100'));
     await tokenContract.approve(env.distributor.address, ethers.constants.MaxUint256);
+    const distributorsDistId = await hre.run('defaultDistributionId');
+    if (!distributorsDistId) throw new Error('Distribution name not found');
+    if (typeof distributorsDistId !== 'string') throw new Error('Distribution name must be a string');
     await env.distributor.connect(oSigner).instantiate(distributorsDistId, data);
     const filter = env.distributor.filters.Instantiated();
     const evts = await env.distributor.queryFilter(filter);

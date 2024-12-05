@@ -7,7 +7,7 @@ import { MAODistribution, DAODistributor, Rankify, RankifyDiamondInstance } from
 import { AdrSetupResult, setupTest } from './utils';
 import { getCodeIdFromArtifact } from '../scripts/getCodeId';
 import addDistribution from '../scripts/playbooks/addDistribution';
-import generateDistributorData from '../scripts/libraries/generateDistributorData';
+import { generateDistributorData } from '../scripts/libraries/generateDistributorData';
 
 describe('MAODistribution', async function () {
   let contract: MAODistribution;
@@ -15,6 +15,7 @@ describe('MAODistribution', async function () {
   let maoId: string;
   let rankify: Rankify;
   let addr: AdrSetupResult;
+  let distrId: string;
   beforeEach(async function () {
     const setup = await setupTest();
     addr = setup.adr;
@@ -24,22 +25,30 @@ describe('MAODistribution', async function () {
     distributorContract = setup.env.distributor;
 
     rankify = setup.env.rankifyToken;
+
+    distrId = await hre.run('defaultDistributionId');
+    if (!distrId) throw new Error('Distribution name not found');
+    if (typeof distrId !== 'string') throw new Error('Distribution name must be a string');
   });
   it('only owner can add distribution', async () => {
     await expect(
-      distributorContract['addDistribution(bytes32,address)'](maoId, ethers.constants.AddressZero),
+      distributorContract.addNamedDistribution(distrId, maoId, ethers.constants.AddressZero),
     ).to.revertedWithCustomError(distributorContract, 'AccessControlUnauthorizedAccount');
     await expect(
       distributorContract
         .connect(addr.gameOwner.wallet)
-        ['addDistribution(bytes32,address)'](maoId, ethers.constants.AddressZero),
+        .addNamedDistribution(distrId, maoId, ethers.constants.AddressZero),
     ).to.emit(distributorContract, 'DistributionAdded');
   });
   describe('when distribution was added', async () => {
     beforeEach(async () => {
       const { owner } = await hre.getNamedAccounts();
       const signer = await hre.ethers.getSigner(owner);
-      await addDistribution(hre)(await getCodeIdFromArtifact(hre)('MAODistribution'), signer);
+      await addDistribution(hre)({
+        distrId: await getCodeIdFromArtifact(hre)('MAODistribution'),
+        signer,
+        name: distrId,
+      });
     });
     it('Can instantiate a distribution', async () => {
       const distributorArguments: MAODistribution.DistributorArgumentsStruct = {
@@ -58,9 +67,6 @@ describe('MAODistribution', async function () {
       // Encode the arguments using generateDistributorData
       const data = generateDistributorData(distributorArguments);
 
-      const distributorsDistId = ethers.utils.keccak256(
-        ethers.utils.defaultAbiCoder.encode(['bytes32', 'address'], [maoId, ethers.constants.AddressZero]),
-      );
       const token = await deployments.get('Rankify');
       const { owner } = await getNamedAccounts();
       const oSigner = await ethers.getSigner(owner);
@@ -68,8 +74,7 @@ describe('MAODistribution', async function () {
       await tokenContract.mint(oSigner.address, ethers.utils.parseEther('100'));
       await tokenContract.approve(distributorContract.address, ethers.constants.MaxUint256);
 
-      const tx = await distributorContract.connect(oSigner).instantiate(distributorsDistId, data);
-      //   const receipt = await tx.wait(1);
+      const tx = await distributorContract.connect(oSigner).instantiate(distrId, data);
       await expect(tx).not.reverted;
       expect((await distributorContract.functions.getDistributions()).length).to.equal(1);
       const filter = distributorContract.filters.Instantiated();

@@ -27,4 +27,32 @@ interface IRankifyInstance {
         uint128 timePerTurn;
         uint128 timeToJoin;
     }
+
+    struct GameStateOutput {
+        uint256 rank;
+        uint256 minGameTime;
+        address createdBy;
+        uint256 numOngoingProposals;
+        uint256 numPrevProposals;
+        uint256 numCommitments;
+        uint256 numVotesThisTurn;
+        uint256 numVotesPrevTurn;
+        LibQuadraticVoting.qVotingStruct voting;
+        uint256 currentTurn;
+        uint256 turnStartedAt;
+        uint256 registrationOpenAt;
+        uint256 startedAt;
+        bool hasStarted;
+        bool hasEnded;
+        uint256 numPlayersMadeMove;
+        uint256 numActivePlayers;
+        bool isOvertime;
+        uint256 timePerTurn;
+        uint256 maxPlayerCnt;
+        uint256 minPlayerCnt;
+        uint256 timeToJoin;
+        uint256 maxTurns;
+        uint256 voteCredits;
+        address gameMaster;
+    }
 }

@@ -27,7 +27,7 @@ const scriptName = path.basename(__filename);
 
 import { getCodeIdFromArtifact } from '../scripts/getCodeId';
 import { MAODistribution } from '../types/src/distributions/MAODistribution';
-import generateDistributorData from '../scripts/libraries/generateDistributorData';
+import { generateDistributorData } from '../scripts/libraries/generateDistributorData';
 let votes: MockVotes;
 let proposalsStruct: ProposalSubmission[];
 let adr: AdrSetupResult;
@@ -237,7 +237,10 @@ describe(scriptName, () => {
     const setup = await setupTest();
     adr = setup.adr;
     env = setup.env;
-    await addDistribution(hre)(await getCodeIdFromArtifact(hre)('MAODistribution'), adr.gameOwner.wallet);
+    await addDistribution(hre)({
+      distrId: await getCodeIdFromArtifact(hre)('MAODistribution'),
+      signer: adr.gameOwner.wallet,
+    });
     const distributorArguments: MAODistribution.DistributorArgumentsStruct = {
       tokenSettings: {
         tokenName: 'tokenName',
@@ -254,10 +257,9 @@ describe(scriptName, () => {
     const data = generateDistributorData(distributorArguments);
     const maoCode = await hre.ethers.provider.getCode(env.maoDistribution.address);
     const maoId = ethers.utils.keccak256(maoCode);
-    const distributorsDistId = await env.distributor['calculateDistributorId(bytes32,address)'](
-      maoId,
-      ethers.constants.AddressZero,
-    );
+    const distributorsDistId = await hre.run('defaultDistributionId');
+    if (!distributorsDistId) throw new Error('Distribution name not found');
+    if (typeof distributorsDistId !== 'string') throw new Error('Distribution name must be a string');
 
     const token = await deployments.get('Rankify');
     const { owner } = await getNamedAccounts();
@@ -483,6 +485,25 @@ describe(scriptName, () => {
       // Check 90% of game cost is burned
       const burnedAmount = gamePrice.mul(90).div(100);
       expect(finalTotalSupply).to.equal(initialTotalSupply.sub(burnedAmount), '90% of game cost should be burned');
+    });
+    it('can get game state', async () => {
+      const state = await rankifyInstance.getGameState(1);
+      expect(state.rank).to.be.equal(1);
+      expect(state.minGameTime).to.be.equal(RInstanceSettings.RInstance_MIN_GAME_TIME);
+      expect(state.createdBy).to.be.equal(adr.gameCreator1.wallet.address);
+      expect(state.numOngoingProposals).to.be.equal(0);
+      expect(state.numPrevProposals).to.be.equal(0);
+      expect(state.numCommitments).to.be.equal(0);
+      expect(state.numVotesPrevTurn).to.be.equal(0);
+      expect(state.currentTurn).to.be.equal(0);
+      expect(state.turnStartedAt).to.be.equal(0);
+      expect(state.registrationOpenAt).to.be.equal(0);
+      expect(state.startedAt).to.be.equal(0);
+      expect(state.hasStarted).to.be.equal(false);
+      expect(state.hasEnded).to.be.equal(false);
+      expect(state.numPlayersMadeMove).to.be.equal(0);
+      expect(state.numActivePlayers).to.be.equal(0);
+      expect(state.isOvertime).to.be.equal(false);
     });
 
     it('Should calculate game price correctly for different time parameters', async () => {

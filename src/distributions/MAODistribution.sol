@@ -54,20 +54,17 @@ contract MAODistribution is IDistribution, CodeIndexer {
 
     /**
      * @notice Initializes the contract with the provided parameters and performs necessary checks.
-     * @dev - retrieves contract addresses from a contract index using the provided identifiers.
-     * - checks if the access manager supports the ERC7746 interface.
-     * - EIP712 compatible name/version can be extracted with use of LibSemver
-     *
-     *
-     * WARNING: _trustedForwarder functionality hasn't been yet reviewed nor implemented for Rankify distribution and if set will affect only OSx DAO setup.
-     *
-     * @param trustedForwarder Address of the trusted forwarder.
-     * @param rankTokenCodeId Identifier for the rank token code.
-     * @param RankifyDIistributionId Identifier for the Rankify distribution.
-     * @param accessManagerId Identifier for the access manager.
-     * @param governanceERC20BaseId Identifier for the governance ERC20 base.
-     * @param distributionName Name of the distribution.
-     * @param distributionVersion Version of the distribution as a `LibSemver.Version` struct.
+     * @dev Retrieves contract addresses from a contract index using the provided identifiers
+     *      and initializes the distribution system.
+     * @param trustedForwarder Address of the trusted forwarder for meta-transactions (WARNING: Not yet reviewed)
+     * @param paymentToken Address of the token used for payments in the system
+     * @param beneficiary Address that receives payments and fees
+     * @param rankTokenCodeId Identifier for the rank token implementation in CodeIndex
+     * @param RankifyDIistributionId Identifier for the Rankify distribution implementation
+     * @param accessManagerId Identifier for the access manager implementation
+     * @param governanceERC20BaseId Identifier for the governance token implementation
+     * @param distributionName Name identifier for this distribution
+     * @param distributionVersion Semantic version information as LibSemver.Version struct
      */
     constructor(
         address trustedForwarder,

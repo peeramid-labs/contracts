@@ -10,4 +10,3 @@ export function generateDistributorData(args: MAODistribution.DistributorArgumen
   );
   return data;
 }
-export default generateDistributorData;

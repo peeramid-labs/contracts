@@ -1,17 +1,21 @@
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
-import { Signer } from '@ethersproject/abstract-signer';
 import { DAODistributor } from '../../types';
-
-export const addDistributionNoChecks =
-  (hre: HardhatRuntimeEnvironment) => async (distrId: string, signer: Signer, initializer?: string) => {
-    const { deployments } = hre;
-    const DAODistributor = await deployments.get('DAODistributor');
-    const distributorContract = new hre.ethers.Contract(DAODistributor.address, DAODistributor.abi, signer);
-    return distributorContract.addDistribution(distrId, initializer ?? hre.ethers.constants.AddressZero);
-  };
+import { ethers } from 'hardhat';
+import { Signer } from 'ethers';
 
 export const addDistribution =
-  (hre: HardhatRuntimeEnvironment) => async (distrId: string, signer: Signer, initializer?: string) => {
+  (hre: HardhatRuntimeEnvironment) =>
+  async ({
+    name,
+    distrId,
+    signer,
+    initializer,
+  }: {
+    name?: string;
+    distrId: string;
+    signer: Signer;
+    initializer?: string;
+  }) => {
     const { deployments } = hre;
     const DAODistributor = await deployments.get('DAODistributor');
     const distributorContract = new hre.ethers.Contract(
@@ -20,7 +24,13 @@ export const addDistribution =
       signer,
     ) as DAODistributor;
     const distributionsLengthBefore = (await distributorContract.getDistributions()).length;
-    const receipt = await distributorContract['addDistribution(bytes32,address)'](
+    let receipt;
+    let _name = name;
+    if (!_name) _name = await hre.run('defaultDistributionId');
+    if (!_name) throw new Error('Distribution name not found');
+    if (typeof _name !== 'string') throw new Error('Distribution name must be a string');
+    receipt = await distributorContract.addNamedDistribution(
+      _name,
       distrId,
       initializer ?? hre.ethers.constants.AddressZero,
     );

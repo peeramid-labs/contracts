@@ -15,6 +15,12 @@ import getSuperInterface from './scripts/getSuperInterface';
 import { ErrorFragment, EventFragment, FunctionFragment } from '@ethersproject/abi';
 import './scripts/generateSelectorDocs';
 
+task('defaultDistributionId', 'Prints the default distribution id', async (taskArgs, hre) => {
+  const id = hre.ethers.utils.formatBytes32String(process.env.DEFAULT_DISTRIBUTION_NAME ?? 'MAO Distribution');
+  if (taskArgs.print) console.log(id);
+  return id;
+}).addFlag('print', 'Prints the default distribution id');
+
 task('accounts', 'Prints the list of accounts', async (taskArgs, hre) => {
   const accounts = await hre.ethers.getSigners();
 
