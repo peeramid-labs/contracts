@@ -2,7 +2,7 @@ import { task } from 'hardhat/config';
 
 import { getCodeIdFromArtifact } from '../scripts/getCodeId';
 import { DAODistributor, MAODistribution, Rankify } from '../types';
-import generateDistributorData from '../scripts/libraries/generateDistributorData';
+import { generateDistributorData } from '../scripts/libraries/generateDistributorData';
 import { parseInstantiated } from '../scripts/parseInstantiated';
 
 task('createSubject', 'Creates a new subject with MAO distribution')
