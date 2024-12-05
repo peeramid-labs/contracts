@@ -2,4 +2,4 @@
 'rankify-contracts': patch
 ---
 
-added deployment artefacts
+added deployment artifacts
