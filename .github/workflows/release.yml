@@ -40,3 +40,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Send Discord notification
+        if: steps.changesets.outputs.published == 'true'
+        uses: Ilshidur/action-discord@master
+        with:
+          args: |
+            New Rankify-Contracts release published! Check out the changes: https://github.com/${{ github.repository }}/releases/tag/v${{ fromJson(steps.changesets.outputs.publishedPackages)[0].version }}
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_RELEASE_NOTIFIER }}
