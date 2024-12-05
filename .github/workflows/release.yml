@@ -31,6 +31,7 @@ jobs:
       - name: generate doc selectors
         run: pnpm hardhat generate-selector-docs
       - name: Create Release Pull Request or Publish to npm
+        id: changesets
         uses: changesets/action@v1
         with:
           publish: pnpm run release
