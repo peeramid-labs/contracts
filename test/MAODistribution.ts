@@ -7,7 +7,7 @@ import { MAODistribution, DAODistributor, Rankify, RankifyDiamondInstance } from
 import { AdrSetupResult, setupTest } from './utils';
 import { getCodeIdFromArtifact } from '../scripts/getCodeId';
 import addDistribution from '../scripts/playbooks/addDistribution';
-import generateDistributorData from '../scripts/libraries/generateDistributorData';
+import { generateDistributorData } from '../scripts/libraries/generateDistributorData';
 
 describe('MAODistribution', async function () {
   let contract: MAODistribution;

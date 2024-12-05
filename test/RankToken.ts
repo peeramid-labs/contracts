@@ -6,7 +6,7 @@ import { RankifyDiamondInstance, RankToken, Rankify } from '../types';
 import addDistribution from '../scripts/playbooks/addDistribution';
 import { getCodeIdFromArtifact } from '../scripts/getCodeId';
 import { MAODistribution } from '../types/src/distributions/MAODistribution';
-import generateDistributorData from '../scripts/libraries/generateDistributorData';
+import { generateDistributorData } from '../scripts/libraries/generateDistributorData';
 
 let adr: AdrSetupResult;
 let env: EnvSetupResult;

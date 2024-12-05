@@ -386,4 +386,29 @@ contract RankifyInstanceMainFacet is
     function isActive(uint256 gameId, address player) public view returns (bool) {
         return gameId.isActive(player);
     }
+
+    function getGameState(uint256 gameId) public view returns (IRankifyInstance.GameStateOutput memory state) {
+        LibTBG.Instance storage tbgInstanceState = LibTBG._getInstance(gameId);
+        LibRankify.GameState storage gameState = gameId.getGameState();
+        state = IRankifyInstance.GameStateOutput({
+            rank: gameState.rank,
+            minGameTime: gameState.minGameTime,
+            createdBy: gameState.createdBy,
+            numOngoingProposals: gameState.numOngoingProposals,
+            numPrevProposals: gameState.numPrevProposals,
+            numCommitments: gameState.numCommitments,
+            numVotesThisTurn: gameState.numVotesThisTurn,
+            numVotesPrevTurn: gameState.numVotesPrevTurn,
+            voting: gameState.voting,
+            currentTurn: tbgInstanceState.state.currentTurn,
+            turnStartedAt: tbgInstanceState.state.turnStartedAt,
+            registrationOpenAt: tbgInstanceState.state.registrationOpenAt,
+            startedAt: tbgInstanceState.state.startedAt,
+            hasStarted: tbgInstanceState.state.hasStarted,
+            hasEnded: tbgInstanceState.state.hasEnded,
+            numPlayersMadeMove: tbgInstanceState.state.numPlayersMadeMove,
+            numActivePlayers: tbgInstanceState.state.numActivePlayers,
+            isOvertime: tbgInstanceState.state.isOvertime
+        });
+    }
 }

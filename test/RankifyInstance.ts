@@ -27,7 +27,7 @@ const scriptName = path.basename(__filename);
 
 import { getCodeIdFromArtifact } from '../scripts/getCodeId';
 import { MAODistribution } from '../types/src/distributions/MAODistribution';
-import generateDistributorData from '../scripts/libraries/generateDistributorData';
+import { generateDistributorData } from '../scripts/libraries/generateDistributorData';
 let votes: MockVotes;
 let proposalsStruct: ProposalSubmission[];
 let adr: AdrSetupResult;
@@ -485,6 +485,25 @@ describe(scriptName, () => {
       // Check 90% of game cost is burned
       const burnedAmount = gamePrice.mul(90).div(100);
       expect(finalTotalSupply).to.equal(initialTotalSupply.sub(burnedAmount), '90% of game cost should be burned');
+    });
+    it('can get game state', async () => {
+      const state = await rankifyInstance.getGameState(1);
+      expect(state.rank).to.be.equal(1);
+      expect(state.minGameTime).to.be.equal(RInstanceSettings.RInstance_MIN_GAME_TIME);
+      expect(state.createdBy).to.be.equal(adr.gameCreator1.wallet.address);
+      expect(state.numOngoingProposals).to.be.equal(0);
+      expect(state.numPrevProposals).to.be.equal(0);
+      expect(state.numCommitments).to.be.equal(0);
+      expect(state.numVotesPrevTurn).to.be.equal(0);
+      expect(state.currentTurn).to.be.equal(0);
+      expect(state.turnStartedAt).to.be.equal(0);
+      expect(state.registrationOpenAt).to.be.equal(0);
+      expect(state.startedAt).to.be.equal(0);
+      expect(state.hasStarted).to.be.equal(false);
+      expect(state.hasEnded).to.be.equal(false);
+      expect(state.numPlayersMadeMove).to.be.equal(0);
+      expect(state.numActivePlayers).to.be.equal(0);
+      expect(state.isOvertime).to.be.equal(false);
     });
 
     it('Should calculate game price correctly for different time parameters', async () => {

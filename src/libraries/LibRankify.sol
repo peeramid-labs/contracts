@@ -61,7 +61,6 @@ library LibRankify {
 
     /**
      * @dev Comprehensive state structure for an individual game
-     * @param gamePrice Price paid to create this game
      * @param rank Required rank level for participation
      * @param minGameTime Minimum duration the game must run
      * @param createdBy Address of the game creator
@@ -73,7 +72,6 @@ library LibRankify {
      * @param voting Quadratic voting state for this game
      */
     struct GameState {
-        uint256 gamePrice;
         uint256 rank;
         uint256 minGameTime;
         address createdBy;
