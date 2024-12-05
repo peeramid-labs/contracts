@@ -10,7 +10,7 @@ import 'hardhat-contract-sizer';
 import 'hardhat-deploy';
 import 'hardhat-tracer';
 import 'solidity-docgen';
-import './playbook';
+// import './playbook';
 import getSuperInterface from './scripts/getSuperInterface';
 import { ErrorFragment, EventFragment, FunctionFragment } from '@ethersproject/abi';
 import './scripts/generateSelectorDocs';
