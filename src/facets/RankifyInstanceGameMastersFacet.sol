@@ -13,6 +13,12 @@ import "hardhat/console.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import "../vendor/diamond/libraries/LibDiamond.sol";
 
+/**
+ * @title RankifyInstanceGameMastersFacet
+ * @notice Facet handling game master functionality for Rankify instances
+ * @dev Implements game master specific operations like vote submission and game management
+ * @author Peeramid Labs, 2024
+ */
 contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
     using LibTBG for uint256;
     using LibRankify for uint256;

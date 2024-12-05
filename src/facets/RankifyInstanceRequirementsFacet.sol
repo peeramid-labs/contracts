@@ -5,6 +5,13 @@ import {LibTBG} from "../libraries/LibTurnBasedGame.sol";
 import {LibCoinVending} from "../libraries/LibCoinVending.sol";
 import {LibRankify} from "../libraries/LibRankify.sol";
 
+/**
+ * @title RankifyInstanceRequirementsFacet
+ * @notice Facet handling game requirements and conditions for Rankify instances
+ * @dev Implements functionality for setting and checking join requirements for games,
+ *      utilizing the LibCoinVending library for configuration management
+ * @author Peeramid Labs, 2024
+ */
 contract RankifyInstanceRequirementsFacet {
     using LibTBG for uint256;
     using LibRankify for uint256;

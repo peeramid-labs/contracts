@@ -7,6 +7,14 @@ pragma solidity ^0.8.0;
 import {LibDiamond} from "./libraries/LibDiamond.sol";
 import {IDiamondCut} from "./interfaces/IDiamondCut.sol";
 
+/**
+ * @title DiamondClonable
+ * @notice A modified Diamond implementation that supports cloning for efficient proxy deployment
+ * @dev Extends the Diamond pattern to allow the contract to be cloned, reducing gas costs
+ *      for deploying multiple instances. Includes core Diamond functionality like cut operations
+ *      and function delegation.
+ * @author Adapted from Nick Mudge's Diamond implementation by Peeramid Labs, 2024
+ */
 contract DiamondClonable {
     error functionDoesNotExist(bytes4 selector);
     address private immutable cutFacet;
