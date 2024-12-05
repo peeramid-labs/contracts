@@ -26,7 +26,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   };
 
   const log = (message: string) => {
-    if (process.env.NODE_ENV !== 'test') {
+    if (process.env.NODE_ENV !== 'TEST') {
       console.log(`[MAO Deploy] ${message}`);
     }
   };

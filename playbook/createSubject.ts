@@ -3,9 +3,10 @@ import { task } from 'hardhat/config';
 import { getCodeIdFromArtifact } from '../scripts/getCodeId';
 import { DAODistributor, MAODistribution, Rankify } from '../types';
 import generateDistributorData from '../scripts/libraries/generateDistributorData';
+import { parseInstantiated } from '../scripts/parseInstantiated';
 
 task('createSubject', 'Creates a new subject with MAO distribution')
-  .addOptionalParam('metadata', 'Metadata for the DAO', 'metadata')
+  .addOptionalParam('metadata', 'Metadata for the rankify contract', 'metadata')
   .addOptionalParam('tokenName', 'Name of the token', 'tokenName')
   .addOptionalParam('tokenSymbol', 'Symbol of the token', 'tokenSymbol')
   .addOptionalParam('rankTokenUri', 'URI for the rank token', 'https://example.com/rank')
@@ -40,11 +41,7 @@ task('createSubject', 'Creates a new subject with MAO distribution')
 
     const data = generateDistributorData(distributorArguments);
 
-    const maoId = await getCodeIdFromArtifact(hre)('MAODistribution');
-    const distributorsDistId = await distributorContract['calculateDistributorId(bytes32,address)'](
-      maoId,
-      hre.ethers.constants.AddressZero,
-    );
+    const distributorsDistId = hre.ethers.utils.parseBytes32String('');
 
     const token = await hre.deployments.get('Rankify');
     const { DAO: owner } = await hre.getNamedAccounts();
@@ -72,13 +69,6 @@ task('createSubject', 'Creates a new subject with MAO distribution')
       instances,
       newInstanceId: parsedLog.args.newInstanceId,
       receipt,
-      instancesParsed: {
-        rankToken: parsedLog.args.instances[11],
-        rankifyInstance: parsedLog.args.instances[2],
-        govToken: parsedLog.args.instances[0],
-        govTokenAccessManager: parsedLog.args.instances[1],
-        acidInstance: parsedLog.args.instances[2],
-        acidAccessManager: parsedLog.args.instances[10],
-      },
+      instancesParsed: parseInstantiated(parsedLog.args.instances),
     };
   });

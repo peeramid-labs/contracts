@@ -92,4 +92,8 @@ contract DAODistributor is TokenizedDistributor, AccessControlDefaultAdminRules 
     ) external override onlyRole(DEFAULT_ADMIN_ROLE) {
         super._addDistribution(address(repository), initializer, requirement);
     }
+
+    function addNamedDistribution(bytes32 name, bytes32 distributorId, address initializer) external override onlyRole(DEFAULT_ADMIN_ROLE) {
+        super._addDistribution(name, distributorId, initializer);
+    }
 }

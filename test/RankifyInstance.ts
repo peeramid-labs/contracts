@@ -237,7 +237,10 @@ describe(scriptName, () => {
     const setup = await setupTest();
     adr = setup.adr;
     env = setup.env;
-    await addDistribution(hre)(await getCodeIdFromArtifact(hre)('MAODistribution'), adr.gameOwner.wallet);
+    await addDistribution(hre)({
+      distrId: await getCodeIdFromArtifact(hre)('MAODistribution'),
+      signer: adr.gameOwner.wallet,
+    });
     const distributorArguments: MAODistribution.DistributorArgumentsStruct = {
       tokenSettings: {
         tokenName: 'tokenName',
@@ -254,10 +257,9 @@ describe(scriptName, () => {
     const data = generateDistributorData(distributorArguments);
     const maoCode = await hre.ethers.provider.getCode(env.maoDistribution.address);
     const maoId = ethers.utils.keccak256(maoCode);
-    const distributorsDistId = await env.distributor['calculateDistributorId(bytes32,address)'](
-      maoId,
-      ethers.constants.AddressZero,
-    );
+    const distributorsDistId = await hre.run('defaultDistributionId');
+    if (!distributorsDistId) throw new Error('Distribution name not found');
+    if (typeof distributorsDistId !== 'string') throw new Error('Distribution name must be a string');
 
     const token = await deployments.get('Rankify');
     const { owner } = await getNamedAccounts();
