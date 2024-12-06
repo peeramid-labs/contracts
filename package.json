@@ -16,7 +16,7 @@
     "upgrade:game:mumbai": "source .secrets/hh_mumbai.env &&  pnpm hardhat --network mumbai deploy --tags upgrade_game",
     "test": "export NODE_ENV=TEST && pnpm hardhat test",
     "test:parallel": "export NODE_ENV=TEST && pnpm hardhat test --parallel",
-    "build": "pnpm hardhat compile",
+    "build": "pnpm hardhat compile && pnpm hardhat diamond-abi-viem-export",
     "lint:sol": "prettier --log-level warn --ignore-path .gitignore '{src,test}/**/*.sol' --check && solhint '{contracts,test}/**/*.sol'",
     "lint:sol:fix": "prettier --log-level warn --ignore-path .gitignore '{src,test}/**/*.sol' --write",
     "version": "pnpm build && changeset version",

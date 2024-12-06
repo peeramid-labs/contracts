@@ -260,11 +260,7 @@ contract MAODistribution is IDistribution, CodeIndexer {
      * @dev This is only needed to ensure `DistributorArguments` are provided in ABI, as it would be internal otherwise.
      * @return DistributorArguments The schema of the distribution.
      */
-    function distributionSchema() external pure returns (DistributorArguments memory) {
-        return
-            DistributorArguments({
-                tokenSettings: TokenArguments("", ""),
-                rankifySettings: UserRankifySettings(0, 0, "", "", "")
-            });
+    function distributionSchema(DistributorArguments memory args) external pure returns (DistributorArguments memory) {
+        return args;
     }
 }
