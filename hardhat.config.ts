@@ -2,7 +2,6 @@ import { task, subtask } from 'hardhat/config';
 import { TASK_COMPILE_SOLIDITY_EMIT_ARTIFACTS } from 'hardhat/builtin-tasks/task-names';
 import { join } from 'path';
 import { writeFile, mkdir, readFile } from 'fs/promises';
-import { writeFile, mkdir } from 'fs/promises';
 import { inspect } from 'util';
 import '@nomicfoundation/hardhat-chai-matchers';
 import 'hardhat-diamond-abi';

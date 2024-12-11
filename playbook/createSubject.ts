@@ -13,6 +13,10 @@ task('createSubject', 'Creates a new subject with MAO distribution')
   .addOptionalParam('rankTokenContractUri', 'URI for the rank token contract', 'https://example.com/rank')
   .addOptionalParam('principalCost', 'Principal cost for ranking', '1')
   .addOptionalParam('principalTimeConstant', 'Time constant for principal', '3600')
+  .addOptionalParam(
+    'distributorsId',
+    'Distributors ID to create game from, defaults to hardhat task defaultDistributionId',
+  )
   .setAction(async (taskArgs, hre) => {
     const { getNamedAccounts } = hre;
     const distributorDeployment = await hre.deployments.get('DAODistributor');
@@ -41,7 +45,10 @@ task('createSubject', 'Creates a new subject with MAO distribution')
 
     const data = generateDistributorData(distributorArguments);
 
-    const distributorsDistId = hre.ethers.utils.parseBytes32String('');
+    const distributorsID = taskArgs.distributorsId ?? (await hre.run('defaultDistributionId'));
+    if (!distributorsID) {
+      throw new Error('Distribution name not found');
+    }
 
     const token = await hre.deployments.get('Rankify');
     const { DAO: owner } = await hre.getNamedAccounts();
@@ -49,10 +56,9 @@ task('createSubject', 'Creates a new subject with MAO distribution')
     const tokenContract = new hre.ethers.Contract(token.address, token.abi, oSigner) as Rankify;
     await tokenContract.mint(oSigner.address, hre.ethers.utils.parseEther('100'));
     await tokenContract.approve(distributorContract.address, hre.ethers.constants.MaxUint256);
-    const instances = await distributorContract.numInstances();
-    const tx = await distributorContract.connect(oSigner).instantiate(distributorsDistId, data);
-    const receipt = await tx.wait();
-    const filter = distributorContract.filters.Instantiated(distributorsDistId);
+    const tx = await distributorContract.connect(oSigner).instantiate(distributorsID, data);
+    const receipt = await tx.wait(1);
+    const filter = distributorContract.filters.Instantiated(distributorsID);
     const t = filter.topics && filter.topics[0];
     if (!t) throw new Error('Filter not found');
     const logs = receipt.logs.filter(log => log.topics[0] === t);
@@ -66,7 +72,7 @@ task('createSubject', 'Creates a new subject with MAO distribution')
     console.log('instances created', parsedLog.args.instances);
     console.log('instance id', parsedLog.args.newInstanceId);
     return {
-      instances,
+      instances: parsedLog.args.instances,
       newInstanceId: parsedLog.args.newInstanceId,
       receipt,
       instancesParsed: parseInstantiated(parsedLog.args.instances),
