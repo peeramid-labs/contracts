@@ -1,5 +1,11 @@
 # rankify-contracts
 
+## 0.10.1
+
+### Patch Changes
+
+- [#96](https://github.com/peeramid-labs/contracts/pull/96) [`c582421d2e4672f15e768d1a8293d42e72c5e0f9`](https://github.com/peeramid-labs/contracts/commit/c582421d2e4672f15e768d1a8293d42e72c5e0f9) Thanks [@peersky](https://github.com/peersky)! - improved create game playbooks
+
 ## 0.10.0
 
 ### Minor Changes
