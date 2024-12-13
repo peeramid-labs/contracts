@@ -20,7 +20,7 @@
     "lint:sol": "prettier --log-level warn --ignore-path .gitignore '{src,test}/**/*.sol' --check && solhint '{contracts,test}/**/*.sol'",
     "lint:sol:fix": "prettier --log-level warn --ignore-path .gitignore '{src,test}/**/*.sol' --write",
     "version": "pnpm build && changeset version",
-    "release": "pnpm build && changeset publish",
+    "release": "pnpm hardhat clean && rm -rf ./abi && pnpm build && changeset publish",
     "anvil:deploy": "./playbook/utils/deploy-to-local-anvil.sh"
   },
   "keywords": [],
