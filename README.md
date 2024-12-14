@@ -73,6 +73,8 @@ The Autonomous Competence Identification Distribution ([ArguableVotingTournament
    mkdir .secrets
    cp dev.env.sample .secrets/dev.env
    vi .secrets/dev.env
+   # ...
+   . ./.secrets/dev.env
    ```
 
 ### Build and Test
