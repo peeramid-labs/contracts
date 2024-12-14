@@ -114,13 +114,34 @@ The Autonomous Competence Identification Distribution ([ArguableVotingTournament
    # or to run next step:
    ./playbook/utils/deploy-to-local-anvil.sh
    ```
+## Interacting with Contracts
 
-2. Running playbooks:
+We provide helper tools in form of `playbooks` - small hardhat runtime scripts that can be used to set contract state for sake of testing and verification.
+
+1. Running local playbooks:
    ```sh
    pnpm hardhat --network $NETWORK addDistribution
    pnpm hardhat --network $NETWORK createSubject --token-name xxx
    pnpm hardhat --network $NETWORK createGame --rankify-instance-address $INSTANCE_ADDRESS
    ```
+2. Using viem to interact with contracts:
+
+In (abi)[./abi] directory you can find generated abi files for all contracts, including .ts files to give viem/wagmi a better experience.
+
+Copy these files to your working project and import them using `import { ... } from './abi/...';`
+
+We provide this packaged within our sdk: [`@peeramid-labs/sdk`](https://github.com/peeramid-labs/sdk)
+
+3. Get all interfaces and signatures:
+
+You can get all of the function signatures to debug your application via the following command:
+```
+pnpm hardhat getSuperInterface > interface.json
+```
+This will generate a file called `interface.json` in the current directory.
+
+You can also use script in `./scripts/getSuperInterface.ts` to get ethers js object
+
 
 ## Project Structure
 
@@ -136,6 +157,10 @@ contracts/
 ├── test/                  # Test files
 ├── scripts/              # Deployment and utility scripts
 └── deployments/          # Deployment artifacts
+```
+## Documentation
+
+Documentation is generated via docgen and is available at [docs.rankify.it](https://docs.rankify.it)
 
 ## Contributing
 
