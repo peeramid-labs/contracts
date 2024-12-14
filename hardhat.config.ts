@@ -84,7 +84,7 @@ task('getSuperInterface', 'Prints the super interface of a contract').setAction(
     return_value['functions'][su.getSighash(x)] = x;
   });
   Object.values(su.events).forEach(x => {
-    return_value['events'][su.getSighash(x)] = x;
+    return_value['events'][su.getEventTopic(x)] = x;
   });
   Object.values(su.errors).forEach(x => {
     return_value['errors'][su.getSighash(x)] = x;
@@ -171,22 +171,6 @@ export default {
         url: process.env.FORK_RPC_URL ?? '',
         blockNumber: 257223284, // works for arbitrum, change for others
       },
-    },
-    mumbai: {
-      url: 'https://matic-mumbai.chainstacklabs.com',
-      accounts: process.env.PRIVATE_KEY && [process.env.PRIVATE_KEY],
-    },
-    matic: {
-      url: process.env.RPC_URL ?? '',
-      accounts: process.env.PRIVATE_KEY && [process.env.PRIVATE_KEY],
-    },
-    ganache: {
-      url: process.env.GANACHE_RPC_URL ?? '',
-      accounts: process.env.PRIVATE_KEY && [process.env.PRIVATE_KEY],
-    },
-    goerli: {
-      url: process.env.RPC_URL ?? '',
-      accounts: process.env.PRIVATE_KEY && [process.env.PRIVATE_KEY],
     },
     localhost: {
       url: 'http://127.0.0.1:8545',

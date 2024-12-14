@@ -1,117 +1,182 @@
+# Rankify Contracts
+
+Smart contract infrastructure for [rankify.it](https://rankify.it) - A platform for building bottom-up self-organized organizations with use of autonomous competence identification and continuous voting proposing protocols .
+
+## Overview
+
+Rankify Contracts provide the foundation for creating and managing Meritocratic Autonomous Organizations (MAO) using a  tournament system for autonomous competence identification. The system leverages the Diamond pattern for upgradeable smart contracts and integrates with Ethereum Distribution System toi deploy governance tokens compatible with governance frameworks like Aragon OSx or OpenZeppelin.
+
+## Architecture
+
+### Core Components
+
+1. **Distribution System**
+   - Main protocol entry point to start new community
+   - Based on [Ethereum Distribution System](https://github.com/peeramid-labs/eds)
+   - Enables decentralized infrastructure deployment
+   - Main distributor: [MAODistributor.sol](./src/MAODistributor.sol)
+
+2. **Token System**
+   - [RankToken](./src/tokens/RankToken.sol): ERC1155 token for rank representation
+   - [DistributableGovernanceERC20](./src/tokens/DistributableGovernanceERC20.sol): ERC20 token for governance
+   - [Rankify Token](./src/tokens/Rankify.sol): ERC20 token implementing entrance gating
+
+3. **Diamond Pattern Implementation**
+   - **Core Facets:**
+     - EIP712InspectorFacet: EIP-712 message signing and verification
+     - RankifyInstanceMainFacet: Tournament core logic
+     - RankifyInstanceGameMastersFacet: Voting and proposal mechanics
+     - RankifyInstanceRequirementsFacet: Participation requirements
+     - DiamondLoupeFacet: Facet introspection
+     - OwnershipFacet: Contract ownership management
+
+## Available Distributions
+
+### 1. Meritocratic Autonomous Organization (MAO)
+
+The MAO distribution ([MAODistribution.sol](./src/distributions/MAODistribution.sol)) creates a complete infrastructure for a Meritocratic Autonomous Organization, including:
+- Rank and governance tokens
+- ACID Distribution system
+- Token voting capabilities
+
+### 2. ACID Distribution
+
+The Autonomous Competence Identification Distribution ([ArguableVotingTournament.sol](./src/distributions/ArguableVotingTournament.sol)) implements:
+- Turn-based game mechanics
+- Voting and proposal systems
+- EIP-712 compliant message signing
+- Modular architecture
+
+## Development Setup
+
+### Prerequisites
+
+- Node.js (LTS version)
+- pnpm package manager
+- Git
+
 ### Installation
 
 1. Clone the repository:
-
    ```sh
    git clone https://github.com/rankify-it/contracts.git
    cd contracts
    ```
 
 2. Install dependencies:
-
    ```sh
    pnpm install
    ```
 
-3. Setup environment variables
-
+3. Setup environment variables:
    ```sh
    mkdir .secrets
    cp dev.env.sample .secrets/dev.env
    vi .secrets/dev.env
+   # ...
+   . ./.secrets/dev.env
    ```
 
-4. Compile the smart contracts:
+### Build and Test
 
+1. Compile contracts:
    ```sh
-   pnpm hardhat compile
+   pnpm build
    ```
 
-5. Deploy the smart contracts:
+2. Run tests:
    ```sh
+   pnpm test
+   # or run tests in parallel
+   pnpm test:parallel
+   ```
+
+3. Run linting:
+   ```sh
+   pnpm lint
+   # fix linting issues
+   pnpm lint:fix
+   ```
+
+### Deployment
+
+1. Deployment:
+   ```sh
+   # deploy EDS dependency (only once per network)
+   git clone https://github.com/peeramid-labs/eds.git
+   cd eds
+   latestTag=$(git describe --tags "$(git rev-list --tags --max-count=1)")
+   git checkout $latestTag
+   pnpm install && pnpm hardhat deploy --network <network> --tags code_index
+   cd ..
+
    pnpm hardhat deploy --network <network> --tags <tags>
+   # or
+   pnpm anvil:deploy
+   # or to run next step:
+   ./playbook/utils/deploy-to-local-anvil.sh
    ```
+## Interacting with Contracts
 
-## Available Distributions
+We provide helper tools in form of `playbooks` - small hardhat runtime scripts that can be used to set contract state for sake of testing and verification.
 
-We are using [Ethereum Distribution System](https://github.com/peeramid-labs/eds) to enable users to deploy their own infrastructure in transparent and decentralized way.
+1. Running local playbooks:
+   ```sh
+   pnpm hardhat --network $NETWORK addDistribution
+   pnpm hardhat --network $NETWORK createSubject --token-name xxx
+   pnpm hardhat --network $NETWORK createGame --rankify-instance-address $INSTANCE_ADDRESS
+   ```
+2. Using viem to interact with contracts:
 
-In order to be out of box compatible with the interfaces & notifications of the Rankify platform, any deployment should should be done from the Peeramid Labs Distributor contract ([PeeramidLabsDistributor.sol](./src/distributors/PeeramidLabsDistributor.sol)).
+In (abi)[./abi] directory you can find generated abi files for all contracts, including .ts files to give viem/wagmi a better experience.
 
-Specific address for distributor deployment can be found in the [deployments](./deployments) folder.
+Copy these files to your working project and import them using `import { ... } from './abi/...';`
 
-### Meritocratic Autonomous Organization (MAO)
+We provide this packaged within our sdk: [`@peeramid-labs/sdk`](https://github.com/peeramid-labs/sdk)
 
-[MAODistribution.sol](./src/distributions/MAODistribution.sol) is used to create a new Meritocratic Autonomous Organization (MAO).
+3. Get all interfaces and signatures:
 
-This deployment will create following infrastructure:
-
-- [RankToken](./src/tokens/RankToken.sol) - ERC1155 token used to represent the ranks in the MAO.
-- [Governance token](./src/tokens/DistributableGovernanceERC20.sol) - ERC20 token used to represent the governance in the MAO.
-- [ACID Distribution](./src/distributions/ArguableVotingTournament.sol) - Arguable Voting Tournament contract used to distribute governance tokens.
-- [Aragon OSx DAO](https://aragon.org/) - Aragon DAO used as wrapped smart account that represents the MAO.
-- [Aragon Token Voting Plugin](https://github.com/aragon/token-voting-plugin) - Aragon plugin used to vote on proposals within the DAO.
-
-#### How to instantiate
-
-In order to instantiate the MAO distribution, you don't need to deploy a thing. You just need to call the `instantiate` function of the the [PeeramidLabsDistributor.sol](./src/distributors/PeeramidLabsDistributor.sol) contract and specify proper distribution Id and arguments.
-
-```ts
-import { MAODistribution } from 'rankify-contracts/types';
-const distributorArguments: MAODistribution.DistributorArgumentsStruct = {
-  tokenSettings: {
-    tokenName: 'tokenName',
-    tokenSymbol: 'tokenSymbol',
-  },
-  rankifySettings: {
-    rankTokenContractURI: 'https://example.com/rank',
-    principalCost: RInstanceSettings.PRINCIPAL_COST,
-    principalTimeConstant: RInstanceSettings.PRINCIPAL_TIME_CONSTANT,
-    metadata: ethers.utils.hexlify(ethers.utils.toUtf8Bytes('metadata')),
-    rankTokenURI: 'https://example.com/rank',
-  },
-};
-// const abi = import('../abi/src/distributions/MAODistribution.sol/MAODistribution.json');
-// Encode the arguments
-const data = ethers.utils.defaultAbiCoder.encode(
-  [
-    'tuple(tuple(string tokenName, string tokenSymbol) tokenSettings, tuple(uint256 principalCost, uint256 principalTimeConstant, string metadata, string rankTokenURI, string rankTokenContractURI) rankifySettings)',
-  ],
-  [distributorArguments],
-);
-const distributorsDistId = process.env.DISTRIBUTOR_DIST_ID;
-const tx = await distributorContract.instantiate(distributorsDistId, data);
+You can get all of the function signatures to debug your application via the following command:
 ```
+pnpm hardhat getSuperInterface > interface.json
+```
+This will generate a file called `interface.json` in the current directory.
 
-In order to get `distributorsDistId` you can call `getDistributions` at `PeeramidLabsDistributor` contract and look for. We will host a public API to get the list of distributions soon.
+You can also use script in `./scripts/getSuperInterface.ts` to get ethers js object
 
-### ACID Distribution (Autonomous Competence Identification Distribution)
 
-[ArguableVotingTournament.sol](./src/distributions/ArguableVotingTournament.sol) implements a sophisticated tournament system for autonomous competence identification. It uses the Diamond pattern to provide a modular and upgradeable smart contract architecture.
+## Project Structure
 
-#### Core Components
+```
+contracts/
+├── src/                    # Smart contract source files
+│   ├── abstracts/         # Abstract contracts
+│   ├── distributions/     # Distribution implementations
+│   ├── facets/           # Diamond pattern facets
+│   ├── interfaces/       # Contract interfaces
+│   ├── libraries/        # Shared libraries
+│   └── tokens/           # Token implementations
+├── test/                  # Test files
+├── scripts/              # Deployment and utility scripts
+└── deployments/          # Deployment artifacts
+```
+## Documentation
 
-The distribution deploys a Diamond Proxy with the following facets:
-
-- **EIP712InspectorFacet**: Handles message signing and verification using EIP-712 standard
-- **RankifyInstanceMainFacet**: Core tournament logic including game creation, joining, and management
-- **RankifyInstanceGameMastersFacet**: Manages voting and proposal submission mechanics
-- **RankifyInstanceRequirementsFacet**: Handles participation requirements and constraints
-- **DiamondLoupeFacet**: Standard Diamond pattern implementation for facet introspection
-- **OwnershipFacet**: Manages contract ownership and permissions
-
-#### Key Features
-
-- Turn-based game mechanics with voting and proposal systems
-- EIP-712 compliant message signing for secure interactions
-- Modular architecture allowing for future upgrades
-- Built-in reentrancy protection
-- Integrated with the Rankify protocol for rank token management
+Documentation is generated via docgen and is available at [docs.rankify.it](https://docs.rankify.it)
 
 ## Contributing
 
-We welcome contributions to improve the Rankify smart contracts. Please fork the repository and submit a pull request.
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Add your changes, add changeset: `pnpm changeset`
+4. Commit your changes (`git commit -m 'Add some amazing feature'`)
+5. Push to the branch (`git push origin feature/amazing-feature`)
+6. Create a Pull Request
 
 ## License
 
 This project is licensed under the MIT License.
+
+## Security
+
+For security concerns, please email sirt@peeramid.xyz
