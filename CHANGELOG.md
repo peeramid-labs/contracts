@@ -1,5 +1,11 @@
 # rankify-contracts
 
+## 0.10.2
+
+### Patch Changes
+
+- [#98](https://github.com/peeramid-labs/contracts/pull/98) [`9507326d20c5ce870cbef96650ebcae60fc5ce5a`](https://github.com/peeramid-labs/contracts/commit/9507326d20c5ce870cbef96650ebcae60fc5ce5a) Thanks [@peersky](https://github.com/peersky)! - updated readme with latest release information
+
 ## 0.10.1
 
 ### Patch Changes
