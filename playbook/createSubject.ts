@@ -79,3 +79,46 @@ task('createSubject', 'Creates a new subject with MAO distribution')
       instancesParsed: parseInstantiated(parsedLog.args.instances),
     };
   });
+
+task('makeDemoSubjects', 'Creates 4 demo subjects with different configurations')
+  .setAction(async (_, { run }) => {
+    console.log('Creating demo subjects...');
+
+    await run('createSubject', {
+      tokenName: 'Rankify inner discussion token',
+      tokenSymbol: 'RKFD',
+      rankTokenContractUri: '/nft/rankify-inner-discussions/metadata.json',
+    });
+
+    await run('createSubject', {
+      tokenName: 'Rankify music token',
+      tokenSymbol: 'RKFM',
+      rankTokenContractUri: '/nft/music-challenge/metadata.json',
+    });
+
+    await run('createSubject', {
+      tokenName: 'Rankify kids content token',
+      tokenSymbol: 'RKFK',
+      rankTokenContractUri: '/nft/kids-content/metadata.json',
+    });
+
+    await run('createSubject', {
+      tokenName: 'Rankify book writers',
+      tokenSymbol: 'RKFBW',
+      rankTokenContractUri: '/nft/book-writers/metadata.json',
+    });
+
+    await run('createSubject', {
+      tokenName: 'Rankify developers token',
+      tokenSymbol: 'RKFD',
+      rankTokenContractUri: '/nft/developers/metadata.json',
+    });
+
+    await run('createSubject', {
+      tokenName: 'Rankify designers toker',
+      tokenSymbol: 'RKFDG',
+      rankTokenContractUri: '/nft/designers/metadata.json',
+    });
+
+    console.log('Successfully created 6 demo subjects!');
+  });
