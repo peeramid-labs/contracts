@@ -1,5 +1,11 @@
 # rankify-contracts
 
+## 0.11.0
+
+### Minor Changes
+
+- [#103](https://github.com/peeramid-labs/contracts/pull/103) [`2d915aa7b76215fd499b8b8387f3a268f721eab7`](https://github.com/peeramid-labs/contracts/commit/2d915aa7b76215fd499b8b8387f3a268f721eab7) Thanks [@theKosmoss](https://github.com/theKosmoss)! - Playbook teask to create sample subjects
+
 ## 0.10.2
 
 ### Patch Changes
