@@ -601,7 +601,7 @@ describe(scriptName, () => {
         'Only game creator',
       );
     });
-    describe.only('When registration was open without any additional requirements', () => {
+    describe('When registration was open without any additional requirements', () => {
       beforeEach(async () => {
         await rankifyInstance.connect(adr.gameCreator1.wallet).openRegistration(1);
       });
