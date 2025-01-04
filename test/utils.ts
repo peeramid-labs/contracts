@@ -19,7 +19,6 @@ import { assert } from 'console';
 import { Deployment } from 'hardhat-deploy/types';
 import { HardhatEthersHelpers } from '@nomiclabs/hardhat-ethers/types';
 
-
 export interface SignerIdentity {
   name: string;
   id: string;
@@ -571,6 +570,38 @@ const publicVoteTypes = {
       name: 'vote3',
     },
   ],
+};
+
+const joinTypes = {
+  AttestJoiningGame: [
+    { type: 'address', name: 'instance' },
+    { type: 'address', name: 'participant' },
+    { type: 'uint256', name: 'gameId' },
+    { type: 'bytes32', name: 'hiddenSalt' },
+  ],
+};
+
+export const signJoiningGame = async (
+  verifier: string,
+  participant: string,
+  gameId: BigNumberish,
+  signer: SignerIdentity,
+) => {
+  let { chainId } = await ethers.provider.getNetwork();
+  const domain = {
+    name: RANKIFY_INSTANCE_CONTRACT_NAME,
+    version: RANKIFY_INSTANCE_CONTRACT_VERSION,
+    chainId,
+    verifyingContract: verifier,
+  };
+  const hiddenSalt = ethers.utils.hexZeroPad('0x123131231311', 32); // Pad to 32 bytes
+  const signature = await signer.wallet._signTypedData(domain, joinTypes, {
+    instance: verifier,
+    participant,
+    gameId,
+    hiddenSalt: ethers.utils.keccak256(hiddenSalt), // Hash the padded value
+  });
+  return { signature, hiddenSalt };
 };
 
 export const signVoteMessage = async (message: VoteMessage, verifierAddress: string, signer: SignerIdentity) => {

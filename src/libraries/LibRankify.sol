@@ -8,7 +8,8 @@ import {LibQuadraticVoting} from "./LibQuadraticVoting.sol";
 import "hardhat/console.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {SignedMath} from "@openzeppelin/contracts/utils/math/SignedMath.sol";
-
+import {IErrors} from "../interfaces/IErrors.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 /**
  * @title LibRankify
  * @dev Core library for the Rankify protocol that handles game state management, voting, and player interactions
@@ -315,10 +316,15 @@ library LibRankify {
      * - Increases the payments balance of the game by the join game price.
      * - Adds `player` to the game.
      */
-    function joinGame(uint256 gameId, address player) internal {
+    function joinGame(uint256 gameId, address player, bytes memory gameMasterSignature, bytes32 digest) internal {
         enforceGameExists(gameId);
         fulfillRankRq(gameId, player);
         gameId.addPlayer(player);
+        address signer = ECDSA.recover(digest, gameMasterSignature);
+        require(
+            gameId.getGM() == signer,
+            IErrors.invalidECDSARecoverSigner(signer, "LibRankify::joinGame->invalid signature")
+        );
     }
 
     /**

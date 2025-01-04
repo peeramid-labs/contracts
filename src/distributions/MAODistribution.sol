@@ -14,7 +14,8 @@ import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165C
 import "@peeramid-labs/eds/src/abstracts/CodeIndexer.sol";
 import "hardhat/console.sol";
 import {TokenSettings} from "../vendor/aragon/interfaces.sol";
-
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
+import {ShortStrings, ShortString} from "@openzeppelin/contracts/utils/ShortStrings.sol";
 /**
  * @title MAODistribution
  * @dev This contract implements the IDistribution and CodeIndexer interfaces. It uses the Clones library for address cloning.
@@ -43,7 +44,7 @@ contract MAODistribution is IDistribution, CodeIndexer {
 
     using Clones for address;
     address private immutable _trustedForwarder;
-    bytes32 private immutable _distributionName;
+    ShortString private immutable _distributionName;
     uint256 private immutable _distributionVersion;
     address private immutable _rankTokenBase;
     IDistribution private immutable _RankifyDistributionBase;
@@ -56,6 +57,7 @@ contract MAODistribution is IDistribution, CodeIndexer {
      * @notice Initializes the contract with the provided parameters and performs necessary checks.
      * @dev Retrieves contract addresses from a contract index using the provided identifiers
      *      and initializes the distribution system.
+     * @dev WARNING: distributionName must be less then 31 bytes long to comply with ShortStrings immutable format
      * @param trustedForwarder Address of the trusted forwarder for meta-transactions (WARNING: Not yet reviewed)
      * @param paymentToken Address of the token used for payments in the system
      * @param beneficiary Address that receives payments and fees
@@ -74,11 +76,11 @@ contract MAODistribution is IDistribution, CodeIndexer {
         bytes32 RankifyDIistributionId,
         bytes32 accessManagerId,
         bytes32 governanceERC20BaseId,
-        bytes32 distributionName,
+        string memory distributionName,
         LibSemver.Version memory distributionVersion
     ) {
         _trustedForwarder = trustedForwarder;
-        _distributionName = distributionName;
+        _distributionName = ShortStrings.toShortString(distributionName);
         _distributionVersion = LibSemver.toUint256(distributionVersion);
         _rankTokenBase = getContractsIndex().get(rankTokenCodeId);
         _governanceERC20Base = getContractsIndex().get(governanceERC20BaseId);
@@ -199,8 +201,9 @@ contract MAODistribution is IDistribution, CodeIndexer {
             beneficiary: _beneficiary
         });
 
+
         RankifyInstanceInit(RankifyDistrAddresses[0]).init(
-            string(abi.encodePacked(RankifyDistributionName)),
+            ShortStrings.toString(ShortString.wrap(RankifyDistributionName)),
             LibSemver.toString(LibSemver.parse(RankifyDistributionVersion)),
             RankifyInit
         );
@@ -238,7 +241,7 @@ contract MAODistribution is IDistribution, CodeIndexer {
         for (uint256 i; i < RankifyInstances.length; ++i) {
             returnValue[tokenInstances.length + i] = RankifyInstances[i];
         }
-        return (returnValue, _distributionName, _distributionVersion);
+        return (returnValue, ShortString.unwrap(_distributionName), _distributionVersion);
     }
 
     function contractURI() public pure virtual override returns (string memory) {
@@ -252,7 +255,7 @@ contract MAODistribution is IDistribution, CodeIndexer {
         srcs[2] = address(_RankifyDistributionBase);
         srcs[3] = address(_governanceERC20Base);
         srcs[4] = address(_accessManagerBase);
-        return (srcs, _distributionName, _distributionVersion);
+        return (srcs, ShortString.unwrap(_distributionName), _distributionVersion);
     }
 
     /**
