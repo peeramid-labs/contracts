@@ -201,7 +201,6 @@ contract MAODistribution is IDistribution, CodeIndexer {
             beneficiary: _beneficiary
         });
 
-
         RankifyInstanceInit(RankifyDistrAddresses[0]).init(
             ShortStrings.toString(ShortString.wrap(RankifyDistributionName)),
             LibSemver.toString(LibSemver.parse(RankifyDistributionVersion)),

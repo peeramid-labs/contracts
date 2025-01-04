@@ -144,11 +144,17 @@ contract RankifyInstanceMainFacet is
      *         - Emits a _PlayerJoined_ event.
      * @custom:security nonReentrant
      */
-    function joinGame(uint256 gameId, bytes memory gameMasterSignature, bytes memory hiddenSalt) public payable nonReentrant {
+    function joinGame(
+        uint256 gameId,
+        bytes memory gameMasterSignature,
+        bytes memory hiddenSalt
+    ) public payable nonReentrant {
         bytes32 digest = _hashTypedDataV4(
             keccak256(
                 abi.encode(
-                    keccak256("AttestJoiningGame(address instance,address participant,uint256 gameId,bytes32 hiddenSalt)"),
+                    keccak256(
+                        "AttestJoiningGame(address instance,address participant,uint256 gameId,bytes32 hiddenSalt)"
+                    ),
                     address(this),
                     msg.sender,
                     gameId,
