@@ -601,9 +601,42 @@ describe(scriptName, () => {
         'Only game creator',
       );
     });
-    describe('When registration was open without any additional requirements', () => {
+    describe.only('When registration was open without any additional requirements', () => {
       beforeEach(async () => {
         await rankifyInstance.connect(adr.gameCreator1.wallet).openRegistration(1);
+      });
+      it('Should reject join attempt with invalid signature', async () => {
+        // Try with wrong signer
+        const s1 = await signJoiningGame(rankifyInstance.address, adr.player1.wallet.address, 1, adr.gameMaster2); // Using wrong game master
+        await expect(
+          rankifyInstance.connect(adr.player1.wallet).joinGame(1, s1.signature, s1.hiddenSalt),
+        ).to.be.revertedWithCustomError(rankifyInstance, 'invalidECDSARecoverSigner');
+
+        // Try with wrong gameId
+        const s2 = await signJoiningGame(rankifyInstance.address, adr.player1.wallet.address, 2, adr.gameMaster1); // Wrong gameId
+        await expect(
+          rankifyInstance.connect(adr.player1.wallet).joinGame(1, s2.signature, s2.hiddenSalt),
+        ).to.be.revertedWithCustomError(rankifyInstance, 'invalidECDSARecoverSigner');
+
+        // Try with wrong participant
+        const s3 = await signJoiningGame(rankifyInstance.address, adr.player2.wallet.address, 1, adr.gameMaster1); // Wrong participant
+        await expect(
+          rankifyInstance.connect(adr.player1.wallet).joinGame(1, s3.signature, s3.hiddenSalt),
+        ).to.be.revertedWithCustomError(rankifyInstance, 'invalidECDSARecoverSigner');
+
+        // Try with tampered hiddenSalt
+        const s4 = await signJoiningGame(rankifyInstance.address, adr.player1.wallet.address, 1, adr.gameMaster1);
+        const tamperedSalt = ethers.utils.hexZeroPad('0xdeadbeef', 32); // Different salt than what was signed
+        await expect(
+          rankifyInstance.connect(adr.player1.wallet).joinGame(1, s4.signature, tamperedSalt),
+        ).to.be.revertedWithCustomError(rankifyInstance, 'invalidECDSARecoverSigner');
+      });
+
+      it('Should accept valid signature from correct game master', async () => {
+        const s1 = await signJoiningGame(rankifyInstance.address, adr.player1.wallet.address, 1, adr.gameMaster1);
+        await expect(rankifyInstance.connect(adr.player1.wallet).joinGame(1, s1.signature, s1.hiddenSalt))
+          .to.emit(rankifyInstance, 'PlayerJoined')
+          .withArgs(1, adr.player1.wallet.address, s1.hiddenSalt);
       });
 
       it('Mutating join requirements is no longer possible', async () => {
@@ -611,7 +644,7 @@ describe(scriptName, () => {
           rankifyInstance.connect(adr.gameCreator1.wallet).setJoinRequirements(1, requirement),
         ).to.be.revertedWith('Cannot do when registration is open');
       });
-      it.only('Qualified players can join', async () => {
+      it('Qualified players can join', async () => {
         const s1 = await signJoiningGame(rankifyInstance.address, adr.player1.wallet.address, 1, adr.gameMaster1);
         await expect(rankifyInstance.connect(adr.player1.wallet).joinGame(1, s1.signature, s1.hiddenSalt)).to.be.emit(
           rankifyInstance,

@@ -323,7 +323,7 @@ library LibRankify {
         address signer = ECDSA.recover(digest, gameMasterSignature);
         require(
             gameId.getGM() == signer,
-            IErrors.invalidECDSARecoverSigner(signer, "LibRankify::joinGame->invalid signature")
+            IErrors.invalidECDSARecoverSigner(digest, "LibRankify::joinGame->invalid signature")
         );
     }
 
