@@ -40,8 +40,10 @@ contract RankifyInstanceInit is Initializable {
         address rewardToken;
         uint256 principalCost;
         uint96 principalTimeConstant;
+        uint256 minimumParticipantsInCircle;
         address paymentToken;
         address beneficiary;
+        address derivedToken;
     }
 
     // You can add parameters to this function in order to pass in
@@ -74,6 +76,8 @@ contract RankifyInstanceInit is Initializable {
         commons.gamePaymentToken = initData.paymentToken;
         commons.rankTokenAddress = initData.rewardToken;
         commons.beneficiary = initData.beneficiary;
+        commons.minimumParticipantsInCircle = initData.minimumParticipantsInCircle;
+        commons.derivedToken = initData.derivedToken;
 
         LibRankify.InstanceState storage _RInstance = LibRankify.instanceState();
         require(initData.paymentToken != address(0), "initializer.paymentToken not set");

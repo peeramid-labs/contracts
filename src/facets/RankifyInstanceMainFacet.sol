@@ -418,4 +418,15 @@ contract RankifyInstanceMainFacet is
             gameMaster: tbgInstanceState.settings.gameMaster
         });
     }
+
+    function exitRankToken(uint256 rankId, uint256 amount) external {
+       LibRankify.InstanceState memory state = LibRankify.instanceState();
+       LibRankify.CommonParams storage commons = state.commonParams;
+       IRankToken rankContract = IRankToken(commons.rankTokenAddress);
+       IDistributableGovernanceERC20 tokenContract = IDistributableGovernanceERC20(commons.derivedToken);
+       uint256 _toMint = amount * (commons.principalCost * (commons.minimumParticipantsInCircle ** rankId));
+       rankContract.burn(msg.sender, rankId, amount);
+       tokenContract.mint(msg.sender, _toMint);
+       emit RankTokenExited(msg.sender, rankId, amount, _toMint);
+    }
 }

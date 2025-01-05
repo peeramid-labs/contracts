@@ -26,9 +26,9 @@ contract MAODistribution is IDistribution, CodeIndexer {
     struct UserRankifySettings {
         uint256 principalCost;
         uint96 principalTimeConstant;
-        string metadata;
         string rankTokenURI;
         string rankTokenContractURI;
+        uint256 minParticipantsInCircle;
     }
 
     struct TokenArguments {
@@ -145,6 +145,7 @@ contract MAODistribution is IDistribution, CodeIndexer {
 
     function createRankify(
         UserRankifySettings memory args
+        address derivedToken;
     ) internal returns (address[] memory instances, bytes32, uint256) {
         address rankToken = _rankTokenBase.clone();
 
@@ -195,8 +196,10 @@ contract MAODistribution is IDistribution, CodeIndexer {
             rewardToken: rankToken,
             principalCost: args.principalCost,
             principalTimeConstant: args.principalTimeConstant,
+            minimumParticipantsInCircle: args.minParticipantsInCircle,
             paymentToken: _paymentToken,
             beneficiary: _beneficiary
+            derivedToken: derivedToken
         });
 
         RankifyInstanceInit(RankifyDistrAddresses[0]).init(
@@ -228,7 +231,7 @@ contract MAODistribution is IDistribution, CodeIndexer {
         DistributorArguments memory args = abi.decode(data, (DistributorArguments));
 
         (address[] memory tokenInstances, , ) = createToken(args.tokenSettings);
-        (address[] memory RankifyInstances, , ) = createRankify(args.rankifySettings);
+        (address[] memory RankifyInstances, , ) = createRankify(args.rankifySettings, tokenInstances[0]);
 
         address[] memory returnValue = new address[](tokenInstances.length + RankifyInstances.length);
 

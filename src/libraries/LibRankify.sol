@@ -40,6 +40,7 @@ library LibRankify {
      * @param gamePaymentToken Address of the token used for game payments
      * @param rankTokenAddress Address of the rank token contract
      * @param beneficiary Address that receives a portion of game fees
+     * @param minimumParticipantsInCircle Minimum number of participants required to join a game
      */
     struct CommonParams {
         uint256 principalCost;
@@ -47,6 +48,8 @@ library LibRankify {
         address gamePaymentToken;
         address rankTokenAddress;
         address beneficiary;
+        uint256 minimumParticipantsInCircle;
+        address derivedToken;
     }
 
     /**
@@ -239,6 +242,7 @@ library LibRankify {
                 uint256(commonParams.principalTimeConstant) * 16,
             "Min game time out of bounds"
         );
+        require(commonParams.minimumParticipantsInCircle <= params.minPlayerCnt, "Min player count too low");
         uint256 principalGamePrice = getGamePrice(params.minGameTime, commonParams);
         uint256 burnAmount = Math.mulDiv(principalGamePrice, 9, 10);
         uint256 daoAmount = principalGamePrice - burnAmount;
