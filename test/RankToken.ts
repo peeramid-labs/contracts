@@ -32,7 +32,6 @@ describe('Rank Token Test', async function () {
         rankTokenContractURI: 'https://example.com/rank',
         principalCost: RInstanceSettings.PRINCIPAL_COST,
         principalTimeConstant: RInstanceSettings.PRINCIPAL_TIME_CONSTANT,
-        metadata: ethers.utils.hexlify(ethers.utils.toUtf8Bytes('metadata')),
         rankTokenURI: 'https://example.com/rank',
       },
     };
