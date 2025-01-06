@@ -15,7 +15,8 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "../abstracts/draft-EIP712Diamond.sol";
 import "hardhat/console.sol";
 import {IErrors} from "../interfaces/IErrors.sol";
-
+import {IRankToken} from "../interfaces/IRankToken.sol";
+import {DistributableGovernanceERC20} from "../tokens/DistributableGovernanceERC20.sol";
 /**
  * @title RankifyInstanceMainFacet
  * @notice Main facet for the Rankify protocol that handles game creation and management
@@ -417,5 +418,21 @@ contract RankifyInstanceMainFacet is
             voteCredits: tbgInstanceState.settings.voteCredits,
             gameMaster: tbgInstanceState.settings.gameMaster
         });
+    }
+
+    function getCommonParams() public view returns (LibRankify.CommonParams memory) {
+        return LibRankify.instanceState().commonParams;
+    }
+
+    function exitRankToken(uint256 rankId, uint256 amount) external {
+        require(amount != 0, "cannot specify zero exit amount");
+        LibRankify.InstanceState storage state = LibRankify.instanceState();
+        LibRankify.CommonParams storage commons = state.commonParams;
+        IRankToken rankContract = IRankToken(commons.rankTokenAddress);
+        DistributableGovernanceERC20 tokenContract = DistributableGovernanceERC20(commons.derivedToken);
+        uint256 _toMint = amount * (commons.principalCost * (commons.minimumParticipantsInCircle ** rankId));
+        rankContract.burn(msg.sender, rankId, amount);
+        tokenContract.mint(msg.sender, _toMint);
+        emit RankTokenExited(msg.sender, rankId, amount, _toMint);
     }
 }

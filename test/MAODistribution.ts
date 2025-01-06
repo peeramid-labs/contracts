@@ -58,7 +58,6 @@ describe('MAODistribution', async function () {
         },
         rankifySettings: {
           rankTokenContractURI: 'https://example.com/rank',
-          metadata: ethers.utils.hexlify(ethers.utils.toUtf8Bytes('metadata')),
           rankTokenURI: 'https://example.com/rank',
           principalCost: 1,
           principalTimeConstant: 1,
