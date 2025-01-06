@@ -146,7 +146,6 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
         RankifyInstanceMainFacetSelectors[29] = RankifyInstanceMainFacet.getCommonParams.selector;
         RankifyInstanceMainFacetSelectors[30] = RankifyInstanceMainFacet.exitRankToken.selector;
 
-
         facetCuts[2] = IDiamondCut.FacetCut({
             facetAddress: address(_RankifyMainFacet),
             action: IDiamondCut.FacetCutAction.Add,
