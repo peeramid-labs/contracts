@@ -6,6 +6,7 @@ import { CodeIndex } from '@peeramid-labs/eds/types';
 import CodeIndexAbi from '@peeramid-labs/eds/abi/src/CodeIndex.sol/CodeIndex.json';
 import { MintSettingsStruct } from '../types/src/tokens/DistributableGovernanceERC20.sol/DistributableGovernanceERC20';
 import { ArguableVotingTournament } from '../types/src/distributions/ArguableVotingTournament';
+import { RInstance_MIN_PLAYERS } from '../test/utils';
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployments, getNamedAccounts } = hre;
@@ -186,6 +187,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       govTokenDeploymentCodeId,
       _distributionName,
       _distributionVersion,
+      RInstance_MIN_PLAYERS,
     ],
   });
 
