@@ -28,7 +28,6 @@ task('createSubject', 'Creates a new subject with MAO distribution')
       },
       rankifySettings: {
         rankTokenContractURI: taskArgs.rankTokenContractUri,
-        metadata: hre.ethers.utils.hexlify(hre.ethers.utils.toUtf8Bytes(taskArgs.metadata)),
         rankTokenURI: taskArgs.rankTokenUri,
         principalCost: taskArgs.principalCost,
         principalTimeConstant: taskArgs.principalTimeConstant,
