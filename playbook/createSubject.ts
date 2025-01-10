@@ -1,6 +1,4 @@
 import { task } from 'hardhat/config';
-
-import { getCodeIdFromArtifact } from '../scripts/getCodeId';
 import { DAODistributor, MAODistribution, Rankify } from '../types';
 import { generateDistributorData } from '../scripts/libraries/generateDistributorData';
 import { parseInstantiated } from '../scripts/parseInstantiated';
@@ -84,40 +82,58 @@ task('makeDemoSubjects', 'Creates 4 demo subjects with different configurations'
     console.log('Creating demo subjects...');
 
     await run('createSubject', {
-      tokenName: 'Rankify inner discussion token',
+      tokenName: 'Rankify inner discussions token',
       tokenSymbol: 'RKFD',
-      rankTokenContractUri: '/nft/rankify-inner-discussions/metadata.json',
+      rankTokenContractUri: 'ipfs://Qmb995He9vswwKkq7xcqnahsL4dAvriWZwwUnWTuy2P8bq',
     });
 
     await run('createSubject', {
-      tokenName: 'Rankify music token',
+      tokenName: 'EIP fun discussions token',
+      tokenSymbol: 'EIPFD',
+      rankTokenContractUri: 'ipfs://QmXiiiSuWP7UDVh7FR6yXNisPgJW75GgauDPD92LHoGTnG',
+    });
+
+    await run('createSubject', {
+      tokenName: 'Rankify music challenge token',
       tokenSymbol: 'RKFM',
-      rankTokenContractUri: '/nft/music-challenge/metadata.json',
+      rankTokenContractUri: 'ipfs://QmQR6mVos58TR7GYxRzyPSs9FAkeSCAR3VGT9q72dFsr9t',
     });
 
     await run('createSubject', {
       tokenName: 'Rankify kids content token',
       tokenSymbol: 'RKFK',
-      rankTokenContractUri: '/nft/kids-content/metadata.json',
+      rankTokenContractUri: 'ipfs://Qmf8YjaAoH2Ho5Bgrd5xnnk5eBdmZwJC6JX15PjfaaQyZ8',
     });
 
     await run('createSubject', {
-      tokenName: 'Rankify book writers',
+      tokenName: 'Optimism Collective token',
+      tokenSymbol: 'OC',
+      rankTokenContractUri: 'ipfs://QmTDdnzRee6G5My4TDhaffWjCYp2d6rssmPQP4GMW5LuBd',
+    });
+
+    await run('createSubject', {
+      tokenName: 'Peeramid fellowship council token',
+      tokenSymbol: 'PFC',
+      rankTokenContractUri: 'ipfs://QmTyThvjSqoW96mVjRSon1gJhtiK2kVpUTLLmuMf4LPEaU',
+    });
+
+    await run('createSubject', {
+      tokenName: 'Arbitrum foundation token',
+      tokenSymbol: 'AF',
+      rankTokenContractUri: 'ipfs://QmSoLhj51VS2XXdVHrcLejaAXUtasi1wa1zEoTBpTwFFHs',
+    });
+
+    await run('createSubject', {
+      tokenName: 'Rankify book writers token',
       tokenSymbol: 'RKFBW',
-      rankTokenContractUri: '/nft/book-writers/metadata.json',
+      rankTokenContractUri: 'ipfs://QmP7Wo9fZhzn4dGDN1tp4xZ43vuE7HT8heTYo3PmVDVbBA',
     });
 
     await run('createSubject', {
-      tokenName: 'Rankify developers token',
-      tokenSymbol: 'RKFD',
-      rankTokenContractUri: '/nft/developers/metadata.json',
+      tokenName: 'Open audius foundation token',
+      tokenSymbol: 'OA',
+      rankTokenContractUri: 'ipfs://QmRQHq1TzW2cAxzF66wGLxxnJ3vgirBgFfDrjGsPnp2VQ1',
     });
 
-    await run('createSubject', {
-      tokenName: 'Rankify designers toker',
-      tokenSymbol: 'RKFDG',
-      rankTokenContractUri: '/nft/designers/metadata.json',
-    });
-
-    console.log('Successfully created 6 demo subjects!');
+    console.log('Successfully created 8 demo subjects!');
   });
