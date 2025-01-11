@@ -9,7 +9,7 @@ import {
   SignerIdentity,
   RInstance_MAX_TURNS,
 } from './utils';
-import { RInstanceSettings, mineBlocks, mockProposals, mockVotes, getPlayers } from '../playbook/utils';
+import { RInstanceSettings, mineBlocks, mockProposals, mockVotes, getPlayers } from './utils';
 import { expect } from 'chai';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
 import { DistributableGovernanceERC20, Rankify, RankifyDiamondInstance, RankToken } from '../types/';
