@@ -14,7 +14,7 @@ import 'hardhat-contract-sizer';
 import 'hardhat-deploy';
 import 'hardhat-tracer';
 import 'solidity-docgen';
-// import './playbook';
+import './playbook';
 import getSuperInterface from './scripts/getSuperInterface';
 import { ErrorFragment, EventFragment, FunctionFragment } from '@ethersproject/abi';
 import './scripts/generateSelectorDocs';
@@ -167,10 +167,11 @@ export default {
       accounts: {
         mnemonic: 'casual vacant letter raw trend tool vacant opera buzz jaguar bridge myself',
       }, // ONLY LOCAL
-      //   forking: { // Uncomment if have no EDS code index deployed
-      //     url: process.env.FORK_RPC_URL ?? 'https://arb1.arbitrum.io/rpc',
-      //     blockNumber: 257223284, // works for arbitrum, change for others
-      //   },
+      forking: {
+        // Uncomment if have no EDS code index deployed
+        url: process.env.FORK_RPC_URL ?? 'https://arb1.arbitrum.io/rpc',
+        blockNumber: 257223284, // works for arbitrum, change for others
+      },
     },
     localhost: {
       url: 'http://127.0.0.1:8545',
