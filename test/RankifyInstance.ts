@@ -8,8 +8,8 @@ import {
   setupTest,
   SignerIdentity,
   RInstance_MAX_TURNS,
-} from './utils';
-import { RInstanceSettings, mineBlocks, mockProposals, mockVotes, getPlayers } from './utils';
+} from '../playbook/utils';
+import { RInstanceSettings, mineBlocks, mockProposals, mockVotes, getPlayers } from '../playbook/utils';
 import { expect } from 'chai';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
 import { DistributableGovernanceERC20, Rankify, RankifyDiamondInstance, RankToken } from '../types/';
@@ -172,7 +172,7 @@ const mockValidVotes = async (
 const startGame = async (gameId: BigNumberish) => {
   const currentT = await time.latest();
   await time.setNextBlockTimestamp(currentT + Number(RInstanceSettings.RInstance_TIME_TO_JOIN) + 1);
-  await mineBlocks(RInstanceSettings.RInstance_TIME_TO_JOIN + 1);
+  await mineBlocks(RInstanceSettings.RInstance_TIME_TO_JOIN + 1, hre);
   await rankifyInstance.connect(adr.gameMaster1.wallet).startGame(gameId);
 };
 
@@ -216,7 +216,7 @@ const fillParty = async (
   if (shiftTime) {
     const currentT = await time.latest();
     await time.setNextBlockTimestamp(currentT + Number(RInstanceSettings.RInstance_TIME_TO_JOIN) + 1);
-    await mineBlocks(1);
+    await mineBlocks(1, hre);
   }
   if (startGame && gameMaster) {
     await rankifyInstance.connect(gameMaster.wallet).startGame(gameId);
@@ -235,7 +235,7 @@ describe(scriptName, () => {
     contracts: [],
   };
   beforeEach(async () => {
-    const setup = await setupTest();
+    const setup = await setupTest(hre)();
     adr = setup.adr;
     env = setup.env;
     await addDistribution(hre)({
@@ -687,7 +687,7 @@ describe(scriptName, () => {
         ).to.be.revertedWith('Game has not yet started');
       });
       it('Cannot be started if not enough players', async () => {
-        await mineBlocks(RInstanceSettings.RInstance_TIME_TO_JOIN + 1);
+        await mineBlocks(RInstanceSettings.RInstance_TIME_TO_JOIN + 1, hre);
         await expect(rankifyInstance.connect(adr.gameMaster1.wallet).startGame(1)).to.be.revertedWith(
           'startGame->Not enough players',
         );
@@ -702,7 +702,7 @@ describe(scriptName, () => {
           );
           const currentT = await time.latest();
           await time.setNextBlockTimestamp(currentT + Number(RInstanceSettings.RInstance_TIME_TO_JOIN) + 1);
-          await mineBlocks(1);
+          await mineBlocks(1, hre);
           await expect(rankifyInstance.connect(adr.gameMaster1.wallet).startGame(1)).to.be.emit(
             rankifyInstance,
             'GameStarted',
@@ -870,7 +870,7 @@ describe(scriptName, () => {
             ).to.be.revertedWith('Only game master');
           });
           it('Can end turn if timeout reached with zero scores', async () => {
-            await mineBlocks(RInstanceSettings.RInstance_TIME_PER_TURN + 1);
+            await mineBlocks(RInstanceSettings.RInstance_TIME_PER_TURN + 1, hre);
             await expect(rankifyInstance.connect(adr.gameMaster1.wallet).endTurn(1, [], [], []))
               .to.be.emit(rankifyInstance, 'TurnEnded')
               .withArgs(

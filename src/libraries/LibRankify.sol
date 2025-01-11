@@ -346,7 +346,7 @@ library LibRankify {
     function closeGame(
         uint256 gameId,
         function(uint256, address) playersGameEndedCallback
-    ) internal returns (uint256[] memory) {
+    ) internal returns (address[] memory, uint256[] memory) {
         enforceGameExists(gameId);
 
         // Get game state and check minimum time
@@ -364,7 +364,7 @@ library LibRankify {
             playersGameEndedCallback(gameId, players[i]);
         }
         emitRankRewards(gameId, gameId.getLeaderBoard());
-        return finalScores;
+        return (players, finalScores);
     }
 
     /**

@@ -1,7 +1,7 @@
 import { ethers, getNamedAccounts, network } from 'hardhat';
 import { expect } from 'chai';
 import hre, { deployments } from 'hardhat';
-import { AdrSetupResult, EnvSetupResult, RInstanceSettings, setupTest } from './utils';
+import { AdrSetupResult, EnvSetupResult, RInstanceSettings, setupTest } from '../playbook/utils';
 import { RankifyDiamondInstance, RankToken, Rankify } from '../types';
 import addDistribution from '../scripts/playbooks/addDistribution';
 import { getCodeIdFromArtifact } from '../scripts/getCodeId';
