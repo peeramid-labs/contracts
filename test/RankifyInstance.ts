@@ -8,7 +8,7 @@ import {
   setupTest,
   SignerIdentity,
   RInstance_MAX_TURNS,
-} from '../playbook/utils';
+} from './utils';
 import { RInstanceSettings, mineBlocks, mockProposals, mockVotes, getPlayers } from '../playbook/utils';
 import { expect } from 'chai';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
@@ -235,7 +235,7 @@ describe(scriptName, () => {
     contracts: [],
   };
   beforeEach(async () => {
-    const setup = await setupTest(hre)();
+    const setup = await setupTest();
     adr = setup.adr;
     env = setup.env;
     await addDistribution(hre)({

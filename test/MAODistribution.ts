@@ -4,7 +4,7 @@ import { deployments, ethers, getNamedAccounts } from 'hardhat';
 import hre from 'hardhat';
 import { expect } from 'chai';
 import { MAODistribution, DAODistributor, Rankify, RankifyDiamondInstance } from '../types';
-import { AdrSetupResult, setupTest } from '../playbook/utils';
+import { AdrSetupResult, setupTest } from './utils';
 import { getCodeIdFromArtifact } from '../scripts/getCodeId';
 import addDistribution from '../scripts/playbooks/addDistribution';
 import { generateDistributorData } from '../scripts/libraries/generateDistributorData';
