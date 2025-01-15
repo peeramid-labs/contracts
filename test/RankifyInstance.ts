@@ -5,12 +5,12 @@ import {
   EnvSetupResult,
   MockVotes,
   ProposalSubmission,
-  setupTest,
   SignerIdentity,
   RInstance_MAX_TURNS,
   RANKIFY_INSTANCE_CONTRACT_NAME,
   RANKIFY_INSTANCE_CONTRACT_VERSION,
-} from './utils';
+} from '../playbook/utils';
+import { setupTest } from './utils';
 import { RInstanceSettings, mineBlocks, mockProposals, mockVotes, getPlayers } from './utils';
 import { expect } from 'chai';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
