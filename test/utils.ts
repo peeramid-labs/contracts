@@ -261,7 +261,7 @@ export const setupAddresses = async (
 };
 
 const baseFee = 1 * 10 ** 18;
-export const RANKIFY_INSTANCE_CONTRACT_NAME = 'RANKIFY_INSTANCENAME';
+export const RANKIFY_INSTANCE_CONTRACT_NAME = 'RANKIFY_INSTANCE_NAME';
 export const RANKIFY_INSTANCE_CONTRACT_VERSION = '0.0.1';
 export const RInstance_TIME_PER_TURN = 2500;
 export const RInstance_MAX_PLAYERS = 6;

@@ -8,6 +8,8 @@ import {
   setupTest,
   SignerIdentity,
   RInstance_MAX_TURNS,
+  RANKIFY_INSTANCE_CONTRACT_NAME,
+  RANKIFY_INSTANCE_CONTRACT_VERSION,
 } from './utils';
 import { RInstanceSettings, mineBlocks, mockProposals, mockVotes, getPlayers } from './utils';
 import { expect } from 'chai';
@@ -1674,6 +1676,40 @@ describe(scriptName, () => {
       await expect(rankifyInstance.connect(adr.gameCreator1.wallet).createGame(params)).to.be.revertedWith(
         'Min player count too low',
       );
+    });
+  });
+
+  // Add this test to the existing describe block
+  describe('EIP712 Domain', () => {
+    it('should have consistent domain separator parameters', async () => {
+      const {
+        _HASHED_NAME,
+        _HASHED_VERSION,
+        _CACHED_CHAIN_ID,
+        _CACHED_THIS,
+        _TYPE_HASH,
+        _CACHED_DOMAIN_SEPARATOR,
+        _NAME,
+        _VERSION,
+      } = await rankifyInstance.inspectEIP712Hashes();
+      // Verify name and version
+      expect(_NAME).to.equal(RANKIFY_INSTANCE_CONTRACT_NAME);
+      expect(_VERSION).to.equal(RANKIFY_INSTANCE_CONTRACT_VERSION);
+
+      // Verify hashed components
+      expect(_HASHED_NAME).to.equal(ethers.utils.solidityKeccak256(['string'], [_NAME]));
+      expect(_HASHED_VERSION).to.equal(ethers.utils.solidityKeccak256(['string'], [_VERSION]));
+      expect(_CACHED_CHAIN_ID).to.equal(await rankifyInstance.currentChainId());
+      expect(_CACHED_THIS.toLowerCase()).to.equal(rankifyInstance.address.toLowerCase());
+
+      // Verify domain separator construction
+      const domainSeparator = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ['bytes32', 'bytes32', 'bytes32', 'uint256', 'address'],
+          [_TYPE_HASH, _HASHED_NAME, _HASHED_VERSION, _CACHED_CHAIN_ID, _CACHED_THIS],
+        ),
+      );
+      expect(_CACHED_DOMAIN_SEPARATOR).to.equal(domainSeparator);
     });
   });
 });
