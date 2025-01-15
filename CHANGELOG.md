@@ -1,5 +1,19 @@
 # rankify-contracts
 
+## 0.11.0
+
+### Minor Changes
+
+- [#121](https://github.com/peeramid-labs/contracts/pull/121) [`40c69b68b9d451e11b75ed5d867d523e69516dc4`](https://github.com/peeramid-labs/contracts/commit/40c69b68b9d451e11b75ed5d867d523e69516dc4) Thanks [@peersky](https://github.com/peersky)! - added eip712 domain name and version returns
+
+- [#103](https://github.com/peeramid-labs/contracts/pull/103) [`2d915aa7b76215fd499b8b8387f3a268f721eab7`](https://github.com/peeramid-labs/contracts/commit/2d915aa7b76215fd499b8b8387f3a268f721eab7) Thanks [@theKosmoss](https://github.com/theKosmoss)! - Playbook teask to create sample subjects
+
+- [#112](https://github.com/peeramid-labs/contracts/pull/112) [`1b05d8c86f3c72d2e7fd665551149531382b3ec4`](https://github.com/peeramid-labs/contracts/commit/1b05d8c86f3c72d2e7fd665551149531382b3ec4) Thanks [@peersky](https://github.com/peersky)! - added ability to mint derived tokens by burning rank tokens. added min participant count as fundamental constant to instance creation interface
+
+- [#117](https://github.com/peeramid-labs/contracts/pull/117) [`f5c1790cbd8f4936d73feb0701920a38adc94984`](https://github.com/peeramid-labs/contracts/commit/f5c1790cbd8f4936d73feb0701920a38adc94984) Thanks [@peersky](https://github.com/peersky)! - added playbooks to set state for local dev and demos, cleaned unused dependencies, fixed minor event issues in contracts
+
+- [#116](https://github.com/peeramid-labs/contracts/pull/116) [`eb1961809276b8400edbc9ee4b280d8e4b4dc891`](https://github.com/peeramid-labs/contracts/commit/eb1961809276b8400edbc9ee4b280d8e4b4dc891) Thanks [@theKosmoss](https://github.com/theKosmoss)! - Created mintRankifyToken playbook. Updated sample subjects playbook
+
 ## 0.10.2
 
 ### Patch Changes
