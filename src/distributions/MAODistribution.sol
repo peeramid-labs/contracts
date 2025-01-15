@@ -27,7 +27,6 @@ contract MAODistribution is IDistribution, CodeIndexer {
     struct UserRankifySettings {
         uint256 principalCost;
         uint96 principalTimeConstant;
-        string metadata;
         string rankTokenURI;
         string rankTokenContractURI;
     }
@@ -52,6 +51,7 @@ contract MAODistribution is IDistribution, CodeIndexer {
     address private immutable _accessManagerBase;
     address private immutable _paymentToken;
     address private immutable _beneficiary;
+    uint256 private immutable _minParticipantsInCircle;
 
     /**
      * @notice Initializes the contract with the provided parameters and performs necessary checks.
@@ -67,6 +67,7 @@ contract MAODistribution is IDistribution, CodeIndexer {
      * @param governanceERC20BaseId Identifier for the governance token implementation
      * @param distributionName Name identifier for this distribution
      * @param distributionVersion Semantic version information as LibSemver.Version struct
+     * @param minParticipantsInCircle Minimum number of participants in a circle
      */
     constructor(
         address trustedForwarder,
@@ -77,8 +78,12 @@ contract MAODistribution is IDistribution, CodeIndexer {
         bytes32 accessManagerId,
         bytes32 governanceERC20BaseId,
         string memory distributionName,
-        LibSemver.Version memory distributionVersion
+        LibSemver.Version memory distributionVersion,
+        uint256 minParticipantsInCircle
     ) {
+        require(minParticipantsInCircle > 2, "minParticipantsInCircle must be greater than 2");
+        _minParticipantsInCircle = minParticipantsInCircle;
+
         _trustedForwarder = trustedForwarder;
         _distributionName = ShortStrings.toShortString(distributionName);
         _distributionVersion = LibSemver.toUint256(distributionVersion);
@@ -146,7 +151,8 @@ contract MAODistribution is IDistribution, CodeIndexer {
     }
 
     function createRankify(
-        UserRankifySettings memory args
+        UserRankifySettings memory args,
+        address derivedToken
     ) internal returns (address[] memory instances, bytes32, uint256) {
         address rankToken = _rankTokenBase.clone();
 
@@ -197,8 +203,10 @@ contract MAODistribution is IDistribution, CodeIndexer {
             rewardToken: rankToken,
             principalCost: args.principalCost,
             principalTimeConstant: args.principalTimeConstant,
+            minimumParticipantsInCircle: _minParticipantsInCircle,
             paymentToken: _paymentToken,
-            beneficiary: _beneficiary
+            beneficiary: _beneficiary,
+            derivedToken: derivedToken
         });
 
         RankifyInstanceInit(RankifyDistrAddresses[0]).init(
@@ -222,7 +230,7 @@ contract MAODistribution is IDistribution, CodeIndexer {
      * @return instances An array of addresses representing the new instances.
      * @return distributionName A bytes32 value representing the name of the distribution.
      * @return distributionVersion A uint256 value representing the version of the distribution.
-     * @dev `instances` array contents: DAO, GovernanceToken, Gov Token AccessManager, Rankify Diamond, 8x Rankify Diamond facets, RankTokenAccessManager, RankToken
+     * @dev `instances` array contents: GovernanceToken, Gov Token AccessManager, Rankify Diamond, 8x Rankify Diamond facets, RankTokenAccessManager, RankToken
      */
     function instantiate(
         bytes memory data
@@ -230,7 +238,7 @@ contract MAODistribution is IDistribution, CodeIndexer {
         DistributorArguments memory args = abi.decode(data, (DistributorArguments));
 
         (address[] memory tokenInstances, , ) = createToken(args.tokenSettings);
-        (address[] memory RankifyInstances, , ) = createRankify(args.rankifySettings);
+        (address[] memory RankifyInstances, , ) = createRankify(args.rankifySettings, tokenInstances[0]);
 
         address[] memory returnValue = new address[](tokenInstances.length + RankifyInstances.length);
 

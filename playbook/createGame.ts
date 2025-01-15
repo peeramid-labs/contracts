@@ -7,8 +7,8 @@ task('createGame', 'Create new game')
   .addOptionalParam('gameCreatorPK', 'Player private key who will create game')
   .addOptionalParam('gameMaster', 'Game master address')
   .addOptionalParam('gameRank', 'Game rank', '1')
-  .addOptionalParam('maxPlayerCnt', 'Max player count', '8')
-  .addOptionalParam('minPlayerCnt', 'Min player count', '4')
+  .addOptionalParam('maxPlayerCnt', 'Max player count', '9')
+  .addOptionalParam('minPlayerCnt', 'Min player count', '5')
   .addOptionalParam('minGameTime', 'Minimum game time in seconds', '3600')
   .addOptionalParam('nTurns', 'Number of turns', '10')
   .addOptionalParam('timePerTurn', 'Time per turn in seconds', '1800')
@@ -77,12 +77,12 @@ task('createGame', 'Create new game')
       }
 
       // Approve tokens
-      const allowance = await rankifyContract.allowance(gameCreatorSigner.address, rankifyInstanceAddress);
+      const allowance = await rankifyContract.allowance(gameCreatorSigner.address, gameInstance.address);
       if (allowance.lt(gamePrice)) {
         console.log('Approving tokens for game instance...');
         const approveTx = await rankifyContract
           .connect(gameCreatorSigner)
-          .approve(rankifyInstanceAddress, ethers.constants.MaxUint256);
+          .approve(gameInstance.address, ethers.constants.MaxUint256);
         await approveTx.wait();
       }
 
@@ -103,7 +103,10 @@ task('createGame', 'Create new game')
       const tx = await gameInstance.createGame(params);
       const receipt = await tx.wait();
 
-      const gameId = await gameInstance.getContractState().then(state => state.numGames);
+      const gameId = await gameInstance
+        .connect(gameCreatorSigner)
+        .getContractState()
+        .then(state => state.numGames);
       console.log('Game with id ' + gameId.toNumber() + ' created!');
       return { gameId: gameId, receipt };
     },

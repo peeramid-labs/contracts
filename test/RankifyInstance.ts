@@ -13,7 +13,7 @@ import {
 import { RInstanceSettings, mineBlocks, mockProposals, mockVotes, getPlayers } from './utils';
 import { expect } from 'chai';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
-import { Rankify, RankifyDiamondInstance, RankToken } from '../types/';
+import { DistributableGovernanceERC20, Rankify, RankifyDiamondInstance, RankToken } from '../types/';
 import { LibCoinVending } from '../types/src/facets/RankifyInstanceRequirementsFacet';
 import { IRankifyInstance } from '../types/src/facets/RankifyInstanceMainFacet';
 import { deployments, ethers, getNamedAccounts } from 'hardhat';
@@ -36,6 +36,7 @@ let votersAddresses: string[];
 let env: EnvSetupResult;
 let rankifyInstance: RankifyDiamondInstance;
 let rankToken: RankToken;
+let govtToken: DistributableGovernanceERC20;
 
 const createGame = async (
   gameContract: RankifyDiamondInstance,
@@ -172,7 +173,7 @@ const mockValidVotes = async (
 const startGame = async (gameId: BigNumberish) => {
   const currentT = await time.latest();
   await time.setNextBlockTimestamp(currentT + Number(RInstanceSettings.RInstance_TIME_TO_JOIN) + 1);
-  await mineBlocks(RInstanceSettings.RInstance_TIME_TO_JOIN + 1);
+  await mineBlocks(RInstanceSettings.RInstance_TIME_TO_JOIN + 1, hre);
   await rankifyInstance.connect(adr.gameMaster1.wallet).startGame(gameId);
 };
 
@@ -224,7 +225,7 @@ const fillParty = async (
   if (shiftTime) {
     const currentT = await time.latest();
     await time.setNextBlockTimestamp(currentT + Number(RInstanceSettings.RInstance_TIME_TO_JOIN) + 1);
-    await mineBlocks(1);
+    await mineBlocks(1, hre);
   }
   if (startGame && gameMaster) {
     await rankifyInstance.connect(gameMaster.wallet).startGame(gameId);
@@ -257,7 +258,6 @@ describe(scriptName, () => {
       },
       rankifySettings: {
         rankTokenContractURI: 'https://example.com/rank',
-        metadata: ethers.utils.hexlify(ethers.utils.toUtf8Bytes('metadata')),
         rankTokenURI: 'https://example.com/rank',
         principalCost: RInstanceSettings.PRINCIPAL_COST,
         principalTimeConstant: RInstanceSettings.PRINCIPAL_TIME_CONSTANT,
@@ -284,6 +284,11 @@ describe(scriptName, () => {
       'RankifyDiamondInstance',
       evts[0].args.instances[2],
     )) as RankifyDiamondInstance;
+
+    govtToken = (await ethers.getContractAt(
+      'DistributableGovernanceERC20',
+      evts[0].args.instances[0],
+    )) as DistributableGovernanceERC20;
 
     await env.rankifyToken
       .connect(adr.gameCreator1.wallet)
@@ -746,7 +751,7 @@ describe(scriptName, () => {
         ).to.be.revertedWith('Game has not yet started');
       });
       it('Cannot be started if not enough players', async () => {
-        await mineBlocks(RInstanceSettings.RInstance_TIME_TO_JOIN + 1);
+        await mineBlocks(RInstanceSettings.RInstance_TIME_TO_JOIN + 1, hre);
         await expect(rankifyInstance.connect(adr.gameMaster1.wallet).startGame(1)).to.be.revertedWith(
           'startGame->Not enough players',
         );
@@ -767,7 +772,7 @@ describe(scriptName, () => {
           );
           const currentT = await time.latest();
           await time.setNextBlockTimestamp(currentT + Number(RInstanceSettings.RInstance_TIME_TO_JOIN) + 1);
-          await mineBlocks(1);
+          await mineBlocks(1, hre);
           await expect(rankifyInstance.connect(adr.gameMaster1.wallet).startGame(1)).to.be.emit(
             rankifyInstance,
             'GameStarted',
@@ -935,7 +940,7 @@ describe(scriptName, () => {
             ).to.be.revertedWith('Only game master');
           });
           it('Can end turn if timeout reached with zero scores', async () => {
-            await mineBlocks(RInstanceSettings.RInstance_TIME_PER_TURN + 1);
+            await mineBlocks(RInstanceSettings.RInstance_TIME_PER_TURN + 1, hre);
             await expect(rankifyInstance.connect(adr.gameMaster1.wallet).endTurn(1, [], [], []))
               .to.be.emit(rankifyInstance, 'TurnEnded')
               .withArgs(
@@ -1387,6 +1392,70 @@ describe(scriptName, () => {
             'gameCreated',
           );
         });
+
+        it('should allow burning rank tokens for derived tokens', async () => {
+          const rankId = 2;
+          const amount = 1;
+          const player = adr.player1;
+
+          // Get initial balances
+          const initialRankBalance = await rankToken.balanceOf(player.wallet.address, rankId);
+          const initialDerivedBalance = await govtToken.balanceOf(player.wallet.address);
+
+          // Calculate expected derived tokens
+          const commonParams = await rankifyInstance.getCommonParams();
+          const expectedDerivedTokens: BigNumber = commonParams.principalCost
+            .mul(commonParams.minimumParticipantsInCircle.pow(rankId))
+            .mul(amount);
+
+          // Exit rank token
+          await rankifyInstance.connect(player.wallet).exitRankToken(rankId, amount);
+
+          // Check balances after exit
+          const finalRankBalance = await rankToken.balanceOf(player.wallet.address, rankId);
+          const finalDerivedBalance = await govtToken.balanceOf(player.wallet.address);
+          expect(finalRankBalance).to.equal(initialRankBalance.sub(amount));
+          expect(finalDerivedBalance).to.equal(initialDerivedBalance.add(expectedDerivedTokens));
+        });
+
+        it('should revert when trying to burn more tokens than owned', async () => {
+          const rankId = 2;
+          const player = adr.player1;
+          const balance = await rankToken.balanceOf(player.wallet.address, rankId);
+          await expect(
+            rankifyInstance.connect(player.wallet).exitRankToken(rankId, balance.add(1)),
+          ).to.be.revertedWithCustomError(rankToken, 'insufficient');
+        });
+        it('should not revert when trying to burn equal tokens owned', async () => {
+          const rankId = 2;
+          const player = adr.player1;
+          const balance = await rankToken.balanceOf(player.wallet.address, rankId);
+          await expect(
+            rankifyInstance.connect(player.wallet).exitRankToken(rankId, balance),
+          ).to.not.be.revertedWithCustomError(rankToken, 'insufficient');
+          const newBalance = await rankToken.balanceOf(player.wallet.address, rankId);
+          expect(newBalance).to.equal(0);
+          await expect(rankifyInstance.connect(player.wallet).exitRankToken(rankId, 1)).to.be.revertedWithCustomError(
+            rankToken,
+            'insufficient',
+          );
+        });
+
+        it('should emit RankTokenExited event', async () => {
+          const rankId = 2;
+          const amount = 1;
+          const player = adr.player1;
+
+          const commonParams = await rankifyInstance.getCommonParams();
+          const expectedDerivedTokens: BigNumber = commonParams.principalCost
+            .mul(commonParams.minimumParticipantsInCircle.pow(rankId))
+            .mul(amount);
+
+          await expect(rankifyInstance.connect(player.wallet).exitRankToken(rankId, amount))
+            .to.emit(rankifyInstance, 'RankTokenExited')
+            .withArgs(player.wallet.address, rankId, amount, expectedDerivedTokens);
+        });
+
         describe('When game of next rank is created and opened', () => {
           beforeEach(async () => {
             const params: IRankifyInstance.NewGameParamsInputStruct = {
@@ -1431,7 +1500,6 @@ describe(scriptName, () => {
           adr.gameMaster1,
           true,
         );
-        console.warn('opened');
         await runToTheEnd(
           state.numGames,
           rankifyInstance,
@@ -1701,5 +1769,33 @@ describe(scriptName, () => {
       rankifyInstance,
       'invalidTurnCount',
     );
+  });
+
+  describe('Game creation with minimum participants', () => {
+    it('should revert when minPlayerCnt is less than minimumParticipantsInCircle', async () => {
+      const commonParams = await rankifyInstance.getCommonParams();
+      const invalidMinPlayers = commonParams.minimumParticipantsInCircle.sub(1);
+
+      const params = {
+        gameMaster: adr.gameMaster1.wallet.address,
+        gameRank: 1,
+        maxPlayerCnt: RInstance_MAX_PLAYERS,
+        minPlayerCnt: invalidMinPlayers,
+        minGameTime: 1000,
+        maxGameTime: 2000,
+        registrationTime: 1000,
+        nTurns: 10,
+        voteCredits: RInstanceSettings.RInstance_VOTE_CREDITS,
+        timePerTurn: RInstanceSettings.RInstance_TIME_PER_TURN,
+        timeToJoin: RInstanceSettings.RInstance_TIME_TO_JOIN,
+        votingTime: 1000,
+        proposalTime: 1000,
+        gameDescription: 'Test Game',
+      };
+
+      await expect(rankifyInstance.connect(adr.gameCreator1.wallet).createGame(params)).to.be.revertedWith(
+        'Min player count too low',
+      );
+    });
   });
 });
