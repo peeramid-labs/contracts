@@ -26,7 +26,6 @@ task('createSubject', 'Creates a new subject with MAO distribution')
       },
       rankifySettings: {
         rankTokenContractURI: taskArgs.rankTokenContractUri,
-        metadata: hre.ethers.utils.hexlify(hre.ethers.utils.toUtf8Bytes(taskArgs.metadata)),
         rankTokenURI: taskArgs.rankTokenUri,
         principalCost: taskArgs.principalCost,
         principalTimeConstant: taskArgs.principalTimeConstant,
@@ -69,7 +68,7 @@ task('createSubject', 'Creates a new subject with MAO distribution')
     console.log('Token Symbol:', taskArgs.tokenSymbol);
     console.log('instances created', parsedLog.args.instances);
     console.log('instance id', parsedLog.args.newInstanceId);
-    console.log('Receipt:', receipt);
+    // console.log('Receipt:', receipt);
     return {
       instances: parsedLog.args.instances,
       newInstanceId: parsedLog.args.newInstanceId,

@@ -168,7 +168,8 @@ export default {
         mnemonic: 'casual vacant letter raw trend tool vacant opera buzz jaguar bridge myself',
       }, // ONLY LOCAL
       forking: {
-        url: process.env.FORK_RPC_URL ?? '',
+        // Uncomment if have no EDS code index deployed
+        url: process.env.FORK_RPC_URL ?? 'https://arb1.arbitrum.io/rpc',
         blockNumber: 257223284, // works for arbitrum, change for others
       },
     },
