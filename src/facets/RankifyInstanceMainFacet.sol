@@ -388,42 +388,6 @@ contract RankifyInstanceMainFacet is
         return gameId.isActive(player);
     }
 
-    function getGameState(uint256 gameId) public view returns (IRankifyInstance.GameStateOutput memory state) {
-        LibTBG.Instance storage tbgInstanceState = LibTBG._getInstance(gameId);
-        LibRankify.GameState storage gameState = gameId.getGameState();
-        state = IRankifyInstance.GameStateOutput({
-            rank: gameState.rank,
-            minGameTime: gameState.minGameTime,
-            createdBy: gameState.createdBy,
-            numOngoingProposals: gameState.numOngoingProposals,
-            numPrevProposals: gameState.numPrevProposals,
-            numCommitments: gameState.numCommitments,
-            numVotesThisTurn: gameState.numVotesThisTurn,
-            numVotesPrevTurn: gameState.numVotesPrevTurn,
-            voting: gameState.voting,
-            currentTurn: tbgInstanceState.state.currentTurn,
-            turnStartedAt: tbgInstanceState.state.turnStartedAt,
-            registrationOpenAt: tbgInstanceState.state.registrationOpenAt,
-            startedAt: tbgInstanceState.state.startedAt,
-            hasStarted: tbgInstanceState.state.hasStarted,
-            hasEnded: tbgInstanceState.state.hasEnded,
-            numPlayersMadeMove: tbgInstanceState.state.numPlayersMadeMove,
-            numActivePlayers: tbgInstanceState.state.numActivePlayers,
-            isOvertime: tbgInstanceState.state.isOvertime,
-            timePerTurn: tbgInstanceState.settings.timePerTurn,
-            maxPlayerCnt: tbgInstanceState.settings.maxPlayerCnt,
-            minPlayerCnt: tbgInstanceState.settings.minPlayerCnt,
-            timeToJoin: tbgInstanceState.settings.timeToJoin,
-            maxTurns: tbgInstanceState.settings.maxTurns,
-            voteCredits: tbgInstanceState.settings.voteCredits,
-            gameMaster: tbgInstanceState.settings.gameMaster
-        });
-    }
-
-    function getCommonParams() public view returns (LibRankify.CommonParams memory) {
-        return LibRankify.instanceState().commonParams;
-    }
-
     function exitRankToken(uint256 rankId, uint256 amount) external {
         require(amount != 0, "cannot specify zero exit amount");
         LibRankify.InstanceState storage state = LibRankify.instanceState();
