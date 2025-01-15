@@ -6,7 +6,11 @@ import { CodeIndex } from '@peeramid-labs/eds/types';
 import CodeIndexAbi from '@peeramid-labs/eds/abi/src/CodeIndex.sol/CodeIndex.json';
 import { MintSettingsStruct } from '../types/src/tokens/DistributableGovernanceERC20.sol/DistributableGovernanceERC20';
 import { ArguableVotingTournament } from '../types/src/distributions/ArguableVotingTournament';
-import { RInstance_MIN_PLAYERS } from '../playbook/utils';
+import {
+  RANKIFY_INSTANCE_CONTRACT_NAME,
+  RANKIFY_INSTANCE_CONTRACT_VERSION,
+  RInstance_MIN_PLAYERS,
+} from '../test/utils';
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployments, getNamedAccounts } = hre;
@@ -19,11 +23,12 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   )) as CodeIndex;
 
   let _trustedForwarder = ethers.constants.AddressZero;
-  let _distributionName = ethers.utils.formatBytes32String('MAO');
+  let _distributionName = process.env.MAO_INSTANCE_NAME ?? RANKIFY_INSTANCE_CONTRACT_NAME;
+  const versionString = process.env.MAO_INSTANCE_VERSION ?? RANKIFY_INSTANCE_CONTRACT_VERSION;
   let _distributionVersion: LibSemver.VersionStruct = {
-    major: 0,
-    minor: 1,
-    patch: 0,
+    major: versionString.split('.')[0],
+    minor: versionString.split('.')[1],
+    patch: versionString.split('.')[2],
   };
 
   const log = (message: string) => {
@@ -79,12 +84,6 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const initializerAdr = initializerDeployment.address;
   const initializerSelector = '0x00000000';
 
-  const distributionName = ethers.utils.formatBytes32String('ArguableVotingTournament');
-  const version = {
-    major: 1,
-    minor: 0,
-    patch: 0,
-  };
   const loupeFacetDeployment = await deploy('DiamondLoupeFacet', {
     from: deployer,
     skipIfAlreadyDeployed: true,
@@ -130,7 +129,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     gasLimit: 8000000,
     estimatedGasLimit: 8000000,
     skipIfAlreadyDeployed: true,
-    args: [initializerAdr, initializerSelector, distributionName, version, addresses],
+    args: [initializerAdr, initializerSelector, _distributionName, _distributionVersion, addresses],
   });
 
   log('Deploying ArguableVotingTournament...');
@@ -185,7 +184,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       arguableVotingTournamentCodeId,
       accessManagerId,
       govTokenDeploymentCodeId,
-      _distributionName,
+      _distributionName, // These could be other, currently duplicates with dependency, good as long as not used
       _distributionVersion,
       RInstance_MIN_PLAYERS,
     ],

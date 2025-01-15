@@ -11,6 +11,7 @@ import "../facets/RankifyInstanceGameMastersFacet.sol";
 import "../initializers/RankifyInstanceInit.sol";
 import "../vendor/diamond/interfaces/IDiamondCut.sol";
 import "@peeramid-labs/eds/src/libraries/LibSemver.sol";
+import {ShortStrings, ShortString} from "@openzeppelin/contracts/utils/ShortStrings.sol";
 
 /**
  * @title ArguableVotingTournament Distribution
@@ -22,6 +23,7 @@ import "@peeramid-labs/eds/src/libraries/LibSemver.sol";
  * @author Peeramid Labs, 2024
  */
 contract ArguableVotingTournament is InitializedDiamondDistribution {
+    using ShortStrings for ShortString;
     DiamondLoupeFacet private immutable _loupeFacet;
     EIP712InspectorFacet private immutable _inspectorFacet;
     RankifyInstanceMainFacet private immutable _RankifyMainFacet;
@@ -30,7 +32,7 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
     OwnershipFacet private immutable _OwnershipFacet;
     address private immutable _initializer;
 
-    bytes32 private immutable distributionName;
+    ShortString private immutable distributionName;
     uint256 private immutable distributionVersion;
 
     /**
@@ -57,6 +59,7 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
 
     /**
      * @dev Constructor for the ArguableVotingTournament contract
+     * @dev WARNING: distributionName must be less then 31 bytes long to comply with ShortStrings immutable format
      * @notice Sets up the diamond proxy system with all required facets and initializes core components
      * @dev The initializer function is added as a regular facet to the Diamond Proxy.
      *      Since initialization is handled by the distributor contract, it's expected that
@@ -65,7 +68,7 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
     constructor(
         address initializer,
         bytes4 initializerSelector,
-        bytes32 _distributionName,
+        string memory _distributionName,
         LibSemver.Version memory version,
         ArguableTournamentAddresses memory addresses
     ) InitializedDiamondDistribution(address(this), bytes32(0), initializerSelector) {
@@ -77,7 +80,8 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
         _RankifyGMFacet = RankifyInstanceGameMastersFacet(addresses.RankifyGMFacet);
         _OwnershipFacet = OwnershipFacet(addresses.OwnershipFacet);
 
-        distributionName = _distributionName;
+        distributionName = ShortStrings.toShortString(_distributionName);
+        // console.log(LibSemver.toString())
         distributionVersion = LibSemver.toUint256(version);
     }
 
@@ -113,7 +117,7 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
             action: IDiamondCut.FacetCutAction.Add,
             functionSelectors: EIP712InspectorFacetSelectors
         });
-        bytes4[] memory RankifyInstanceMainFacetSelectors = new bytes4[](31);
+        bytes4[] memory RankifyInstanceMainFacetSelectors = new bytes4[](29);
         RankifyInstanceMainFacetSelectors[0] = RankifyInstanceMainFacet.cancelGame.selector;
         RankifyInstanceMainFacetSelectors[1] = RankifyInstanceMainFacet.gameCreator.selector;
         RankifyInstanceMainFacetSelectors[2] = RankifyInstanceMainFacet.createGame.selector;
@@ -142,9 +146,9 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
         RankifyInstanceMainFacetSelectors[25] = RankifyInstanceMainFacet.getPlayersMoved.selector;
         RankifyInstanceMainFacetSelectors[26] = RankifyInstanceMainFacet.estimateGamePrice.selector;
         RankifyInstanceMainFacetSelectors[27] = RankifyInstanceMainFacet.isActive.selector;
-        RankifyInstanceMainFacetSelectors[28] = RankifyInstanceMainFacet.getGameState.selector;
-        RankifyInstanceMainFacetSelectors[29] = RankifyInstanceMainFacet.getCommonParams.selector;
-        RankifyInstanceMainFacetSelectors[30] = RankifyInstanceMainFacet.exitRankToken.selector;
+        // RankifyInstanceMainFacetSelectors[28] = RankifyInstanceMainFacet.getGameState.selector;
+        // RankifyInstanceMainFacetSelectors[29] = RankifyInstanceMainFacet.getCommonParams.selector;
+        RankifyInstanceMainFacetSelectors[28] = RankifyInstanceMainFacet.exitRankToken.selector;
 
         facetCuts[2] = IDiamondCut.FacetCut({
             facetAddress: address(_RankifyMainFacet),
@@ -152,12 +156,14 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
             functionSelectors: RankifyInstanceMainFacetSelectors
         });
 
-        bytes4[] memory RankifyInstanceRequirementsFacetSelectors = new bytes4[](3);
+        bytes4[] memory RankifyInstanceRequirementsFacetSelectors = new bytes4[](5);
         RankifyInstanceRequirementsFacetSelectors[0] = RankifyInstanceRequirementsFacet.setJoinRequirements.selector;
         RankifyInstanceRequirementsFacetSelectors[1] = RankifyInstanceRequirementsFacet.getJoinRequirements.selector;
         RankifyInstanceRequirementsFacetSelectors[2] = RankifyInstanceRequirementsFacet
             .getJoinRequirementsByToken
             .selector;
+        RankifyInstanceRequirementsFacetSelectors[3] = RankifyInstanceRequirementsFacet.getGameState.selector;
+        RankifyInstanceRequirementsFacetSelectors[4] = RankifyInstanceRequirementsFacet.getCommonParams.selector;
 
         facetCuts[3] = IDiamondCut.FacetCut({
             facetAddress: address(_RankifyReqsFacet),
@@ -206,7 +212,7 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
         //renouncing ownership
         OwnershipFacet(diamond).transferOwnership(address(0));
 
-        return (returnValue, distributionName, distributionVersion);
+        return (returnValue, ShortString.unwrap(distributionName), distributionVersion);
     }
 
     function contractURI() public pure virtual override returns (string memory) {
@@ -215,6 +221,6 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
 
     function sources() internal view virtual override returns (address[] memory, bytes32, uint256) {
         (address[] memory srcs, , ) = super.sources();
-        return (srcs, distributionName, distributionVersion);
+        return (srcs, ShortString.unwrap(distributionName), distributionVersion);
     }
 }
