@@ -1,7 +1,6 @@
 import { task } from 'hardhat/config';
 import { RankifyDiamondInstance, Rankify } from '../types';
 import { IRankifyInstance } from '../types/src/facets/RankifyInstanceMainFacet';
-import rankifyInstanceAbi from '../abi/hardhat-diamond-abi/HardhatDiamondABI.sol/RankifyDiamondInstance.json';
 
 task('createGame', 'Create new game')
   .addOptionalParam('gameCreatorPK', 'Player private key who will create game')
@@ -54,7 +53,250 @@ task('createGame', 'Create new game')
       // Get game price
       const gameInstance = new ethers.Contract(
         rankifyInstanceAddress,
-        rankifyInstanceAbi,
+        [
+          {
+            inputs: [
+              {
+                internalType: 'uint128',
+                name: 'minGameTime',
+                type: 'uint128',
+              },
+            ],
+            name: 'estimateGamePrice',
+            outputs: [
+              {
+                internalType: 'uint256',
+                name: '',
+                type: 'uint256',
+              },
+            ],
+            stateMutability: 'pure',
+            type: 'function',
+          },
+          {
+            inputs: [
+              {
+                components: [
+                  {
+                    internalType: 'uint256',
+                    name: 'gameRank',
+                    type: 'uint256',
+                  },
+                  {
+                    internalType: 'uint256',
+                    name: 'minPlayerCnt',
+                    type: 'uint256',
+                  },
+                  {
+                    internalType: 'uint256',
+                    name: 'maxPlayerCnt',
+                    type: 'uint256',
+                  },
+                  {
+                    internalType: 'uint96',
+                    name: 'nTurns',
+                    type: 'uint96',
+                  },
+                  {
+                    internalType: 'uint256',
+                    name: 'voteCredits',
+                    type: 'uint256',
+                  },
+                  {
+                    internalType: 'address',
+                    name: 'gameMaster',
+                    type: 'address',
+                  },
+                  {
+                    internalType: 'uint128',
+                    name: 'minGameTime',
+                    type: 'uint128',
+                  },
+                  {
+                    internalType: 'uint128',
+                    name: 'timePerTurn',
+                    type: 'uint128',
+                  },
+                  {
+                    internalType: 'uint128',
+                    name: 'timeToJoin',
+                    type: 'uint128',
+                  },
+                ],
+                internalType: 'struct IRankifyInstance.NewGameParamsInput',
+                name: 'params',
+                type: 'tuple',
+              },
+            ],
+            name: 'createGame',
+            outputs: [],
+            stateMutability: 'nonpayable',
+            type: 'function',
+          },
+          {
+            inputs: [
+              {
+                internalType: 'uint256',
+                name: 'gameId',
+                type: 'uint256',
+              },
+            ],
+            name: 'getGameState',
+            outputs: [
+              {
+                components: [
+                  {
+                    internalType: 'uint256',
+                    name: 'rank',
+                    type: 'uint256',
+                  },
+                  {
+                    internalType: 'uint256',
+                    name: 'minGameTime',
+                    type: 'uint256',
+                  },
+                  {
+                    internalType: 'address',
+                    name: 'createdBy',
+                    type: 'address',
+                  },
+                  {
+                    internalType: 'uint256',
+                    name: 'numOngoingProposals',
+                    type: 'uint256',
+                  },
+                  {
+                    internalType: 'uint256',
+                    name: 'numPrevProposals',
+                    type: 'uint256',
+                  },
+                  {
+                    internalType: 'uint256',
+                    name: 'numCommitments',
+                    type: 'uint256',
+                  },
+                  {
+                    internalType: 'uint256',
+                    name: 'numVotesThisTurn',
+                    type: 'uint256',
+                  },
+                  {
+                    internalType: 'uint256',
+                    name: 'numVotesPrevTurn',
+                    type: 'uint256',
+                  },
+                  {
+                    components: [
+                      {
+                        internalType: 'uint256',
+                        name: 'voteCredits',
+                        type: 'uint256',
+                      },
+                      {
+                        internalType: 'uint256',
+                        name: 'maxQuadraticPoints',
+                        type: 'uint256',
+                      },
+                      {
+                        internalType: 'uint256',
+                        name: 'minQuadraticPositions',
+                        type: 'uint256',
+                      },
+                    ],
+                    internalType: 'struct LibQuadraticVoting.qVotingStruct',
+                    name: 'voting',
+                    type: 'tuple',
+                  },
+                  {
+                    internalType: 'uint256',
+                    name: 'currentTurn',
+                    type: 'uint256',
+                  },
+                  {
+                    internalType: 'uint256',
+                    name: 'turnStartedAt',
+                    type: 'uint256',
+                  },
+                  {
+                    internalType: 'uint256',
+                    name: 'registrationOpenAt',
+                    type: 'uint256',
+                  },
+                  {
+                    internalType: 'uint256',
+                    name: 'startedAt',
+                    type: 'uint256',
+                  },
+                  {
+                    internalType: 'bool',
+                    name: 'hasStarted',
+                    type: 'bool',
+                  },
+                  {
+                    internalType: 'bool',
+                    name: 'hasEnded',
+                    type: 'bool',
+                  },
+                  {
+                    internalType: 'uint256',
+                    name: 'numPlayersMadeMove',
+                    type: 'uint256',
+                  },
+                  {
+                    internalType: 'uint256',
+                    name: 'numActivePlayers',
+                    type: 'uint256',
+                  },
+                  {
+                    internalType: 'bool',
+                    name: 'isOvertime',
+                    type: 'bool',
+                  },
+                  {
+                    internalType: 'uint256',
+                    name: 'timePerTurn',
+                    type: 'uint256',
+                  },
+                  {
+                    internalType: 'uint256',
+                    name: 'maxPlayerCnt',
+                    type: 'uint256',
+                  },
+                  {
+                    internalType: 'uint256',
+                    name: 'minPlayerCnt',
+                    type: 'uint256',
+                  },
+                  {
+                    internalType: 'uint256',
+                    name: 'timeToJoin',
+                    type: 'uint256',
+                  },
+                  {
+                    internalType: 'uint256',
+                    name: 'maxTurns',
+                    type: 'uint256',
+                  },
+                  {
+                    internalType: 'uint256',
+                    name: 'voteCredits',
+                    type: 'uint256',
+                  },
+                  {
+                    internalType: 'address',
+                    name: 'gameMaster',
+                    type: 'address',
+                  },
+                ],
+                internalType: 'struct IRankifyInstance.GameStateOutput',
+                name: 'state',
+                type: 'tuple',
+              },
+            ],
+            stateMutability: 'view',
+            type: 'function',
+          },
+        ],
         gameCreatorSigner,
       ) as RankifyDiamondInstance;
 

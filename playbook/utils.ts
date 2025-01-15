@@ -10,14 +10,25 @@ import {
   DAODistributor,
   ArguableVotingTournament,
 } from '../types';
-import { BigNumber, BigNumberish, BytesLike, Wallet, utils } from 'ethers';
+import { BigNumber, BigNumberish, BytesLike, Wallet, ethers, utils } from 'ethers';
 // @ts-ignore
 import { assert } from 'console';
 import { Deployment } from 'hardhat-deploy/types';
 import { HardhatEthersHelpers } from '@nomiclabs/hardhat-ethers/types';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { getDiscussionForTurn } from './instance/discussionTopics';
-
+export const RANKIFY_INSTANCE_CONTRACT_NAME = 'RANKIFY_INSTANCE_NAME';
+export const RANKIFY_INSTANCE_CONTRACT_VERSION = '0.0.1';
+export const RInstance_TIME_PER_TURN = 2500;
+export const RInstance_MAX_PLAYERS = 6;
+export const RInstance_MIN_PLAYERS = 5;
+export const RInstance_MAX_TURNS = 3;
+export const RInstance_TIME_TO_JOIN = '200';
+export const RInstance_GAME_PRICE = ethers.utils.parseEther('0.001');
+export const RInstance_JOIN_GAME_PRICE = ethers.utils.parseEther('0.001');
+export const RInstance_NUM_WINNERS = 3;
+export const RInstance_VOTE_CREDITS = 14;
+export const RInstance_SUBJECT = 'Best Music on youtube';
 export interface SignerIdentity {
   name: string;
   id: string;
@@ -261,20 +272,7 @@ export const setupAddresses = async (
 };
 
 const baseFee = 1 * 10 ** 18;
-import {
-  RANKIFY_INSTANCE_CONTRACT_NAME,
-  RANKIFY_INSTANCE_CONTRACT_VERSION,
-  RInstance_TIME_PER_TURN,
-  RInstance_MAX_PLAYERS,
-  RInstance_MIN_PLAYERS,
-  RInstance_MAX_TURNS,
-  RInstance_TIME_TO_JOIN,
-  RInstance_GAME_PRICE,
-  RInstance_JOIN_GAME_PRICE,
-  RInstance_NUM_WINNERS,
-  RInstance_VOTE_CREDITS,
-  RInstance_SUBJECT,
-} from '../test/utils';
+
 export const RInstanceSettings = {
   RInstance_TIME_PER_TURN,
   RInstance_MAX_PLAYERS,
@@ -467,7 +465,7 @@ export const setupEnvironment = async (setup: {
   };
 };
 
-interface ReferrerMesage {
+interface ReferrerMessage {
   referrerAddress: string;
 }
 interface RegisterMessage {
@@ -478,7 +476,7 @@ interface RegisterMessage {
   nonce: BigNumber;
 }
 
-type signatureMessage = ReferrerMesage | RegisterMessage;
+type signatureMessage = ReferrerMessage | RegisterMessage;
 
 export async function mineBlocks(count: any, hre: HardhatRuntimeEnvironment) {
   const { ethers } = hre;

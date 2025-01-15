@@ -261,18 +261,22 @@ export const setupAddresses = async (
 };
 
 const baseFee = 1 * 10 ** 18;
-export const RANKIFY_INSTANCE_CONTRACT_NAME = 'RANKIFY_INSTANCE_NAME';
-export const RANKIFY_INSTANCE_CONTRACT_VERSION = '0.0.1';
-export const RInstance_TIME_PER_TURN = 2500;
-export const RInstance_MAX_PLAYERS = 6;
-export const RInstance_MIN_PLAYERS = 5;
-export const RInstance_MAX_TURNS = 3;
-export const RInstance_TIME_TO_JOIN = '200';
-export const RInstance_GAME_PRICE = ethers.utils.parseEther('0.001');
-export const RInstance_JOIN_GAME_PRICE = ethers.utils.parseEther('0.001');
-export const RInstance_NUM_WINNERS = 3;
-export const RInstance_VOTE_CREDITS = 14;
-export const RInstance_SUBJECT = 'Best Music on youtube';
+
+import {
+  RANKIFY_INSTANCE_CONTRACT_NAME,
+  RANKIFY_INSTANCE_CONTRACT_VERSION,
+  RInstance_TIME_PER_TURN,
+  RInstance_MAX_PLAYERS,
+  RInstance_MIN_PLAYERS,
+  RInstance_MAX_TURNS,
+  RInstance_TIME_TO_JOIN,
+  RInstance_GAME_PRICE,
+  RInstance_JOIN_GAME_PRICE,
+  RInstance_NUM_WINNERS,
+  RInstance_VOTE_CREDITS,
+  RInstance_SUBJECT,
+} from '../playbook/utils';
+
 export const RInstanceSettings = {
   RInstance_TIME_PER_TURN,
   RInstance_MAX_PLAYERS,

@@ -1,6 +1,5 @@
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DAODistributor } from '../../types';
-import { ethers } from 'hardhat';
 import { Signer } from 'ethers';
 
 export const addDistribution =
