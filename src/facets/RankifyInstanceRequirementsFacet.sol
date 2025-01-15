@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import {LibTBG} from "../libraries/LibTurnBasedGame.sol";
 import {LibCoinVending} from "../libraries/LibCoinVending.sol";
 import {LibRankify} from "../libraries/LibRankify.sol";
-
+import {IRankifyInstance} from "../interfaces/IRankifyInstance.sol";
 /**
  * @title RankifyInstanceRequirementsFacet
  * @notice Facet handling game requirements and conditions for Rankify instances
@@ -57,5 +57,41 @@ contract RankifyInstanceRequirementsFacet {
         LibCoinVending.ContractTypes contractType
     ) public view returns (LibCoinVending.ContractCondition memory) {
         return LibCoinVending.getPositionByContract(bytes32(gameId), contractAddress, contractId, contractType);
+    }
+
+    function getCommonParams() public view returns (LibRankify.CommonParams memory) {
+        return LibRankify.instanceState().commonParams;
+    }
+
+    function getGameState(uint256 gameId) public view returns (IRankifyInstance.GameStateOutput memory state) {
+        LibTBG.Instance storage tbgInstanceState = LibTBG._getInstance(gameId);
+        LibRankify.GameState storage gameState = gameId.getGameState();
+        state = IRankifyInstance.GameStateOutput({
+            rank: gameState.rank,
+            minGameTime: gameState.minGameTime,
+            createdBy: gameState.createdBy,
+            numOngoingProposals: gameState.numOngoingProposals,
+            numPrevProposals: gameState.numPrevProposals,
+            numCommitments: gameState.numCommitments,
+            numVotesThisTurn: gameState.numVotesThisTurn,
+            numVotesPrevTurn: gameState.numVotesPrevTurn,
+            voting: gameState.voting,
+            currentTurn: tbgInstanceState.state.currentTurn,
+            turnStartedAt: tbgInstanceState.state.turnStartedAt,
+            registrationOpenAt: tbgInstanceState.state.registrationOpenAt,
+            startedAt: tbgInstanceState.state.startedAt,
+            hasStarted: tbgInstanceState.state.hasStarted,
+            hasEnded: tbgInstanceState.state.hasEnded,
+            numPlayersMadeMove: tbgInstanceState.state.numPlayersMadeMove,
+            numActivePlayers: tbgInstanceState.state.numActivePlayers,
+            isOvertime: tbgInstanceState.state.isOvertime,
+            timePerTurn: tbgInstanceState.settings.timePerTurn,
+            maxPlayerCnt: tbgInstanceState.settings.maxPlayerCnt,
+            minPlayerCnt: tbgInstanceState.settings.minPlayerCnt,
+            timeToJoin: tbgInstanceState.settings.timeToJoin,
+            maxTurns: tbgInstanceState.settings.maxTurns,
+            voteCredits: tbgInstanceState.settings.voteCredits,
+            gameMaster: tbgInstanceState.settings.gameMaster
+        });
     }
 }

@@ -117,7 +117,7 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
             action: IDiamondCut.FacetCutAction.Add,
             functionSelectors: EIP712InspectorFacetSelectors
         });
-        bytes4[] memory RankifyInstanceMainFacetSelectors = new bytes4[](31);
+        bytes4[] memory RankifyInstanceMainFacetSelectors = new bytes4[](29);
         RankifyInstanceMainFacetSelectors[0] = RankifyInstanceMainFacet.cancelGame.selector;
         RankifyInstanceMainFacetSelectors[1] = RankifyInstanceMainFacet.gameCreator.selector;
         RankifyInstanceMainFacetSelectors[2] = RankifyInstanceMainFacet.createGame.selector;
@@ -146,9 +146,9 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
         RankifyInstanceMainFacetSelectors[25] = RankifyInstanceMainFacet.getPlayersMoved.selector;
         RankifyInstanceMainFacetSelectors[26] = RankifyInstanceMainFacet.estimateGamePrice.selector;
         RankifyInstanceMainFacetSelectors[27] = RankifyInstanceMainFacet.isActive.selector;
-        RankifyInstanceMainFacetSelectors[28] = RankifyInstanceMainFacet.getGameState.selector;
-        RankifyInstanceMainFacetSelectors[29] = RankifyInstanceMainFacet.getCommonParams.selector;
-        RankifyInstanceMainFacetSelectors[30] = RankifyInstanceMainFacet.exitRankToken.selector;
+        // RankifyInstanceMainFacetSelectors[28] = RankifyInstanceMainFacet.getGameState.selector;
+        // RankifyInstanceMainFacetSelectors[29] = RankifyInstanceMainFacet.getCommonParams.selector;
+        RankifyInstanceMainFacetSelectors[28] = RankifyInstanceMainFacet.exitRankToken.selector;
 
         facetCuts[2] = IDiamondCut.FacetCut({
             facetAddress: address(_RankifyMainFacet),
@@ -156,12 +156,14 @@ contract ArguableVotingTournament is InitializedDiamondDistribution {
             functionSelectors: RankifyInstanceMainFacetSelectors
         });
 
-        bytes4[] memory RankifyInstanceRequirementsFacetSelectors = new bytes4[](3);
+        bytes4[] memory RankifyInstanceRequirementsFacetSelectors = new bytes4[](5);
         RankifyInstanceRequirementsFacetSelectors[0] = RankifyInstanceRequirementsFacet.setJoinRequirements.selector;
         RankifyInstanceRequirementsFacetSelectors[1] = RankifyInstanceRequirementsFacet.getJoinRequirements.selector;
         RankifyInstanceRequirementsFacetSelectors[2] = RankifyInstanceRequirementsFacet
             .getJoinRequirementsByToken
             .selector;
+        RankifyInstanceRequirementsFacetSelectors[3] = RankifyInstanceRequirementsFacet.getGameState.selector;
+        RankifyInstanceRequirementsFacetSelectors[4] = RankifyInstanceRequirementsFacet.getCommonParams.selector;
 
         facetCuts[3] = IDiamondCut.FacetCut({
             facetAddress: address(_RankifyReqsFacet),
