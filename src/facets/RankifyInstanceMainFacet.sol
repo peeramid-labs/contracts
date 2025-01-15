@@ -388,7 +388,6 @@ contract RankifyInstanceMainFacet is
         return gameId.isActive(player);
     }
 
-
     function exitRankToken(uint256 rankId, uint256 amount) external {
         require(amount != 0, "cannot specify zero exit amount");
         LibRankify.InstanceState storage state = LibRankify.instanceState();
