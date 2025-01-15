@@ -193,7 +193,7 @@ async function handleGameState(instanceBase: InstanceBase, gameId: number) {
 }
 
 task('gameLifecycle', 'Interactive guide through the game lifecycle').setAction(async (_, hre) => {
-  const setupEnv = await setupTest(hre)();
+  const setupEnv = await setupTest(hre);
   hre.tracer.enabled = true;
   const { ethers } = hre;
   // Initial setup
