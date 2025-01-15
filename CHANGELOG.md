@@ -1,5 +1,11 @@
 # rankify-contracts
 
+## 0.11.1
+
+### Patch Changes
+
+- [#122](https://github.com/peeramid-labs/contracts/pull/122) [`8ca5c05fa5817c8220062d24d12522876822bb07`](https://github.com/peeramid-labs/contracts/commit/8ca5c05fa5817c8220062d24d12522876822bb07) Thanks [@peersky](https://github.com/peersky)! - playbooks now work without need to be uncommented
+
 ## 0.11.0
 
 ### Minor Changes
