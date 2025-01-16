@@ -11,6 +11,7 @@ import {
   AdrSetupResult,
   SignerIdentity,
   signJoiningGame,
+  getTurnSalt,
 } from '../utils';
 import { assert } from 'console';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
@@ -165,9 +166,10 @@ export class InstanceBase {
     }
 
     console.log('\nSubmitting turn end transaction...');
+    const turnSalt = getTurnSalt({ gameId: gameId, turn: turn });
     const tx = await this.rankifyInstance
       .connect(this.adr.gameMaster1.wallet)
-      .endTurn(gameId, mappedVotes, shuffledProposals, newShuffling);
+      .endTurn(gameId, mappedVotes, shuffledProposals, newShuffling, turnSalt);
     // const receipt = await tx.wait();
     const scores = await this.rankifyInstance.getScores(gameId);
     console.log('Turn ended successfully');
