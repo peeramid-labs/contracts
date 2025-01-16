@@ -6,7 +6,6 @@ import {
   mockProposals,
   MockVotes,
   ProposalSubmission,
-  RInstance_MAX_TURNS,
   RInstanceSettings,
   EnvSetupResult,
   AdrSetupResult,

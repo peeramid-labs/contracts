@@ -10,7 +10,7 @@ import {
   RANKIFY_INSTANCE_CONTRACT_NAME,
   RANKIFY_INSTANCE_CONTRACT_VERSION,
   RInstance_MIN_PLAYERS,
-} from '../test/utils';
+} from '../playbook/utils';
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployments, getNamedAccounts } = hre;

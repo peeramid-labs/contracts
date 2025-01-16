@@ -14,6 +14,8 @@ library LibEIP712WithStorage {
         bytes32 _HASHED_NAME;
         bytes32 _HASHED_VERSION;
         bytes32 _TYPE_HASH;
+        string _VERSION; // Added for introspection reasons
+        string _NAME; // Added for introspection reasons
     }
 
     function EIP712WithStorage() internal pure returns (LibEIP712WithStorageStorage storage ds) {

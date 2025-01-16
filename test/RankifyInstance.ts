@@ -5,11 +5,13 @@ import {
   EnvSetupResult,
   MockVotes,
   ProposalSubmission,
-  setupTest,
   SignerIdentity,
   RInstance_MAX_TURNS,
+  RANKIFY_INSTANCE_CONTRACT_NAME,
+  RANKIFY_INSTANCE_CONTRACT_VERSION,
   signJoiningGame,
-} from './utils';
+} from '../playbook/utils';
+import { setupTest } from './utils';
 import { RInstanceSettings, mineBlocks, mockProposals, mockVotes, getPlayers } from './utils';
 import { expect } from 'chai';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
@@ -173,7 +175,7 @@ const mockValidVotes = async (
 const startGame = async (gameId: BigNumberish) => {
   const currentT = await time.latest();
   await time.setNextBlockTimestamp(currentT + Number(RInstanceSettings.RInstance_TIME_TO_JOIN) + 1);
-  await mineBlocks(RInstanceSettings.RInstance_TIME_TO_JOIN + 1, hre);
+  await mineBlocks(RInstanceSettings.RInstance_TIME_TO_JOIN + 1);
   await rankifyInstance.connect(adr.gameMaster1.wallet).startGame(gameId);
 };
 
@@ -213,19 +215,18 @@ const fillParty = async (
     if (!env.rankTokenBase.address) throw new Error('Rank token undefined or unemployed');
     await rankToken.connect(players[i].wallet).setApprovalForAll(rankifyInstance.address, true);
     const { signature, hiddenSalt } = await signJoiningGame(
+      hre,
       gameContract.address,
       players[i].wallet.address,
       gameId,
       gameMaster,
     );
-    await gameContract
-      .connect(players[i].wallet)
-      .joinGame(gameId, signature, hiddenSalt, { value: ethers.utils.parseEther('0.4') });
+    await gameContract.connect(players[i].wallet).joinGame(gameId, signature, hiddenSalt);
   }
   if (shiftTime) {
     const currentT = await time.latest();
     await time.setNextBlockTimestamp(currentT + Number(RInstanceSettings.RInstance_TIME_TO_JOIN) + 1);
-    await mineBlocks(1, hre);
+    await mineBlocks(1);
   }
   if (startGame && gameMaster) {
     await rankifyInstance.connect(gameMaster.wallet).startGame(gameId);
@@ -404,7 +405,7 @@ describe(scriptName, () => {
   });
 
   it('Cannot perform actions on games that do not exist', async () => {
-    const s1 = await signJoiningGame(rankifyInstance.address, adr.gameCreator1.wallet.address, 1, adr.gameMaster1);
+    const s1 = await signJoiningGame(hre, rankifyInstance.address, adr.gameCreator1.wallet.address, 1, adr.gameMaster1);
     await expect(
       rankifyInstance.connect(adr.gameCreator1.wallet).joinGame(1, s1.signature, s1.hiddenSalt),
     ).to.be.revertedWith('game not found');
@@ -434,7 +435,7 @@ describe(scriptName, () => {
       'game not found',
     );
 
-    let s2 = await signJoiningGame(rankifyInstance.address, adr.gameMaster1.wallet.address, 1, adr.gameMaster1);
+    let s2 = await signJoiningGame(hre, rankifyInstance.address, adr.gameMaster1.wallet.address, 1, adr.gameMaster1);
 
     await expect(
       rankifyInstance.connect(adr.gameMaster1.wallet).joinGame(0, s2.signature, s2.hiddenSalt),
@@ -580,7 +581,7 @@ describe(scriptName, () => {
     it('Players cannot join until registration is open', async () => {
       await env.rankifyToken.connect(adr.player1.wallet).approve(rankifyInstance.address, ethers.constants.MaxUint256);
       const gameId = await rankifyInstance.getContractState().then(s => s.numGames);
-      const s1 = await signJoiningGame(rankifyInstance.address, adr.player1.wallet.address, 1, adr.gameMaster1);
+      const s1 = await signJoiningGame(hre, rankifyInstance.address, adr.player1.wallet.address, 1, adr.gameMaster1);
       await expect(
         rankifyInstance.connect(adr.player1.wallet).joinGame(gameId, s1.signature, s1.hiddenSalt),
       ).to.be.revertedWith('addPlayer->cant join now');
@@ -612,25 +613,25 @@ describe(scriptName, () => {
       });
       it('Should reject join attempt with invalid signature', async () => {
         // Try with wrong signer
-        const s1 = await signJoiningGame(rankifyInstance.address, adr.player1.wallet.address, 1, adr.gameMaster2); // Using wrong game master
+        const s1 = await signJoiningGame(hre, rankifyInstance.address, adr.player1.wallet.address, 1, adr.gameMaster2); // Using wrong game master
         await expect(
           rankifyInstance.connect(adr.player1.wallet).joinGame(1, s1.signature, s1.hiddenSalt),
         ).to.be.revertedWithCustomError(rankifyInstance, 'invalidECDSARecoverSigner');
 
         // Try with wrong gameId
-        const s2 = await signJoiningGame(rankifyInstance.address, adr.player1.wallet.address, 2, adr.gameMaster1); // Wrong gameId
+        const s2 = await signJoiningGame(hre, rankifyInstance.address, adr.player1.wallet.address, 2, adr.gameMaster1); // Wrong gameId
         await expect(
           rankifyInstance.connect(adr.player1.wallet).joinGame(1, s2.signature, s2.hiddenSalt),
         ).to.be.revertedWithCustomError(rankifyInstance, 'invalidECDSARecoverSigner');
 
         // Try with wrong participant
-        const s3 = await signJoiningGame(rankifyInstance.address, adr.player2.wallet.address, 1, adr.gameMaster1); // Wrong participant
+        const s3 = await signJoiningGame(hre, rankifyInstance.address, adr.player2.wallet.address, 1, adr.gameMaster1); // Wrong participant
         await expect(
           rankifyInstance.connect(adr.player1.wallet).joinGame(1, s3.signature, s3.hiddenSalt),
         ).to.be.revertedWithCustomError(rankifyInstance, 'invalidECDSARecoverSigner');
 
         // Try with tampered hiddenSalt
-        const s4 = await signJoiningGame(rankifyInstance.address, adr.player1.wallet.address, 1, adr.gameMaster1);
+        const s4 = await signJoiningGame(hre, rankifyInstance.address, adr.player1.wallet.address, 1, adr.gameMaster1);
         const tamperedSalt = ethers.utils.hexZeroPad('0xdeadbeef', 32); // Different salt than what was signed
         await expect(
           rankifyInstance.connect(adr.player1.wallet).joinGame(1, s4.signature, tamperedSalt),
@@ -638,7 +639,7 @@ describe(scriptName, () => {
       });
 
       it('Should accept valid signature from correct game master', async () => {
-        const s1 = await signJoiningGame(rankifyInstance.address, adr.player1.wallet.address, 1, adr.gameMaster1);
+        const s1 = await signJoiningGame(hre, rankifyInstance.address, adr.player1.wallet.address, 1, adr.gameMaster1);
         await expect(rankifyInstance.connect(adr.player1.wallet).joinGame(1, s1.signature, s1.hiddenSalt))
           .to.emit(rankifyInstance, 'PlayerJoined')
           .withArgs(1, adr.player1.wallet.address, s1.hiddenSalt);
@@ -650,27 +651,27 @@ describe(scriptName, () => {
         ).to.be.revertedWith('Cannot do when registration is open');
       });
       it('Qualified players can join', async () => {
-        const s1 = await signJoiningGame(rankifyInstance.address, adr.player1.wallet.address, 1, adr.gameMaster1);
+        const s1 = await signJoiningGame(hre, rankifyInstance.address, adr.player1.wallet.address, 1, adr.gameMaster1);
         await expect(rankifyInstance.connect(adr.player1.wallet).joinGame(1, s1.signature, s1.hiddenSalt)).to.be.emit(
           rankifyInstance,
           'PlayerJoined',
         );
       });
       it('Game cannot be started until join block time has passed unless game is full', async () => {
-        const s1 = await signJoiningGame(rankifyInstance.address, adr.player1.wallet.address, 1, adr.gameMaster1);
+        const s1 = await signJoiningGame(hre, rankifyInstance.address, adr.player1.wallet.address, 1, adr.gameMaster1);
         await rankifyInstance.connect(adr.player1.wallet).joinGame(1, s1.signature, s1.hiddenSalt);
         await expect(rankifyInstance.connect(adr.player1.wallet).startGame(1)).to.be.revertedWith(
           'startGame->Not enough players',
         );
-        const s2 = await signJoiningGame(rankifyInstance.address, adr.player2.wallet.address, 1, adr.gameMaster1);
+        const s2 = await signJoiningGame(hre, rankifyInstance.address, adr.player2.wallet.address, 1, adr.gameMaster1);
         await rankifyInstance.connect(adr.player2.wallet).joinGame(1, s2.signature, s2.hiddenSalt);
-        const s3 = await signJoiningGame(rankifyInstance.address, adr.player3.wallet.address, 1, adr.gameMaster1);
+        const s3 = await signJoiningGame(hre, rankifyInstance.address, adr.player3.wallet.address, 1, adr.gameMaster1);
         await rankifyInstance.connect(adr.player3.wallet).joinGame(1, s3.signature, s3.hiddenSalt);
-        const s4 = await signJoiningGame(rankifyInstance.address, adr.player4.wallet.address, 1, adr.gameMaster1);
+        const s4 = await signJoiningGame(hre, rankifyInstance.address, adr.player4.wallet.address, 1, adr.gameMaster1);
         await rankifyInstance.connect(adr.player4.wallet).joinGame(1, s4.signature, s4.hiddenSalt);
-        const s5 = await signJoiningGame(rankifyInstance.address, adr.player5.wallet.address, 1, adr.gameMaster1);
+        const s5 = await signJoiningGame(hre, rankifyInstance.address, adr.player5.wallet.address, 1, adr.gameMaster1);
         await rankifyInstance.connect(adr.player5.wallet).joinGame(1, s5.signature, s5.hiddenSalt);
-        const s6 = await signJoiningGame(rankifyInstance.address, adr.player6.wallet.address, 1, adr.gameMaster1);
+        const s6 = await signJoiningGame(hre, rankifyInstance.address, adr.player6.wallet.address, 1, adr.gameMaster1);
         await rankifyInstance.connect(adr.player6.wallet).joinGame(1, s6.signature, s6.hiddenSalt);
         await expect(rankifyInstance.connect(adr.player1.wallet).startGame(1)).to.be.emit(
           rankifyInstance,
@@ -680,13 +681,20 @@ describe(scriptName, () => {
       it('No more than max players can join', async () => {
         for (let i = 1; i < RInstanceSettings.RInstance_MAX_PLAYERS + 1; i++) {
           let name = `player${i}` as any as keyof AdrSetupResult;
-          const s1 = await signJoiningGame(rankifyInstance.address, adr[`${name}`].wallet.address, 1, adr.gameMaster1);
+          const s1 = await signJoiningGame(
+            hre,
+            rankifyInstance.address,
+            adr[`${name}`].wallet.address,
+            1,
+            adr.gameMaster1,
+          );
           await rankifyInstance.connect(adr[`${name}`].wallet).joinGame(1, s1.signature, s1.hiddenSalt);
         }
         await env.rankifyToken
           .connect(adr.maliciousActor1.wallet)
           .approve(rankifyInstance.address, ethers.constants.MaxUint256);
         const s1 = await signJoiningGame(
+          hre,
           rankifyInstance.address,
           adr.maliciousActor1.wallet.address,
           1,
@@ -751,7 +759,7 @@ describe(scriptName, () => {
         ).to.be.revertedWith('Game has not yet started');
       });
       it('Cannot be started if not enough players', async () => {
-        await mineBlocks(RInstanceSettings.RInstance_TIME_TO_JOIN + 1, hre);
+        await mineBlocks(RInstanceSettings.RInstance_TIME_TO_JOIN + 1);
         await expect(rankifyInstance.connect(adr.gameMaster1.wallet).startGame(1)).to.be.revertedWith(
           'startGame->Not enough players',
         );
@@ -772,7 +780,7 @@ describe(scriptName, () => {
           );
           const currentT = await time.latest();
           await time.setNextBlockTimestamp(currentT + Number(RInstanceSettings.RInstance_TIME_TO_JOIN) + 1);
-          await mineBlocks(1, hre);
+          await mineBlocks(1);
           await expect(rankifyInstance.connect(adr.gameMaster1.wallet).startGame(1)).to.be.emit(
             rankifyInstance,
             'GameStarted',
@@ -940,7 +948,7 @@ describe(scriptName, () => {
             ).to.be.revertedWith('Only game master');
           });
           it('Can end turn if timeout reached with zero scores', async () => {
-            await mineBlocks(RInstanceSettings.RInstance_TIME_PER_TURN + 1, hre);
+            await mineBlocks(RInstanceSettings.RInstance_TIME_PER_TURN + 1);
             await expect(rankifyInstance.connect(adr.gameMaster1.wallet).endTurn(1, [], [], []))
               .to.be.emit(rankifyInstance, 'TurnEnded')
               .withArgs(
@@ -1183,7 +1191,13 @@ describe(scriptName, () => {
             await createGame(rankifyInstance, adr.gameCreator1, adr.gameMaster2.wallet.address, 1, true);
           });
           it('Reverts if players from another game tries to join', async () => {
-            const s1 = await signJoiningGame(rankifyInstance.address, adr.player1.wallet.address, 2, adr.gameMaster1);
+            const s1 = await signJoiningGame(
+              hre,
+              rankifyInstance.address,
+              adr.player1.wallet.address,
+              2,
+              adr.gameMaster1,
+            );
             await expect(
               rankifyInstance.connect(adr.player1.wallet).joinGame(2, s1.signature, s1.hiddenSalt),
             ).to.be.revertedWith('addPlayer->Player in game');
@@ -1476,8 +1490,20 @@ describe(scriptName, () => {
             expect(await rankToken.balanceOf(adr.player1.wallet.address, 2)).to.be.equal(1);
             await rankToken.connect(adr.player1.wallet).setApprovalForAll(rankifyInstance.address, true);
             await rankToken.connect(adr.player2.wallet).setApprovalForAll(rankifyInstance.address, true);
-            const s1 = await signJoiningGame(rankifyInstance.address, adr.player1.wallet.address, 2, adr.gameMaster1);
-            const s2 = await signJoiningGame(rankifyInstance.address, adr.player2.wallet.address, 2, adr.gameMaster1);
+            const s1 = await signJoiningGame(
+              hre,
+              rankifyInstance.address,
+              adr.player1.wallet.address,
+              2,
+              adr.gameMaster1,
+            );
+            const s2 = await signJoiningGame(
+              hre,
+              rankifyInstance.address,
+              adr.player2.wallet.address,
+              2,
+              adr.gameMaster1,
+            );
             await expect(rankifyInstance.connect(adr.player1.wallet).joinGame(2, s1.signature, s1.hiddenSalt))
               .to.emit(rankifyInstance, 'PlayerJoined')
               .withArgs(2, adr.player1.wallet.address, s1.hiddenSalt);
@@ -1523,6 +1549,7 @@ describe(scriptName, () => {
         const state = await rankifyInstance.getContractState();
         await rankifyInstance.connect(adr.gameCreator1.wallet).openRegistration(state.numGames);
         const s1 = await signJoiningGame(
+          hre,
           rankifyInstance.address,
           adr.player1.wallet.address,
           state.numGames,
@@ -1535,6 +1562,7 @@ describe(scriptName, () => {
         await rankToken.connect(adr.player2.wallet).setApprovalForAll(rankifyInstance.address, true);
 
         const s2 = await signJoiningGame(
+          hre,
           rankifyInstance.address,
           adr.player2.wallet.address,
           state.numGames,
@@ -1588,6 +1616,7 @@ describe(scriptName, () => {
         const lastCreatedGameId = await rankifyInstance.getContractState().then(r => r.numGames);
         await rankToken.connect(adr.player2.wallet).setApprovalForAll(rankifyInstance.address, true);
         const s2 = await signJoiningGame(
+          hre,
           rankifyInstance.address,
           adr.player2.wallet.address,
           lastCreatedGameId,
@@ -1598,6 +1627,7 @@ describe(scriptName, () => {
         ).to.emit(rankifyInstance, 'PlayerJoined');
         await rankToken.connect(adr.maliciousActor1.wallet).setApprovalForAll(rankifyInstance.address, true);
         const mal1s = await signJoiningGame(
+          hre,
           rankifyInstance.address,
           adr.maliciousActor1.wallet.address,
           lastCreatedGameId,
@@ -1614,6 +1644,7 @@ describe(scriptName, () => {
         const lastCreatedGameId = await rankifyInstance.getContractState().then(r => r.numGames);
         await rankToken.connect(adr.player1.wallet).setApprovalForAll(rankifyInstance.address, true);
         const s1 = await signJoiningGame(
+          hre,
           rankifyInstance.address,
           adr.player1.wallet.address,
           lastCreatedGameId,
@@ -1627,6 +1658,7 @@ describe(scriptName, () => {
         const lastCreatedGameId = await rankifyInstance.getContractState().then(r => r.numGames);
         await rankToken.connect(adr.player1.wallet).setApprovalForAll(rankifyInstance.address, true);
         const s1 = await signJoiningGame(
+          hre,
           rankifyInstance.address,
           adr.player1.wallet.address,
           lastCreatedGameId,
@@ -1642,12 +1674,14 @@ describe(scriptName, () => {
         await rankToken.connect(adr.player1.wallet).setApprovalForAll(rankifyInstance.address, true);
         await rankToken.connect(adr.player2.wallet).setApprovalForAll(rankifyInstance.address, true);
         const s1 = await signJoiningGame(
+          hre,
           rankifyInstance.address,
           adr.player1.wallet.address,
           lastCreatedGameId,
           adr.gameMaster1,
         );
         const s2 = await signJoiningGame(
+          hre,
           rankifyInstance.address,
           adr.player2.wallet.address,
           lastCreatedGameId,
@@ -1796,6 +1830,40 @@ describe(scriptName, () => {
       await expect(rankifyInstance.connect(adr.gameCreator1.wallet).createGame(params)).to.be.revertedWith(
         'Min player count too low',
       );
+    });
+  });
+
+  // Add this test to the existing describe block
+  describe('EIP712 Domain', () => {
+    it('should have consistent domain separator parameters', async () => {
+      const {
+        _HASHED_NAME,
+        _HASHED_VERSION,
+        _CACHED_CHAIN_ID,
+        _CACHED_THIS,
+        _TYPE_HASH,
+        _CACHED_DOMAIN_SEPARATOR,
+        _NAME,
+        _VERSION,
+      } = await rankifyInstance.inspectEIP712Hashes();
+      // Verify name and version
+      expect(_NAME).to.equal(RANKIFY_INSTANCE_CONTRACT_NAME);
+      expect(_VERSION).to.equal(RANKIFY_INSTANCE_CONTRACT_VERSION);
+
+      // Verify hashed components
+      expect(_HASHED_NAME).to.equal(ethers.utils.solidityKeccak256(['string'], [_NAME]));
+      expect(_HASHED_VERSION).to.equal(ethers.utils.solidityKeccak256(['string'], [_VERSION]));
+      expect(_CACHED_CHAIN_ID).to.equal(await rankifyInstance.currentChainId());
+      expect(_CACHED_THIS.toLowerCase()).to.equal(rankifyInstance.address.toLowerCase());
+
+      // Verify domain separator construction
+      const domainSeparator = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ['bytes32', 'bytes32', 'bytes32', 'uint256', 'address'],
+          [_TYPE_HASH, _HASHED_NAME, _HASHED_VERSION, _CACHED_CHAIN_ID, _CACHED_THIS],
+        ),
+      );
+      expect(_CACHED_DOMAIN_SEPARATOR).to.equal(domainSeparator);
     });
   });
 });

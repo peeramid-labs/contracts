@@ -68,6 +68,8 @@ contract RankifyInstanceInit is Initializable {
         ss._CACHED_DOMAIN_SEPARATOR = _buildDomainSeparator(typeHash, hashedName, hashedVersion);
         ss._CACHED_THIS = address(this);
         ss._TYPE_HASH = typeHash;
+        ss._NAME = name;
+        ss._VERSION = version;
 
         LibRankify.CommonParams storage commons = LibRankify.instanceState().commonParams;
 
