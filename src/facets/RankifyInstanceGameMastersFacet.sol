@@ -56,6 +56,8 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
         string encryptedProposal;
         bytes32 commitmentHash;
         address proposer;
+        bytes gmSignature;
+        bytes voterSignature;
     }
 
     event VoteSubmitted(uint256 indexed gameId, uint256 indexed turn, address indexed player, string votesHidden);
@@ -154,8 +156,40 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
      */
     function submitProposal(ProposalParams memory proposalData) public {
         proposalData.gameId.enforceGameExists();
-        proposalData.gameId.enforceIsGM(msg.sender);
         require(!proposalData.gameId.isGameOver(), "Game over");
+        address gm = proposalData.gameId.getGM();
+        if(msg.sender != gm)
+        {
+            bytes32 proposalDigest = _hashTypedDataV4(
+                keccak256(
+                    abi.encode(
+                        keccak256("SubmitProposal(uint256 gameId,address proposer,string encryptedProposal,bytes32 commitmentHash)"),
+                        proposalData.gameId,
+                        proposalData.proposer,
+                        keccak256(bytes(proposalData.encryptedProposal)),
+                        proposalData.commitmentHash
+                    )
+                )
+            );
+            require(
+                SignatureChecker.isValidSignatureNow(gm, proposalDigest, proposalData.gmSignature),
+                IErrors.invalidECDSARecoverSigner(proposalDigest, "Invalid GM signature")
+            );
+        }
+        bytes32 voterDigest = _hashTypedDataV4(
+            keccak256(
+                abi.encode(
+                    keccak256("AuthorizeProposalSubmission(uint256 gameId,string encryptedProposal,bytes32 commitmentHash)"),
+                    proposalData.gameId,
+                    keccak256(bytes(proposalData.encryptedProposal)),
+                    proposalData.commitmentHash
+                )
+            )
+        );
+        require(
+            SignatureChecker.isValidSignatureNow(proposalData.proposer, voterDigest, proposalData.voterSignature),
+            IErrors.invalidECDSARecoverSigner(voterDigest, "Invalid voter signature")
+        );
         proposalData.gameId.enforceHasStarted();
 
         LibRankify.GameState storage game = proposalData.gameId.getGameState();

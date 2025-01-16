@@ -190,6 +190,7 @@ const mockValidProposals = async (
   const turn = await gameContract.getTurn(gameId);
 
   proposalsStruct = await mockProposals({
+    hre: hre,
     players: players,
     gameId: gameId,
     turn: turn,
@@ -411,6 +412,7 @@ describe(scriptName, () => {
       rankifyInstance.connect(adr.gameCreator1.wallet).joinGame(1, s1.signature, s1.hiddenSalt),
     ).to.be.revertedWith('game not found');
     proposalsStruct = await mockProposals({
+      hre: hre,
       players: getPlayers(adr, RInstanceSettings.RInstance_MAX_PLAYERS),
       gameId: 1,
       turn: 1,
@@ -453,6 +455,7 @@ describe(scriptName, () => {
     ).to.be.revertedWith('game not found');
     await expect(rankifyInstance.connect(adr.gameMaster1.wallet).startGame(0)).to.be.revertedWith('game not found');
     const proposals = await mockProposals({
+      hre: hre,
       players: getPlayers(adr, RInstanceSettings.RInstance_MAX_PLAYERS),
       gameId: 1,
       turn: 1,
@@ -727,6 +730,7 @@ describe(scriptName, () => {
           }),
         ).to.be.revertedWith('Game has not yet started');
         proposalsStruct = await mockProposals({
+          hre: hre,
           players: getPlayers(adr, RInstanceSettings.RInstance_MAX_PLAYERS),
           gameId: 1,
           turn: 1,
@@ -813,6 +817,7 @@ describe(scriptName, () => {
         it('Game methods beside start are inactive', async () => {
           //TODO: add more methods here
           proposalsStruct = await mockProposals({
+            hre: hre,
             players: getPlayers(adr, RInstanceSettings.RInstance_MAX_PLAYERS),
             gameId: 1,
             turn: 1,
@@ -954,6 +959,7 @@ describe(scriptName, () => {
           });
           it('Accepts only proposals and no votes', async () => {
             const proposals = await mockProposals({
+              hre: hre,
               players: getPlayers(adr, RInstanceSettings.RInstance_MIN_PLAYERS),
               gameId: 1,
               turn: 1,
@@ -1443,6 +1449,7 @@ describe(scriptName, () => {
             distribution: 'ftw',
           });
           proposalsStruct = await mockProposals({
+            hre: hre,
             players: getPlayers(adr, RInstanceSettings.RInstance_MAX_PLAYERS),
             gameId: 1,
             turn: currentTurn,

@@ -490,11 +490,13 @@ export interface ProposalParams {
   encryptedProposal: string;
   commitmentHash: BytesLike;
   proposer: string;
+  gmSignature: BytesLike;
+  voterSignature: BytesLike;
 }
 
 export interface ProposalSubmission {
-  proposal: string;
   params: ProposalParams;
+  proposal: string;
   proposerSignerId: SignerIdentity;
 }
 
@@ -845,31 +847,116 @@ export const mockVotes = async ({
   return votes;
 };
 
+const proposalTypes = {
+  SubmitProposal: [
+    { type: 'uint256', name: 'gameId' },
+    { type: 'address', name: 'proposer' },
+    { type: 'string', name: 'encryptedProposal' },
+    { type: 'bytes32', name: 'commitmentHash' }
+  ],
+  AuthorizeProposalSubmission: [
+    { type: 'uint256', name: 'gameId' },
+    { type: 'string', name: 'encryptedProposal' },
+    { type: 'bytes32', name: 'commitmentHash' }
+  ]
+};
+
+async function signProposal(
+  hre: HardhatRuntimeEnvironment,
+  verifierAddress: string,
+  proposer: string,
+  gameId: BigNumberish,
+  encryptedProposal: string,
+  commitmentHash: string,
+  signer: SignerIdentity,
+  isGM: boolean,
+): Promise<string> {
+  const { chainId } = await hre.ethers.provider.getNetwork();
+
+  const domain = {
+    name: RANKIFY_INSTANCE_CONTRACT_NAME,
+    version: RANKIFY_INSTANCE_CONTRACT_VERSION,
+    chainId,
+    verifyingContract: verifierAddress
+  };
+
+  // Match the exact types from the Solidity contract
+  const type = isGM ? 'SubmitProposal' : 'AuthorizeProposalSubmission';
+  const value = isGM
+    ? {
+        gameId,
+        proposer,
+        encryptedProposal,
+        commitmentHash
+      }
+    : {
+        gameId,
+        encryptedProposal,
+        commitmentHash
+      };
+
+  // Generate typed data hash matching Solidity's keccak256(abi.encode(...))
+  const typedDataHash = await signer.wallet._signTypedData(
+    domain,
+    { [type]: proposalTypes[type] },
+    value
+  );
+
+  return typedDataHash;
+}
+
 export const mockProposalSecrets = async ({
   gm,
   proposer,
   gameId,
   turn,
+  verifierAddress,
+  hre,
 }: {
   gm: SignerIdentity;
   proposer: SignerIdentity;
   gameId: BigNumberish;
   turn: BigNumberish;
   verifierAddress: string;
+  hre: HardhatRuntimeEnvironment;
 }): Promise<ProposalSubmission> => {
   const _gmW = gm.wallet as Wallet;
   const proposal = getDiscussionForTurn(Number(turn), proposer.id);
   const encryptedProposal = aes.encrypt(proposal, _gmW.privateKey).toString();
+
   const commitmentHash: string = utils.solidityKeccak256(['string'], [proposal]);
+
+  // Get both GM and proposer signatures
+  const gmSignature = await signProposal(
+    hre,
+    verifierAddress,
+    proposer.wallet.address,
+    gameId,
+    encryptedProposal,
+    commitmentHash,
+    gm,
+    true,
+  );
+
+  const voterSignature = await signProposal(
+    hre,
+    verifierAddress,
+    proposer.wallet.address,
+    gameId,
+    encryptedProposal,
+    commitmentHash,
+    proposer,
+    false,
+  );
 
   const params: ProposalParams = {
     gameId,
     encryptedProposal,
     commitmentHash,
     proposer: proposer.wallet.address,
+    gmSignature,
+    voterSignature,
   };
-
-  // const s = await signProposalMessage(message, verifierAddress, gm);
 
   return {
     params,
@@ -884,12 +971,14 @@ export const mockProposals = async ({
   turn,
   verifierAddress,
   gm,
+  hre,
 }: {
   players: SignerIdentity[];
   gameId: BigNumberish;
   turn: BigNumberish;
   verifierAddress: string;
   gm: SignerIdentity;
+  hre: HardhatRuntimeEnvironment;
 }) => {
   let proposals = [] as any as ProposalSubmission[];
   for (let i = 0; i < players.length; i++) {
@@ -899,6 +988,7 @@ export const mockProposals = async ({
       gameId,
       turn,
       verifierAddress,
+      hre,
     });
     proposals.push(proposal);
   }

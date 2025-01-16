@@ -243,6 +243,7 @@ export class InstanceBase {
     const turn = await gameContract.getTurn(gameId);
 
     this.ongoingProposals = await mockProposals({
+      hre: this.hre,
       players: players,
       gameId: gameId,
       turn: turn,
