@@ -715,7 +715,7 @@ export const mockVote = async ({
     vote: vote,
     salt: playerSalt,
   };
-  const ballotHash: string = utils.solidityKeccak256(['string[]', 'bytes32'], [vote, playerSalt]);
+  const ballotHash: string = utils.solidityKeccak256(['uint256[]', 'bytes32'], [vote, playerSalt]);
   const ballotId = ballotHash + '_encrypted';
   const gmSignature = await signVote(
     hre,

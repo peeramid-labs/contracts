@@ -21,6 +21,7 @@ import {IErrors} from "../interfaces/IErrors.sol";
  * @author Peeramid Labs, 2024
  */
 contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
+    error ballotIntegrityCheckFailed(bytes32 ballotHash, bytes32 ballotHashFromVotes);
     using LibTBG for uint256;
     using LibRankify for uint256;
     using LibTBG for LibTBG.State;
@@ -119,21 +120,20 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
             );
         }
         // If sender is not the voter, verify voter's signature
-            bytes32 voterDigest = _hashTypedDataV4(
-                keccak256(
-                    abi.encode(
-                        keccak256("AuthorizeVoteSubmission(uint256 gameId,string sealedBallotId,bytes32 ballotHash)"),
-                        gameId,
-                        keccak256(bytes(sealedBallotId)),
-                        ballotHash
-                    )
+        bytes32 voterDigest = _hashTypedDataV4(
+            keccak256(
+                abi.encode(
+                    keccak256("AuthorizeVoteSubmission(uint256 gameId,string sealedBallotId,bytes32 ballotHash)"),
+                    gameId,
+                    keccak256(bytes(sealedBallotId)),
+                    ballotHash
                 )
-            );
-            require(
-                SignatureChecker.isValidSignatureNow(voter, voterDigest, voterSignature),
-                IErrors.invalidECDSARecoverSigner(voterDigest, "Invalid voter signature")
-            );
-
+            )
+        );
+        require(
+            SignatureChecker.isValidSignatureNow(voter, voterDigest, voterSignature),
+            IErrors.invalidECDSARecoverSigner(voterDigest, "Invalid voter signature")
+        );
 
         LibRankify.GameState storage game = gameId.getGameState();
         game.ballotHashes[voter] = ballotHash;
@@ -254,16 +254,27 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
 
         address[] memory players = gameId.getPlayers();
         if (turn != 1) {
+            //Since votes were submitted for shuffled proposals, we need to sort them back to their original positions
             uint256[][] memory votesSorted = new uint256[][](players.length);
             for (uint256 player = 0; player < players.length; ++player) {
                 votesSorted[player] = new uint256[](players.length);
+                // Validate voters vote integrity
+                bytes32 ballotHash = game.ballotHashes[players[player]];
+                bytes32 playerSalt = keccak256(abi.encodePacked(players[player], turnSalt));
+                bytes32 ballotHashFromVotes = keccak256(abi.encodePacked(votes[player], playerSalt));
+                if (game.playerVoted[players[player]]) {
+
+                    require(ballotHash == ballotHashFromVotes, ballotIntegrityCheckFailed(ballotHash, ballotHashFromVotes));
+                }
             }
             for (uint256 votee = 0; votee < players.length; ++votee) {
+                // proposerIndices is the index of the player in the previous voting round
                 uint256 voteesColumn = proposerIndices[votee];
+                // We slice the votes array to get the votes for the current player
                 if (voteesColumn < players.length) {
                     // if index is above length of players array, it means the player did not propose
                     for (uint256 voter = 0; voter < players.length; voter++) {
-                        votesSorted[voter][votee] = votes[voter][voteesColumn];
+                            votesSorted[voter][votee] = votes[voter][voteesColumn];
                     }
                 }
             }
