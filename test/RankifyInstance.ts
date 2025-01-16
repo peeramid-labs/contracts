@@ -12,7 +12,7 @@ import {
   signJoiningGame,
 } from '../playbook/utils';
 import { setupTest } from './utils';
-import { RInstanceSettings, mineBlocks, mockProposals, mockVotes, getPlayers } from './utils';
+import { RInstanceSettings, mineBlocks, mockProposals, mockVotes, getPlayers } from '../playbook/utils';
 import { expect } from 'chai';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
 import { DistributableGovernanceERC20, Rankify, RankifyDiamondInstance, RankToken } from '../types/';
@@ -25,7 +25,7 @@ import { assert } from 'console';
 import { solidityKeccak256 } from 'ethers/lib/utils';
 import addDistribution from '../scripts/playbooks/addDistribution';
 import hre from 'hardhat';
-import { network } from 'hardhat';
+
 const scriptName = path.basename(__filename);
 
 import { getCodeIdFromArtifact } from '../scripts/getCodeId';
@@ -41,6 +41,7 @@ let rankToken: RankToken;
 let govtToken: DistributableGovernanceERC20;
 
 const createGame = async (
+  minGameTime: BigNumberish,
   gameContract: RankifyDiamondInstance,
   signer: SignerIdentity,
   gameMaster: string,
@@ -57,7 +58,7 @@ const createGame = async (
     timeToJoin: RInstanceSettings.RInstance_TIME_TO_JOIN,
     nTurns: RInstance_MAX_TURNS,
     voteCredits: RInstanceSettings.RInstance_VOTE_CREDITS,
-    minGameTime: RInstanceSettings.RInstance_MIN_GAME_TIME,
+    minGameTime: minGameTime,
   };
   await gameContract.connect(signer.wallet).createGame(params);
   const gameId = await gameContract.getContractState().then(state => state.numGames);
@@ -81,7 +82,10 @@ const runToTheEnd = async (
     }
 
     const proposals = await mockValidProposals(players, gameContract, gameMaster, gameId, true);
-    if (isLastTurn) await time.increase(RInstanceSettings.RInstance_MIN_GAME_TIME + 1);
+    if (isLastTurn) {
+      const timeToEnd = await gameContract.getGameState(gameId).then(state => state.minGameTime);
+      await time.increase(timeToEnd.toNumber() + 1);
+    }
     await gameContract.connect(gameMaster.wallet).endTurn(
       gameId,
       turn == 1 ? [] : votes?.map(vote => vote.vote),
@@ -125,25 +129,6 @@ const endTurn = async (gameId: BigNumberish, gameContract: RankifyDiamondInstanc
   );
 };
 
-const runToOvertime = async (
-  gameId: BigNumberish,
-  gameContract: RankifyDiamondInstance,
-  gameMaster: SignerIdentity,
-  players: [SignerIdentity, SignerIdentity, ...SignerIdentity[]],
-) => {
-  await runToLastTurn(gameId, gameContract, gameMaster, players, 'equal');
-
-  await mockValidVotes(players, gameContract, gameId, gameMaster, true, 'equal');
-  const proposals = await mockValidProposals(players, gameContract, gameMaster, gameId, true);
-  const turn = await gameContract.getTurn(gameId);
-  await gameContract.connect(gameMaster.wallet).endTurn(
-    gameId,
-    votes.map(vote => vote.vote),
-    proposals.map(prop => prop.proposal),
-    proposals.map((prop, idx) => idx),
-  );
-};
-
 const mockValidVotes = async (
   players: [SignerIdentity, SignerIdentity, ...SignerIdentity[]],
   gameContract: RankifyDiamondInstance,
@@ -175,7 +160,7 @@ const mockValidVotes = async (
 const startGame = async (gameId: BigNumberish) => {
   const currentT = await time.latest();
   await time.setNextBlockTimestamp(currentT + Number(RInstanceSettings.RInstance_TIME_TO_JOIN) + 1);
-  await mineBlocks(RInstanceSettings.RInstance_TIME_TO_JOIN + 1);
+  await mineBlocks(RInstanceSettings.RInstance_TIME_TO_JOIN + 1, hre);
   await rankifyInstance.connect(adr.gameMaster1.wallet).startGame(gameId);
 };
 
@@ -226,7 +211,7 @@ const fillParty = async (
   if (shiftTime) {
     const currentT = await time.latest();
     await time.setNextBlockTimestamp(currentT + Number(RInstanceSettings.RInstance_TIME_TO_JOIN) + 1);
-    await mineBlocks(1);
+    await mineBlocks(1, hre);
   }
   if (startGame && gameMaster) {
     await rankifyInstance.connect(gameMaster.wallet).startGame(gameId);
@@ -481,7 +466,7 @@ describe(scriptName, () => {
       gamePrice = commonParams.principalCost.mul(principalTimeConstant).div(minGameTime);
 
       // Create the game
-      await createGame(rankifyInstance, adr.gameCreator1, adr.gameMaster1.wallet.address, 1);
+      await createGame(minGameTime, rankifyInstance, adr.gameCreator1, adr.gameMaster1.wallet.address, 1);
     });
 
     it('Should handle game creation costs and token distribution correctly', async () => {
@@ -511,7 +496,7 @@ describe(scriptName, () => {
     it('can get game state', async () => {
       const state = await rankifyInstance.getGameState(1);
       expect(state.rank).to.be.equal(1);
-      expect(state.minGameTime).to.be.equal(RInstanceSettings.RInstance_MIN_GAME_TIME);
+      expect(state.minGameTime).to.be.equal(RInstanceSettings.PRINCIPAL_TIME_CONSTANT);
       expect(state.createdBy).to.be.equal(adr.gameCreator1.wallet.address);
       expect(state.numOngoingProposals).to.be.equal(0);
       expect(state.numPrevProposals).to.be.equal(0);
@@ -759,7 +744,7 @@ describe(scriptName, () => {
         ).to.be.revertedWith('Game has not yet started');
       });
       it('Cannot be started if not enough players', async () => {
-        await mineBlocks(RInstanceSettings.RInstance_TIME_TO_JOIN + 1);
+        await mineBlocks(RInstanceSettings.RInstance_TIME_TO_JOIN + 1, hre);
         await expect(rankifyInstance.connect(adr.gameMaster1.wallet).startGame(1)).to.be.revertedWith(
           'startGame->Not enough players',
         );
@@ -780,7 +765,7 @@ describe(scriptName, () => {
           );
           const currentT = await time.latest();
           await time.setNextBlockTimestamp(currentT + Number(RInstanceSettings.RInstance_TIME_TO_JOIN) + 1);
-          await mineBlocks(1);
+          await mineBlocks(1, hre);
           await expect(rankifyInstance.connect(adr.gameMaster1.wallet).startGame(1)).to.be.emit(
             rankifyInstance,
             'GameStarted',
@@ -905,11 +890,11 @@ describe(scriptName, () => {
             await expect(endTurn(1, rankifyInstance)).to.be.revertedWith(
               'Game duration less than minimum required time',
             );
-            await time.increase(RInstanceSettings.RInstance_MIN_GAME_TIME - 100);
+            await time.setNextBlockTimestamp((await time.latest()) + RInstanceSettings.RInstance_MIN_GAME_TIME - 100);
             await expect(endTurn(1, rankifyInstance)).to.be.revertedWith(
               'Game duration less than minimum required time',
             );
-            await time.increase(101);
+            await time.increase(await rankifyInstance.getGameState(1).then(state => state.minGameTime));
             await expect(endTurn(1, rankifyInstance)).to.not.be.reverted;
           });
           it('Accepts only proposals and no votes', async () => {
@@ -948,7 +933,7 @@ describe(scriptName, () => {
             ).to.be.revertedWith('Only game master');
           });
           it('Can end turn if timeout reached with zero scores', async () => {
-            await mineBlocks(RInstanceSettings.RInstance_TIME_PER_TURN + 1);
+            await mineBlocks(RInstanceSettings.RInstance_TIME_PER_TURN + 1, hre);
             await expect(rankifyInstance.connect(adr.gameMaster1.wallet).endTurn(1, [], [], []))
               .to.be.emit(rankifyInstance, 'TurnEnded')
               .withArgs(
@@ -1188,7 +1173,14 @@ describe(scriptName, () => {
         });
         describe('When another game  of first rank is created', () => {
           beforeEach(async () => {
-            await createGame(rankifyInstance, adr.gameCreator1, adr.gameMaster2.wallet.address, 1, true);
+            await createGame(
+              RInstanceSettings.RInstance_MIN_GAME_TIME,
+              rankifyInstance,
+              adr.gameCreator1,
+              adr.gameMaster2.wallet.address,
+              1,
+              true,
+            );
           });
           it('Reverts if players from another game tries to join', async () => {
             const s1 = await signJoiningGame(
@@ -1300,7 +1292,8 @@ describe(scriptName, () => {
             1,
             true,
           );
-          await time.increase(Number(RInstanceSettings.RInstance_MIN_GAME_TIME) + 1);
+          const timeToEnd = await rankifyInstance.getGameState(1).then(state => state.minGameTime);
+          await time.increase(timeToEnd.toNumber() + 1);
           expect(
             await rankifyInstance.connect(adr.gameMaster1.wallet).endTurn(
               1,
@@ -1577,7 +1570,14 @@ describe(scriptName, () => {
   describe('When there was multiple first rank games played so higher rank game can be filled', () => {
     beforeEach(async () => {
       for (let numGames = 0; numGames < RInstanceSettings.RInstance_MAX_PLAYERS; numGames++) {
-        const gameId = await createGame(rankifyInstance, adr.gameCreator1, adr.gameMaster1.wallet.address, 1, true);
+        const gameId = await createGame(
+          RInstanceSettings.RInstance_MIN_GAME_TIME,
+          rankifyInstance,
+          adr.gameCreator1,
+          adr.gameMaster1.wallet.address,
+          1,
+          true,
+        );
         await fillParty(
           getPlayers(adr, RInstanceSettings.RInstance_MIN_PLAYERS, numGames),
           rankifyInstance,
@@ -1610,7 +1610,14 @@ describe(scriptName, () => {
     });
     describe('When game of next rank is created', () => {
       beforeEach(async () => {
-        await createGame(rankifyInstance, adr.player1, adr.gameMaster1.wallet.address, 2, true);
+        await createGame(
+          RInstanceSettings.RInstance_MIN_GAME_TIME,
+          rankifyInstance,
+          adr.player1,
+          adr.gameMaster1.wallet.address,
+          2,
+          true,
+        );
       });
       it('Can be joined only by bearers of rank token', async () => {
         const lastCreatedGameId = await rankifyInstance.getContractState().then(r => r.numGames);
@@ -1791,7 +1798,7 @@ describe(scriptName, () => {
       minPlayerCnt: RInstance_MIN_PLAYERS,
       voteCredits: RInstanceSettings.RInstance_VOTE_CREDITS,
       nTurns: 2,
-      minGameTime: 3600,
+      minGameTime: RInstanceSettings.RInstance_MIN_GAME_TIME,
       timePerTurn: RInstanceSettings.RInstance_TIME_PER_TURN,
       timeToJoin: RInstanceSettings.RInstance_TIME_TO_JOIN,
     };

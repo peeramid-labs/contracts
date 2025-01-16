@@ -79,11 +79,21 @@ const proposals = {
     'Expand Ensure the assistant is accessible to users with disabilities by providing alternative input methods and output formats. to include more detailed visualizations and customization options, allowing users to tailor the experience to their preferences.',
     'Address potential privacy concerns related to Ensure the assistant is accessible to users with disabilities by providing alternative input methods and output formats. by implementing robust data anonymization and user consent mechanisms.',
   ],
+  'player9-id': [
+    'Implement a smart notification system that learns from user behavior and prioritizes important alerts.',
+    "Create customizable notification categories inspired by player2-id's focus mode concept.",
+    'Add machine learning capabilities to predict the best times for different types of notifications based on user activity patterns.',
+    "Integrate with the task manager to provide intelligent reminders, building on player1-id's organization features.",
+    'Develop a unified notification center with smart filtering and grouping options.',
+    "Further enhance the unified notification center by incorporating player7-id's recommendation engine for better alert prioritization.",
+    'Expand the notification system to include collaborative features, allowing team members to coordinate through smart alerts.',
+    'Implement advanced privacy controls for notification content and user activity data.',
+  ],
 } as const;
 
 export function getDiscussionForTurn(turn: number, proposerId: string) {
   const proposerProposals = proposals[proposerId as keyof typeof proposals];
-  if (turn <= proposerProposals.length) {
+  if (proposerProposals && turn <= proposerProposals.length) {
     return proposerProposals[turn - 1];
   }
 

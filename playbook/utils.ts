@@ -864,6 +864,39 @@ export const mockProposals = async ({
   return proposals;
 };
 
+const joinTypes = {
+  AttestJoiningGame: [
+    { type: 'address', name: 'instance' },
+    { type: 'address', name: 'participant' },
+    { type: 'uint256', name: 'gameId' },
+    { type: 'bytes32', name: 'hiddenSalt' },
+  ],
+};
+export const signJoiningGame = async (
+  hre: HardhatRuntimeEnvironment,
+  verifier: string,
+  participant: string,
+  gameId: BigNumberish,
+  signer: SignerIdentity,
+) => {
+  const { ethers } = hre;
+  let { chainId } = await ethers.provider.getNetwork();
+  const domain = {
+    name: RANKIFY_INSTANCE_CONTRACT_NAME,
+    version: RANKIFY_INSTANCE_CONTRACT_VERSION,
+    chainId,
+    verifyingContract: verifier,
+  };
+  const hiddenSalt = ethers.utils.hexZeroPad('0x123131231311', 32); // Pad to 32 bytes
+  const signature = await signer.wallet._signTypedData(domain, joinTypes, {
+    instance: verifier,
+    participant,
+    gameId,
+    hiddenSalt: ethers.utils.keccak256(hiddenSalt), // Hash the padded value
+  });
+  return { signature, hiddenSalt };
+};
+
 export default {
   setupAddresses,
   setupEnvironment,
