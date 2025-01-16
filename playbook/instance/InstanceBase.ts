@@ -4,12 +4,13 @@ import { IRankifyInstance } from '../../types/src/facets/RankifyInstanceMainFace
 import {
   mockVotes,
   mockProposals,
-  MockVotes,
+  MockVote,
   ProposalSubmission,
   RInstanceSettings,
   EnvSetupResult,
   AdrSetupResult,
   SignerIdentity,
+  signJoiningGame,
 } from '../utils';
 import { assert } from 'console';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
@@ -29,7 +30,7 @@ export class InstanceBase {
   env: EnvSetupResult;
   adr: AdrSetupResult;
   rankifyInstance: RankifyDiamondInstance;
-  ongoingVotes: MockVotes = [];
+  ongoingVotes: MockVote[] = [];
   ongoingProposals: ProposalSubmission[] = [];
   hre: HardhatRuntimeEnvironment;
   private gameStates: Map<number, GameState> = new Map();
@@ -194,6 +195,7 @@ export class InstanceBase {
   ) => {
     const turn = await gameContract.getTurn(gameId);
     this.ongoingVotes = await mockVotes({
+      hre: this.hre,
       gameId: gameId,
       turn: turn,
       verifierAddress: gameContract.address,
@@ -206,7 +208,14 @@ export class InstanceBase {
       for (let i = 0; i < players.length; i++) {
         await gameContract
           .connect(gameMaster.wallet)
-          .submitVote(gameId, this.ongoingVotes[i].voteHidden, players[i].wallet.address);
+          .submitVote(
+            gameId,
+            this.ongoingVotes[i].ballotId,
+            players[i].wallet.address,
+            this.ongoingVotes[i].gmSignature,
+            this.ongoingVotes[i].voterSignature,
+            this.ongoingVotes[i].ballotHash,
+          );
       }
     }
     return this.ongoingVotes;
@@ -257,8 +266,14 @@ export class InstanceBase {
     for (let i = 0; i < players.length; i++) {
       if (!this.rankToken.address) throw new Error('Rank token undefined or unemployed');
       await this.rankToken.connect(players[i].wallet).setApprovalForAll(this.rankifyInstance.address, true);
-
-      await gameContract.connect(players[i].wallet).joinGame(gameId);
+      const { signature, hiddenSalt } = await signJoiningGame(
+        this.hre,
+        this.rankifyInstance.address,
+        players[i].wallet.address,
+        gameId,
+        this.adr.gameMaster1,
+      );
+      await gameContract.connect(players[i].wallet).joinGame(gameId, signature, hiddenSalt);
     }
     if (shiftTime) {
       const currentT = await this.hre.ethers.provider.getBlock('latest').then(b => b.timestamp);

@@ -53,15 +53,6 @@ library LibRankify {
         address derivedToken;
     }
 
-    /**
-     * @dev Structure for storing hidden votes with their proof
-     * @param hash Hash of the vote
-     * @param proof Cryptographic proof associated with the vote
-     */
-    struct VoteHidden {
-        bytes32 hash;
-        bytes proof;
-    }
 
     /**
      * @dev Comprehensive state structure for an individual game
@@ -87,7 +78,7 @@ library LibRankify {
         LibQuadraticVoting.qVotingStruct voting;
         mapping(uint256 => string) ongoingProposals; //Previous Turn Proposals (These are being voted on)
         mapping(address => bytes32) proposalCommitmentHashes; //Current turn Proposal submission
-        mapping(address => VoteHidden) votesHidden;
+        mapping(address => bytes32) ballotHashes;
         mapping(address => bool) playerVoted;
     }
 

@@ -1,4 +1,4 @@
-import aes from 'crypto-js/aes';
+import aes, { encrypt } from 'crypto-js/aes';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import {
   Rankify,
@@ -10,7 +10,7 @@ import {
   DAODistributor,
   ArguableVotingTournament,
 } from '../types';
-import { BigNumber, BigNumberish, BytesLike, Wallet, ethers, utils } from 'ethers';
+import { BigNumber, BigNumberish, BytesLike, TypedDataField, Wallet, ethers, utils } from 'ethers';
 // @ts-ignore
 import { assert } from 'console';
 import { Deployment } from 'hardhat-deploy/types';
@@ -485,24 +485,6 @@ export async function mineBlocks(count: any, hre: HardhatRuntimeEnvironment) {
   }
 }
 
-// interface VoteSubmittion {
-//   gameId: string;
-//   voterHidden: string;
-//   votes: string[3];
-//   proof: string;
-// }
-
-// const mockVote = ({
-//   voter,
-// }: {
-//   voter: SignerIdentity;
-//   gm: SignerIdentity;
-//   voteText: string;
-// }): VoteSubmittion => {
-//   return
-
-// };
-
 export interface ProposalParams {
   gameId: BigNumberish;
   encryptedProposal: string;
@@ -645,6 +627,67 @@ export const getTurnPlayersSalt = ({
   return utils.solidityKeccak256(['address', 'bytes32'], [player, getTurnSalt({ gameId, turn })]);
 };
 
+// Add new function to sign votes
+async function signVote(
+  hre: any,
+  verifierAddress: string,
+  voter: string,
+  gameId: BigNumberish,
+  sealedBallotId: string,
+  signer: SignerIdentity,
+  ballotHash: string,
+  isGM: boolean,
+): Promise<string> {
+  const domain = {
+    name: RANKIFY_INSTANCE_CONTRACT_NAME,
+    version: RANKIFY_INSTANCE_CONTRACT_VERSION,
+    chainId: await hre.getChainId(),
+    verifyingContract: verifierAddress,
+  };
+
+  const types: Record<string, TypedDataField[]> = isGM
+    ? {
+        SubmitVote: [
+          { name: 'gameId', type: 'uint256' },
+          { name: 'voter', type: 'address' },
+          { name: 'sealedBallotId', type: 'string' },
+          { name: 'ballotHash', type: 'bytes32' },
+        ],
+      }
+    : {
+        AuthorizeVoteSubmission: [
+          { name: 'gameId', type: 'uint256' },
+          { name: 'sealedBallotId', type: 'string' },
+          { name: 'ballotHash', type: 'bytes32' },
+        ],
+      };
+
+  const value = isGM
+    ? {
+        gameId: BigNumber.from(gameId),
+        voter: voter,
+        sealedBallotId: sealedBallotId,
+        ballotHash: ballotHash,
+      }
+    : {
+        gameId: BigNumber.from(gameId),
+        sealedBallotId: sealedBallotId,
+        ballotHash: ballotHash,
+      };
+
+  return signer.wallet._signTypedData(domain, types, value);
+}
+export interface MockVote {
+  vote: BigNumberish[];
+  ballotHash: string;
+  ballot: {
+    vote: BigNumberish[];
+    salt: string;
+  };
+  ballotId: string;
+  gmSignature: string;
+  voterSignature: string;
+}
 export const mockVote = async ({
   voter,
   gm,
@@ -652,6 +695,7 @@ export const mockVote = async ({
   turn,
   vote,
   verifierAddress,
+  hre,
 }: {
   voter: SignerIdentity;
   gameId: BigNumberish;
@@ -659,36 +703,41 @@ export const mockVote = async ({
   gm: SignerIdentity;
   vote: BigNumberish[];
   verifierAddress: string;
-}): Promise<{
-  // proof: string;
-  vote: BigNumberish[];
-  voteHidden: string;
-  // publicSignature: string;
-}> => {
+  hre: HardhatRuntimeEnvironment;
+}): Promise<MockVote> => {
   const playerSalt = getTurnPlayersSalt({
     gameId,
     turn,
     player: voter.wallet.address,
   });
 
-  const message = {
+  const ballot = {
     vote: vote,
-    gameId,
-    turn,
     salt: playerSalt,
   };
-
-  const voteHidden: string = utils.solidityKeccak256(['string[]', 'bytes32'], [vote, playerSalt]);
-  // const publicMessage = {
-  //   vote1: voteHidden[0],
-  //   vote2: voteHidden[1],
-  //   vote3: voteHidden[2],
-  //   gameId,
-  //   turn,
-  // };
-  // const proof = await signVoteMessage(message, verifierAddress, gm);
-  // const publicSignature = await signPublicVoteMessage(publicMessage, verifierAddress, gm);
-  return { vote, voteHidden };
+  const ballotHash: string = utils.solidityKeccak256(['string[]', 'bytes32'], [vote, playerSalt]);
+  const ballotId = ballotHash + '_encrypted';
+  const gmSignature = await signVote(
+    hre,
+    verifierAddress,
+    voter.wallet.address,
+    gameId,
+    ballotId,
+    gm,
+    ballotHash,
+    true,
+  );
+  const voterSignature = await signVote(
+    hre,
+    verifierAddress,
+    voter.wallet.address,
+    gameId,
+    ballotId,
+    voter,
+    ballotHash,
+    false,
+  );
+  return { vote, ballotHash, ballot, ballotId, gmSignature, voterSignature };
 };
 export const getPlayers = (
   adr: AdrSetupResult,
@@ -704,13 +753,6 @@ export const getPlayers = (
   }
   return players as any as [SignerIdentity, SignerIdentity, ...SignerIdentity[]];
 };
-
-export type MockVotes = Array<{
-  // proof: string;
-  vote: BigNumberish[];
-  voteHidden: string;
-  // publicSignature: string;
-}>;
 
 function shuffle(array: any[]) {
   let currentIndex = array.length,
@@ -730,6 +772,7 @@ function shuffle(array: any[]) {
 }
 
 export const mockVotes = async ({
+  hre,
   gm,
   gameId,
   turn,
@@ -737,19 +780,15 @@ export const mockVotes = async ({
   players,
   distribution,
 }: {
+  hre: HardhatRuntimeEnvironment;
   gameId: BigNumberish;
   turn: BigNumberish;
   gm: SignerIdentity;
   verifierAddress: string;
   players: [SignerIdentity, SignerIdentity, ...SignerIdentity[]];
   distribution: 'ftw' | 'semiUniform' | 'equal' | 'zeros';
-}): Promise<MockVotes> => {
-  const votes: Array<{
-    // proof: string;
-    vote: BigNumberish[];
-    voteHidden: string;
-    // publicSignature: string;
-  }> = [];
+}): Promise<MockVote[]> => {
+  const votes: MockVote[] = [];
   for (let k = 0; k < players.length; k++) {
     let creditsLeft = RInstance_VOTE_CREDITS;
     let playerVote: BigNumberish[] = [];
@@ -791,15 +830,17 @@ export const mockVotes = async ({
       console.assert(playerVote[k] == 0);
     }
 
-    const { vote, voteHidden } = await mockVote({
-      voter: players[k],
-      gameId,
-      turn,
-      gm,
-      verifierAddress,
-      vote: playerVote,
-    });
-    votes[k] = { vote, voteHidden: utils.hashMessage(JSON.stringify(voteHidden)) };
+    votes.push(
+      await mockVote({
+        hre,
+        voter: players[k],
+        gameId,
+        turn,
+        gm,
+        verifierAddress,
+        vote: playerVote,
+      }),
+    );
   }
   return votes;
 };

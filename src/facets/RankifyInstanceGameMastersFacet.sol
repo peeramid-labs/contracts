@@ -12,6 +12,7 @@ import {LibCoinVending} from "../libraries/LibCoinVending.sol";
 import "hardhat/console.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import "../vendor/diamond/libraries/LibDiamond.sol";
+import {IErrors} from "../interfaces/IErrors.sol";
 
 /**
  * @title RankifyInstanceGameMastersFacet
@@ -84,19 +85,63 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
      * - `voter` must be in the game with `gameId`.
      * - The current turn of the game with `gameId` must be greater than 1.
      */
-    function submitVote(uint256 gameId, string memory encryptedVotes, address voter) public {
-        LibRankify.enforceIsGM(gameId, msg.sender);
+    function submitVote(
+        uint256 gameId,
+        string memory sealedBallotId,
+        address voter,
+        bytes memory gmSignature,
+        bytes memory voterSignature,
+        bytes32 ballotHash
+    ) public {
         gameId.enforceGameExists();
         gameId.enforceHasStarted();
         require(!gameId.isGameOver(), "Game over");
         gameId.enforceIsPlayingGame(voter);
         require(gameId.getTurn() > 1, "No proposals exist at turn 1: cannot vote");
+        address gm = gameId.getGM();
+        if (msg.sender != gm) {
+            // Verify GM signature for sealed ballot
+            bytes32 ballotDigest = _hashTypedDataV4(
+                keccak256(
+                    abi.encode(
+                        keccak256("SubmitVote(uint256 gameId,address voter,string sealedBallotId,bytes32 ballotHash)"),
+                        gameId,
+                        voter,
+                        keccak256(bytes(sealedBallotId)),
+                        ballotHash
+                    )
+                )
+            );
+
+            require(
+                SignatureChecker.isValidSignatureNow(gm, ballotDigest, gmSignature),
+                IErrors.invalidECDSARecoverSigner(ballotDigest, "Invalid GM signature")
+            );
+        }
+        // If sender is not the voter, verify voter's signature
+            bytes32 voterDigest = _hashTypedDataV4(
+                keccak256(
+                    abi.encode(
+                        keccak256("AuthorizeVoteSubmission(uint256 gameId,string sealedBallotId,bytes32 ballotHash)"),
+                        gameId,
+                        keccak256(bytes(sealedBallotId)),
+                        ballotHash
+                    )
+                )
+            );
+            require(
+                SignatureChecker.isValidSignatureNow(voter, voterDigest, voterSignature),
+                IErrors.invalidECDSARecoverSigner(voterDigest, "Invalid voter signature")
+            );
+
+
         LibRankify.GameState storage game = gameId.getGameState();
+        game.ballotHashes[voter] = ballotHash;
         require(!game.playerVoted[voter], "Already voted");
         game.numVotesThisTurn += 1;
         game.playerVoted[voter] = true;
         gameId.tryPlayerMove(voter);
-        emit VoteSubmitted(gameId, gameId.getTurn(), voter, encryptedVotes);
+        emit VoteSubmitted(gameId, gameId.getTurn(), voter, sealedBallotId);
     }
 
     /**
@@ -198,7 +243,8 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
         uint256 gameId,
         uint256[][] memory votes,
         string[] memory newProposals, //REFERRING TO UPCOMING VOTING ROUND
-        uint256[] memory proposerIndices //REFERRING TO game.players index in PREVIOUS VOTING ROUND
+        uint256[] memory proposerIndices, //REFERRING TO game.players index in PREVIOUS VOTING ROUND
+        bytes32 turnSalt
     ) public {
         gameId.enforceIsGM(msg.sender);
         gameId.enforceHasStarted();
@@ -237,7 +283,7 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
             game.proposalCommitmentHashes[players[i]] = bytes32(0);
             game.ongoingProposals[i] = "";
             game.playerVoted[players[i]] = false;
-            game.votesHidden[players[i]].hash = bytes32(0);
+            game.ballotHashes[players[i]] = bytes32(0);
         }
         // This data is to needed to correctly determine "PlayerMove" conditions during next turn
         game.numVotesPrevTurn = game.numVotesThisTurn;

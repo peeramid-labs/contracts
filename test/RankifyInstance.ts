@@ -3,7 +3,7 @@ import {
   RInstance_MAX_PLAYERS,
   RInstance_MIN_PLAYERS,
   EnvSetupResult,
-  MockVotes,
+  MockVote,
   ProposalSubmission,
   SignerIdentity,
   RInstance_MAX_TURNS,
@@ -20,7 +20,7 @@ import { LibCoinVending } from '../types/src/facets/RankifyInstanceRequirementsF
 import { IRankifyInstance } from '../types/src/facets/RankifyInstanceMainFacet';
 import { deployments, ethers, getNamedAccounts } from 'hardhat';
 const path = require('path');
-import { BigNumber, BigNumberish } from 'ethers';
+import { BigNumber, BigNumberish, TypedDataField } from 'ethers';
 import { assert } from 'console';
 import { solidityKeccak256 } from 'ethers/lib/utils';
 import addDistribution from '../scripts/playbooks/addDistribution';
@@ -31,7 +31,8 @@ const scriptName = path.basename(__filename);
 import { getCodeIdFromArtifact } from '../scripts/getCodeId';
 import { MAODistribution } from '../types/src/distributions/MAODistribution';
 import { generateDistributorData } from '../scripts/libraries/generateDistributorData';
-let votes: MockVotes;
+
+let votes: MockVote[];
 let proposalsStruct: ProposalSubmission[];
 let adr: AdrSetupResult;
 let votersAddresses: string[];
@@ -129,6 +130,7 @@ const endTurn = async (gameId: BigNumberish, gameContract: RankifyDiamondInstanc
   );
 };
 
+// Update mockValidVotes function
 const mockValidVotes = async (
   players: [SignerIdentity, SignerIdentity, ...SignerIdentity[]],
   gameContract: RankifyDiamondInstance,
@@ -139,6 +141,7 @@ const mockValidVotes = async (
 ) => {
   const turn = await gameContract.getTurn(gameId);
   votes = await mockVotes({
+    hre: hre,
     gameId: gameId,
     turn: turn,
     verifierAddress: gameContract.address,
@@ -149,9 +152,16 @@ const mockValidVotes = async (
   if (submitNow) {
     votersAddresses = players.map(player => player.wallet.address);
     for (let i = 0; i < players.length; i++) {
-      await rankifyInstance
+      await gameContract
         .connect(gameMaster.wallet)
-        .submitVote(gameId, votes[i].voteHidden, players[i].wallet.address);
+        .submitVote(
+          gameId,
+          votes[i].ballotId,
+          players[i].wallet.address,
+          votes[i].gmSignature,
+          votes[i].voterSignature,
+          votes[i].ballotHash,
+        );
     }
   }
   return votes;
@@ -406,6 +416,7 @@ describe(scriptName, () => {
     ).to.be.revertedWith('game not found');
     votersAddresses = getPlayers(adr, RInstanceSettings.RInstance_MAX_PLAYERS).map(player => player.wallet.address);
     votes = await mockVotes({
+      hre: hre,
       gameId: 1,
       turn: 1,
       verifierAddress: rankifyInstance.address,
@@ -414,7 +425,16 @@ describe(scriptName, () => {
       distribution: 'semiUniform',
     });
     await expect(
-      rankifyInstance.connect(adr.gameMaster1.wallet).submitVote(1, votes[0].voteHidden, adr.player1.wallet.address),
+      rankifyInstance
+        .connect(adr.gameMaster1.wallet)
+        .submitVote(
+          1,
+          votes[0].ballotId,
+          adr.player1.wallet.address,
+          votes[0].gmSignature,
+          votes[0].voterSignature,
+          votes[0].ballotHash,
+        ),
     ).to.be.revertedWith('game not found');
     await expect(rankifyInstance.connect(adr.gameMaster1.wallet).openRegistration(1)).to.be.revertedWith(
       'game not found',
@@ -711,6 +731,7 @@ describe(scriptName, () => {
           verifierAddress: rankifyInstance.address,
           players: getPlayers(adr, RInstanceSettings.RInstance_MAX_PLAYERS),
           gm: adr.gameMaster1,
+          hre: hre,
           distribution: 'semiUniform',
         });
         votersAddresses = getPlayers(adr, RInstanceSettings.RInstance_MAX_PLAYERS).map(player => player.wallet.address);
@@ -725,7 +746,14 @@ describe(scriptName, () => {
         await expect(
           rankifyInstance
             .connect(adr.gameMaster1.wallet)
-            .submitVote(1, votes[0].voteHidden, adr.player1.wallet.address),
+            .submitVote(
+              1,
+              votes[0].ballotId,
+              adr.player1.wallet.address,
+              votes[0].gmSignature,
+              votes[0].voterSignature,
+              votes[0].ballotHash,
+            ),
         ).to.be.revertedWith('Game has not yet started');
         await expect(rankifyInstance.connect(adr.gameCreator1.wallet).openRegistration(1)).to.be.revertedWith(
           'Cannot do when registration is open',
@@ -784,6 +812,7 @@ describe(scriptName, () => {
             rankifyInstance.connect(adr.gameMaster1.wallet).submitProposal(proposalsStruct[0].params),
           ).to.be.revertedWith('Game has not yet started');
           votes = await mockVotes({
+            hre: hre,
             gameId: 1,
             turn: 1,
             verifierAddress: rankifyInstance.address,
@@ -806,7 +835,14 @@ describe(scriptName, () => {
           await expect(
             rankifyInstance
               .connect(adr.gameMaster1.wallet)
-              .submitVote(1, votes[0].voteHidden, adr.player1.wallet.address),
+              .submitVote(
+                1,
+                votes[0].ballotId,
+                adr.player1.wallet.address,
+                votes[0].gmSignature,
+                votes[0].voterSignature,
+                votes[0].ballotHash,
+              ),
           ).to.be.revertedWith('Game has not yet started');
         });
         describe('When game has started', () => {
@@ -856,7 +892,14 @@ describe(scriptName, () => {
               if (i !== 0) {
                 await rankifyInstance
                   .connect(adr.gameMaster1.wallet)
-                  .submitVote(1, votes[i].voteHidden, players[i].wallet.address);
+                  .submitVote(
+                    1,
+                    votes[i].ballotId,
+                    players[i].wallet.address,
+                    votes[i].gmSignature,
+                    votes[i].voterSignature,
+                    votes[i].ballotHash,
+                  );
               }
             }
 
@@ -909,6 +952,7 @@ describe(scriptName, () => {
               rankifyInstance.connect(adr.gameMaster1.wallet).submitProposal(proposals[0].params),
             ).to.be.emit(rankifyInstance, 'ProposalSubmitted');
             votes = await mockVotes({
+              hre: hre,
               gameId: 1,
               turn: 1,
               verifierAddress: rankifyInstance.address,
@@ -921,7 +965,16 @@ describe(scriptName, () => {
             );
 
             await expect(
-              rankifyInstance.connect(adr.gameMaster1.wallet).submitVote(1, votes[0].voteHidden, votersAddresses[0]),
+              rankifyInstance
+                .connect(adr.gameMaster1.wallet)
+                .submitVote(
+                  1,
+                  votes[0].ballotId,
+                  votersAddresses[0],
+                  votes[0].gmSignature,
+                  votes[0].voterSignature,
+                  votes[0].ballotHash,
+                ),
             ).to.be.revertedWith('No proposals exist at turn 1: cannot vote');
           });
           it('Processes only proposals only from game master', async () => {
@@ -1014,10 +1067,18 @@ describe(scriptName, () => {
                   1,
                   true,
                 );
+
                 await expect(
                   rankifyInstance
                     .connect(adr.gameMaster1.wallet)
-                    .submitVote(1, votes[0].voteHidden, adr.player1.wallet.address),
+                    .submitVote(
+                      1,
+                      votes[0].ballotId,
+                      adr.player1.wallet.address,
+                      votes[0].gmSignature,
+                      votes[0].voterSignature,
+                      votes[0].ballotHash,
+                    ),
                 ).to.be.revertedWith('Already voted');
               });
               it('shows no players made a turn', async () => {
@@ -1336,6 +1397,7 @@ describe(scriptName, () => {
         it('Throws on attempt to make another turn', async () => {
           const currentTurn = await rankifyInstance.getTurn(1);
           votes = await mockVotes({
+            hre: hre,
             gameId: 1,
             turn: currentTurn,
             verifierAddress: rankifyInstance.address,
@@ -1361,8 +1423,11 @@ describe(scriptName, () => {
                 .connect(adr.gameMaster1.wallet)
                 .submitVote(
                   1,
-                  votes[i].voteHidden,
+                  votes[i].ballotId,
                   getPlayers(adr, RInstanceSettings.RInstance_MAX_PLAYERS)[i].wallet.address,
+                  votes[i].gmSignature,
+                  votes[i].voterSignature,
+                  votes[i].ballotHash,
                 ),
             ).to.be.revertedWith('Game over');
           }
