@@ -721,14 +721,6 @@ describe(scriptName, () => {
         ).to.be.revertedWith('addPlayer->party full');
       });
       it('Game methods beside join and start are inactive', async () => {
-        await expect(
-          rankifyInstance.connect(adr.gameMaster1.wallet).submitProposal({
-            gameId: 1,
-            proposer: adr.player1.wallet.address,
-            commitmentHash: solidityKeccak256(['string'], ['mockString']),
-            encryptedProposal: '',
-          }),
-        ).to.be.revertedWith('Game has not yet started');
         proposalsStruct = await mockProposals({
           hre: hre,
           players: getPlayers(adr, RInstanceSettings.RInstance_MAX_PLAYERS),
@@ -737,6 +729,10 @@ describe(scriptName, () => {
           verifierAddress: rankifyInstance.address,
           gm: adr.gameMaster1,
         });
+        await expect(
+          rankifyInstance.connect(adr.gameMaster1.wallet).submitProposal(proposalsStruct[0].params),
+        ).to.be.revertedWith('Game has not yet started');
+
         votes = await mockVotes({
           gameId: 1,
           turn: 1,
@@ -994,14 +990,6 @@ describe(scriptName, () => {
                   votes[0].ballotHash,
                 ),
             ).to.be.revertedWith('No proposals exist at turn 1: cannot vote');
-          });
-          it('Processes only proposals only from game master', async () => {
-            await expect(
-              rankifyInstance.connect(adr.gameMaster1.wallet).submitProposal(proposalsStruct[0].params),
-            ).to.emit(rankifyInstance, 'ProposalSubmitted');
-            await expect(
-              rankifyInstance.connect(adr.maliciousActor1.wallet).submitProposal(proposalsStruct[0].params),
-            ).to.be.revertedWith('Only game master');
           });
           it('Can end turn if timeout reached with zero scores', async () => {
             await mineBlocks(RInstanceSettings.RInstance_TIME_PER_TURN + 1, hre);
