@@ -1,7 +1,7 @@
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
 import { ethers } from 'hardhat';
-import CodeIndexAbi from '@peeramid-labs/eds/abi/src/CodeIndex.sol/CodeIndex.json';
+import CodeIndexAbi from '@peeramid-labs/eds/abi/src/ERC7744.sol/ERC7744.json';
 import { CodeIndex } from '@peeramid-labs/eds/types';
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
@@ -17,7 +17,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
   const codeIndexContract = (await ethers.getContractAt(
     CodeIndexAbi,
-    '0xc0D31d398c5ee86C5f8a23FA253ee8a586dA03Ce',
+    '0xC0dE1D2F7662c63796E544B2647b2A94EE658E07',
   )) as CodeIndex;
   const code = await hre.ethers.provider.getCode(sacmDeployment.address);
   const codeId = ethers.utils.keccak256(code);

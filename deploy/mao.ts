@@ -3,7 +3,7 @@ import { DeployFunction } from 'hardhat-deploy/types';
 import { ethers, hardhatArguments } from 'hardhat';
 import { LibSemver } from '../types/src/distributions/MAODistribution';
 import { CodeIndex } from '@peeramid-labs/eds/types';
-import CodeIndexAbi from '@peeramid-labs/eds/abi/src/CodeIndex.sol/CodeIndex.json';
+import CodeIndexAbi from '@peeramid-labs/eds/abi/src/ERC7744.sol/ERC7744.json';
 import { MintSettingsStruct } from '../types/src/tokens/DistributableGovernanceERC20.sol/DistributableGovernanceERC20';
 import { ArguableVotingTournament } from '../types/src/distributions/ArguableVotingTournament';
 import {
@@ -19,7 +19,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployer, DAO } = await getNamedAccounts();
   const codeIndexContract = (await ethers.getContractAt(
     CodeIndexAbi,
-    '0xc0D31d398c5ee86C5f8a23FA253ee8a586dA03Ce',
+    '0xC0dE1D2F7662c63796E544B2647b2A94EE658E07',
   )) as CodeIndex;
 
   let _trustedForwarder = ethers.constants.AddressZero;

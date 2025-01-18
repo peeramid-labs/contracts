@@ -18,5 +18,5 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 };
 
 func.tags = ['distributor'];
-func.dependencies = ['rankify'];
+func.dependencies = ['rankify', 'ERC7744'];
 export default func;
