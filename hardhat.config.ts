@@ -167,11 +167,6 @@ export default {
       accounts: {
         mnemonic: 'casual vacant letter raw trend tool vacant opera buzz jaguar bridge myself',
       }, // ONLY LOCAL
-      forking: {
-        // Uncomment if have no EDS code index deployed
-        url: process.env.FORK_RPC_URL ?? 'https://arb1.arbitrum.io/rpc',
-        blockNumber: 257223284, // works for arbitrum, change for others
-      },
     },
     localhost: {
       url: 'http://127.0.0.1:8545',
@@ -254,5 +249,13 @@ export default {
     // only: [":ERC20$"],
     spacing: 2,
     pretty: false,
+  },
+  external: {
+    contracts: [
+      {
+        artifacts: 'node_modules/@peeramid-labs/eds/artifacts',
+        deploy: 'node_modules/@peeramid-labs/eds/deploy',
+      },
+    ],
   },
 };

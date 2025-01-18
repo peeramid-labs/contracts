@@ -19,7 +19,6 @@ import { assert } from 'console';
 import { Deployment } from 'hardhat-deploy/types';
 import { HardhatEthersHelpers } from '@nomiclabs/hardhat-ethers/types';
 
-
 export interface SignerIdentity {
   name: string;
   id: string;
@@ -295,7 +294,7 @@ export const RInstanceSettings = {
 };
 
 export const setupTest = deployments.createFixture(async ({ deployments, getNamedAccounts, ethers: _eth }, options) => {
-  await deployments.fixture(['MAO']);
+  await deployments.fixture(['ERC7744', 'MAO']);
   const adr = await setupAddresses(getNamedAccounts, _eth);
   const { deployer, owner } = await hre.getNamedAccounts();
 
