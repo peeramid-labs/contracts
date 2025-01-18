@@ -1,5 +1,13 @@
 # rankify-contracts
 
+## 0.11.2
+
+### Patch Changes
+
+- [#125](https://github.com/peeramid-labs/contracts/pull/125) [`ed516b3b6712c32c80007488b10e36ce41afb720`](https://github.com/peeramid-labs/contracts/commit/ed516b3b6712c32c80007488b10e36ce41afb720) Thanks [@peersky](https://github.com/peersky)! - fixed playbooks to work with updated eds internal deplyoment
+
+- [#125](https://github.com/peeramid-labs/contracts/pull/125) [`ed516b3b6712c32c80007488b10e36ce41afb720`](https://github.com/peeramid-labs/contracts/commit/ed516b3b6712c32c80007488b10e36ce41afb720) Thanks [@peersky](https://github.com/peersky)! - using external dependency EDS to avoid need for forks or pre-deployments outside of this repo
+
 ## 0.11.1
 
 ### Patch Changes
