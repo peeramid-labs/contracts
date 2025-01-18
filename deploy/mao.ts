@@ -2,8 +2,8 @@ import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
 import { ethers, hardhatArguments } from 'hardhat';
 import { LibSemver } from '../types/src/distributions/MAODistribution';
-import { CodeIndex } from '@peeramid-labs/eds/types';
-import CodeIndexAbi from '@peeramid-labs/eds/abi/src/ERC7744.sol/ERC7744.json';
+import { ERC7744 } from '@peeramid-labs/eds/types';
+import ERC7744Abi from '@peeramid-labs/eds/abi/src/ERC7744.sol/ERC7744.json';
 import { MintSettingsStruct } from '../types/src/tokens/DistributableGovernanceERC20.sol/DistributableGovernanceERC20';
 import { ArguableVotingTournament } from '../types/src/distributions/ArguableVotingTournament';
 import {
@@ -17,10 +17,10 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deploy } = deployments;
 
   const { deployer, DAO } = await getNamedAccounts();
-  const codeIndexContract = (await ethers.getContractAt(
-    CodeIndexAbi,
+  const codeIndexContract = (await hre.ethers.getContractAt(
+    ERC7744Abi,
     '0xC0dE1D2F7662c63796E544B2647b2A94EE658E07',
-  )) as CodeIndex;
+  )) as ERC7744;
 
   let _trustedForwarder = ethers.constants.AddressZero;
   let _distributionName = process.env.MAO_INSTANCE_NAME ?? RANKIFY_INSTANCE_CONTRACT_NAME;
@@ -208,5 +208,5 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 };
 
 export default func;
-func.dependencies = ['sacm', 'distributor', 'rankify'];
+func.dependencies = ['ERC7744', 'sacm', 'distributor', 'rankify'];
 func.tags = ['MAO'];
