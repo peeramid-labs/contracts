@@ -64,7 +64,7 @@ export class InstanceBase {
       gameMaster: gameMaster,
       gameRank: gameRank,
       maxPlayerCnt: RInstanceSettings.RInstance_MAX_PLAYERS + 1,
-      minPlayerCnt: RInstanceSettings.RInstance_MIN_PLAYERS + 1,
+      minPlayerCnt: RInstanceSettings.RInstance_MIN_PLAYERS,
       timePerTurn: RInstanceSettings.RInstance_TIME_PER_TURN,
       timeToJoin: RInstanceSettings.RInstance_TIME_TO_JOIN,
       nTurns: RInstanceSettings.RInstance_MAX_TURNS,
