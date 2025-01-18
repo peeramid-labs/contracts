@@ -167,12 +167,14 @@ export default {
       accounts: {
         mnemonic: 'casual vacant letter raw trend tool vacant opera buzz jaguar bridge myself',
       }, // ONLY LOCAL
+      tags: ['ERC7744'],
     },
     localhost: {
       url: 'http://127.0.0.1:8545',
       accounts: {
         mnemonic: 'casual vacant letter raw trend tool vacant opera buzz jaguar bridge myself',
       }, // ONLY LOCAL
+      tags: ['ERC7744'],
     },
     anvil: {
       url: process.env.ANVIL_RPC_URL ?? '',
