@@ -6,8 +6,21 @@
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "skipLibCheck": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "typeRoots": ["./node_modules/@types", "./types"],
+    "baseUrl": ".",
+    "paths": {
+      "*": ["node_modules/*", "types/*"]
+    }
   },
-  "include": ["./test", "./src", "./scripts", "hardhat.config.js", "./deploy", "playbook/utils.ts"],
+  "include": [
+    "./test",
+    "./src",
+    "./scripts",
+    "hardhat.config.js",
+    "./deploy",
+    "playbook/utils.ts",
+    "./types/**/*.d.ts"
+  ],
   "files": ["hardhat.config.ts"]
 }

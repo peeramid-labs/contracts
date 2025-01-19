@@ -80,6 +80,7 @@ library LibRankify {
         mapping(address => bytes32) proposalCommitmentHashes; //Current turn Proposal submission
         mapping(address => bytes32) ballotHashes;
         mapping(address => bool) playerVoted;
+        mapping(bytes32 => bool) usedNullifiers;  // Track used nullifiers
     }
 
     /**

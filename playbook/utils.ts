@@ -17,6 +17,9 @@ import { Deployment } from 'hardhat-deploy/types';
 import { HardhatEthersHelpers } from '@nomiclabs/hardhat-ethers/types';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { getDiscussionForTurn } from './instance/discussionTopics';
+import circomlibjs from 'circomlibjs';
+import { groth16 } from 'snarkjs';
+
 export const RANKIFY_INSTANCE_CONTRACT_NAME = 'RANKIFY_INSTANCE_NAME';
 export const RANKIFY_INSTANCE_CONTRACT_VERSION = '0.0.1';
 export const RInstance_TIME_PER_TURN = 2500;
@@ -852,13 +855,13 @@ const proposalTypes = {
     { type: 'uint256', name: 'gameId' },
     { type: 'address', name: 'proposer' },
     { type: 'string', name: 'encryptedProposal' },
-    { type: 'bytes32', name: 'commitmentHash' }
+    { type: 'bytes32', name: 'commitmentHash' },
   ],
   AuthorizeProposalSubmission: [
     { type: 'uint256', name: 'gameId' },
     { type: 'string', name: 'encryptedProposal' },
-    { type: 'bytes32', name: 'commitmentHash' }
-  ]
+    { type: 'bytes32', name: 'commitmentHash' },
+  ],
 };
 
 async function signProposal(
@@ -877,7 +880,7 @@ async function signProposal(
     name: RANKIFY_INSTANCE_CONTRACT_NAME,
     version: RANKIFY_INSTANCE_CONTRACT_VERSION,
     chainId,
-    verifyingContract: verifierAddress
+    verifyingContract: verifierAddress,
   };
 
   // Match the exact types from the Solidity contract
@@ -887,20 +890,16 @@ async function signProposal(
         gameId,
         proposer,
         encryptedProposal,
-        commitmentHash
+        commitmentHash,
       }
     : {
         gameId,
         encryptedProposal,
-        commitmentHash
+        commitmentHash,
       };
 
   // Generate typed data hash matching Solidity's keccak256(abi.encode(...))
-  const typedDataHash = await signer.wallet._signTypedData(
-    domain,
-    { [type]: proposalTypes[type] },
-    value
-  );
+  const typedDataHash = await signer.wallet._signTypedData(domain, { [type]: proposalTypes[type] }, value);
 
   return typedDataHash;
 }
@@ -1027,6 +1026,58 @@ export const signJoiningGame = async (
   });
   return { signature, hiddenSalt };
 };
+
+// Add ZK proof generation helper
+export async function generateBatchProposalProof(
+  proposals: string[],
+  proposerKeys: string[],
+  gameId: BigNumberish,
+  turn: BigNumberish,
+  commitmentHashes: string[],
+  numPlayers: number,
+) {
+  const poseidon = await circomlibjs.buildPoseidon();
+
+  // Define padding function first
+  const maxSize = 18; // Match circuit's max size
+  const padArray = <T>(arr: T[], defaultValue: T): T[] => {
+    return [...arr, ...Array(maxSize - arr.length).fill(defaultValue)];
+  };
+
+  const commitmentRandomnesses = padArray(
+    proposals.map(() => ethers.utils.randomBytes(32)),
+    ethers.utils.randomBytes(32),
+  );
+  const nullifierRandomnesses = padArray(
+    proposals.map(() => ethers.utils.randomBytes(32)),
+    ethers.utils.randomBytes(32),
+  );
+
+  const input = {
+    proposals: padArray(proposals, ''),
+    proposerKeys: padArray(proposerKeys, '0x0'),
+    commitmentRandomnesses,
+    nullifierRandomnesses,
+    gameId: gameId,
+    turn: turn,
+    commitmentHashes: padArray(commitmentHashes, '0x0'),
+    numPlayers: numPlayers,
+  };
+
+  const { proof, publicSignals } = await groth16.fullProve(
+    input,
+    'circuits/proposals_verify.wasm',
+    'circuits/proposals_verify.zkey',
+  );
+
+  return {
+    a: proof.pi_a.slice(0, 2),
+    b: [proof.pi_b[0].slice(0, 2), proof.pi_b[1].slice(0, 2)],
+    c: proof.pi_c.slice(0, 2),
+    nullifiers: publicSignals.slice(0, proposals.length),
+    proposals: proposals,
+  };
+}
 
 export default {
   setupAddresses,

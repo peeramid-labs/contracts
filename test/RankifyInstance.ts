@@ -11,6 +11,8 @@ import {
   RANKIFY_INSTANCE_CONTRACT_VERSION,
   signJoiningGame,
   getTurnSalt,
+  generateProposalProof,
+  generateBatchProposalProof,
 } from '../playbook/utils';
 import { setupTest } from './utils';
 import { RInstanceSettings, mineBlocks, mockProposals, mockVotes, getPlayers } from '../playbook/utils';
@@ -32,6 +34,7 @@ const scriptName = path.basename(__filename);
 import { getCodeIdFromArtifact } from '../scripts/getCodeId';
 import { MAODistribution } from '../types/src/distributions/MAODistribution';
 import { generateDistributorData } from '../scripts/libraries/generateDistributorData';
+import { Identity } from '@semaphore-protocol/identity';
 
 let votes: MockVote[];
 let proposalsStruct: ProposalSubmission[];
@@ -125,12 +128,20 @@ const runToLastTurn = async (
 };
 
 const endTurn = async (gameId: BigNumberish, gameContract: RankifyDiamondInstance, idleVoters?: number[]) => {
+  const { proposals, batchReveal } = await mockValidProposals(
+    getPlayers(adr, RInstanceSettings.RInstance_MIN_PLAYERS),
+    gameContract,
+    adr.gameMaster1,
+    gameId,
+    false,
+  );
+
   return gameContract.connect(adr.gameMaster1.wallet).endTurn(
     gameId,
     votes.map((vote, idx) =>
       idleVoters?.includes(idx) ? Array(votes[0].ballot.vote.length).fill(0) : vote.ballot.vote,
     ),
-    proposalsStruct.map(prop => prop.proposal),
+    batchReveal,
     proposalsStruct.map((prop, idx) => idx),
     getTurnSalt({ gameId, turn: await gameContract.getTurn(gameId) }),
   );
@@ -197,12 +208,27 @@ const mockValidProposals = async (
     verifierAddress: gameContract.address,
     gm: gameMaster,
   });
+
   if (submitNow) {
     for (let i = 0; i < players.length; i++) {
       await gameContract.connect(gameMaster.wallet).submitProposal(proposalsStruct[i].params);
     }
   }
-  return proposalsStruct;
+
+  // Generate ZK proof for batch reveal
+  const proof = await generateBatchProposalProof(
+    proposalsStruct.map(p => p.proposal),
+    players.map(p => p.wallet.privateKey),
+    gameId,
+    turn,
+    proposalsStruct.map(p => p.params.commitmentHash),
+    players.length,
+  );
+
+  return {
+    proposals: proposalsStruct,
+    batchReveal: proof,
+  };
 };
 
 const fillParty = async (

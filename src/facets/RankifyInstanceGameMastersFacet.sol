@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity =0.8.28;
+pragma solidity ^0.8.28;
 
 import {LibTBG} from "../libraries/LibTurnBasedGame.sol";
 import {LibRankify} from "../libraries/LibRankify.sol";
@@ -61,6 +61,22 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
     }
 
     event VoteSubmitted(uint256 indexed gameId, uint256 indexed turn, address indexed player, string votesHidden);
+
+    struct ProposalReveal {
+        string proposal;           // The revealed proposal
+        bytes32 nullifier;        // Nullifier proving proposer's right to reveal
+        uint[2] a;                // ZK proof components
+        uint[2][2] b;
+        uint[2] c;
+    }
+
+    struct BatchProposalReveal {
+        string[] proposals;           // Array of revealed proposals
+        bytes32[] nullifiers;        // Array of nullifiers
+        uint[2] a;                   // Single ZK proof components
+        uint[2][2] b;
+        uint[2] c;
+    }
 
     /**
      * @dev Handles the end of the game for a player. `gameId` is the ID of the game. `player` is the address of the player.
@@ -154,59 +170,63 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
      * - The game with `proposalData.gameId` must exist.
      * - The caller must be a game master of the game with `proposalData.gameId`.
      */
-    function submitProposal(ProposalParams memory proposalData) public {
-        proposalData.gameId.enforceGameExists();
-        require(!proposalData.gameId.isGameOver(), "Game over");
-        address gm = proposalData.gameId.getGM();
-        if(msg.sender != gm)
-        {
+    function submitProposal(
+        ProposalParams memory params
+    ) public {
+        params.gameId.enforceGameExists();
+        require(!params.gameId.isGameOver(), "Game over");
+        address gm = params.gameId.getGM();
+        if(msg.sender != gm) {
             bytes32 proposalDigest = _hashTypedDataV4(
                 keccak256(
                     abi.encode(
                         keccak256("SubmitProposal(uint256 gameId,address proposer,string encryptedProposal,bytes32 commitmentHash)"),
-                        proposalData.gameId,
-                        proposalData.proposer,
-                        keccak256(bytes(proposalData.encryptedProposal)),
-                        proposalData.commitmentHash
+                        params.gameId,
+                        params.proposer,
+                        keccak256(bytes(params.encryptedProposal)),
+                        params.commitmentHash
                     )
                 )
             );
             require(
-                SignatureChecker.isValidSignatureNow(gm, proposalDigest, proposalData.gmSignature),
+                SignatureChecker.isValidSignatureNow(gm, proposalDigest, params.gmSignature),
                 IErrors.invalidECDSARecoverSigner(proposalDigest, "Invalid GM signature")
             );
         }
+
         bytes32 voterDigest = _hashTypedDataV4(
             keccak256(
                 abi.encode(
                     keccak256("AuthorizeProposalSubmission(uint256 gameId,string encryptedProposal,bytes32 commitmentHash)"),
-                    proposalData.gameId,
-                    keccak256(bytes(proposalData.encryptedProposal)),
-                    proposalData.commitmentHash
+                    params.gameId,
+                    keccak256(bytes(params.encryptedProposal)),
+                    params.commitmentHash
                 )
             )
         );
         require(
-            SignatureChecker.isValidSignatureNow(proposalData.proposer, voterDigest, proposalData.voterSignature),
+            SignatureChecker.isValidSignatureNow(params.proposer, voterDigest, params.voterSignature),
             IErrors.invalidECDSARecoverSigner(voterDigest, "Invalid voter signature")
         );
-        proposalData.gameId.enforceHasStarted();
+        LibRankify.GameState storage game = params.gameId.getGameState();
+        require(LibTBG.getPlayersGame(params.proposer) == params.gameId, "not a player");
+        require(bytes(params.encryptedProposal).length != 0, "Cannot propose empty");
+        require(game.proposalCommitmentHashes[params.proposer] == "", "Already proposed!");
+        uint256 turn = params.gameId.getTurn();
+        game.proposalCommitmentHashes[params.proposer] = params.commitmentHash;
 
-        LibRankify.GameState storage game = proposalData.gameId.getGameState();
-        require(LibTBG.getPlayersGame(proposalData.proposer) == proposalData.gameId, "not a player");
-        // require(!proposalData.gameId.isLastTurn(), "Cannot propose in last turn");
-        require(bytes(proposalData.encryptedProposal).length != 0, "Cannot propose empty");
-        require(game.proposalCommitmentHashes[proposalData.proposer] == "", "Already proposed!");
-        uint256 turn = proposalData.gameId.getTurn();
-        game.proposalCommitmentHashes[proposalData.proposer] = proposalData.commitmentHash;
+        params.gameId.enforceHasStarted();
+
+        LibRankify.GameState storage game = params.gameId.getGameState();
+
         game.numCommitments += 1;
-        proposalData.gameId.tryPlayerMove(proposalData.proposer);
+        params.gameId.tryPlayerMove(proposalData.proposer);
         emit ProposalSubmitted(
-            proposalData.gameId,
+            params.gameId,
             turn,
-            proposalData.proposer,
-            proposalData.commitmentHash,
-            proposalData.encryptedProposal
+            params.proposer,
+            params.commitmentHash,
+            params.encryptedProposal
         );
     }
 
@@ -276,8 +296,8 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
     function endTurn(
         uint256 gameId,
         uint256[][] memory votes,
-        string[] memory newProposals, //REFERRING TO UPCOMING VOTING ROUND
-        uint256[] memory proposerIndices, //REFERRING TO game.players index in PREVIOUS VOTING ROUND
+        BatchProposalReveal memory newProposals,
+        uint256[] memory proposerIndices,
         bytes32 turnSalt
     ) public {
         gameId.enforceIsGM(msg.sender);
@@ -285,22 +305,32 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
         gameId.enforceIsNotOver();
         LibRankify.GameState storage game = gameId.getGameState();
         uint256 turn = gameId.getTurn();
-
         address[] memory players = gameId.getPlayers();
+
         if (turn != 1) {
-            //Since votes were submitted for shuffled proposals, we need to sort them back to their original positions
+            // 1. Handle previous turn's voting and scoring
             uint256[][] memory votesSorted = new uint256[][](players.length);
+
+            // Verify vote integrity
             for (uint256 player = 0; player < players.length; ++player) {
                 votesSorted[player] = new uint256[](players.length);
-                // Validate voters vote integrity
                 bytes32 ballotHash = game.ballotHashes[players[player]];
                 bytes32 playerSalt = keccak256(abi.encodePacked(players[player], turnSalt));
                 bytes32 ballotHashFromVotes = keccak256(abi.encodePacked(votes[player], playerSalt));
                 if (game.playerVoted[players[player]]) {
-
                     require(ballotHash == ballotHashFromVotes, ballotIntegrityCheckFailed(ballotHash, ballotHashFromVotes));
                 }
             }
+
+            // Verify proposer indices for previous turn's proposals
+            bool[] memory used = new bool[](players.length);
+            for (uint256 i = 0; i < proposerIndices.length; i++) {
+                require(proposerIndices[i] < players.length, "Invalid proposer index");
+                require(!used[proposerIndices[i]], "Duplicate proposer index");
+                used[proposerIndices[i]] = true;
+            }
+
+            // Sort votes according to previous turn's proposer indices
             for (uint256 votee = 0; votee < players.length; ++votee) {
                 // proposerIndices is the index of the player in the previous voting round
                 uint256 voteesColumn = proposerIndices[votee];
@@ -308,34 +338,69 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
                 if (voteesColumn < players.length) {
                     // if index is above length of players array, it means the player did not propose
                     for (uint256 voter = 0; voter < players.length; voter++) {
-                            votesSorted[voter][votee] = votes[voter][voteesColumn];
+                        votesSorted[voter][votee] = votes[voter][voteesColumn];
                     }
                 }
             }
 
+            // Calculate scores for previous turn's proposals
             (, uint256[] memory roundScores) = gameId.calculateScoresQuadratic(votesSorted, proposerIndices);
             for (uint256 i = 0; i < players.length; ++i) {
                 string memory proposal = game.ongoingProposals[proposerIndices[i]];
                 emit ProposalScore(gameId, turn, proposal, proposal, roundScores[i]);
             }
         }
-        (, uint256[] memory scores) = gameId.getScores();
-        emit TurnEnded(gameId, gameId.getTurn(), players, scores, newProposals, proposerIndices, votes);
-
-        // Clean up game instance for upcoming round
-
+        bytes32[] memory currentCommitmentHashes = new bytes32[](game.numCommitments);
+        uint256 currentCommitmentHashesIndex = 0;
         for (uint256 i = 0; i < players.length; ++i) {
-            game.proposalCommitmentHashes[players[i]] = bytes32(0);
+            bytes32 commitmentHash = game.proposalCommitmentHashes[players[i]];
+            if(commitmentHash != bytes(0)) {
+                currentCommitmentHashes[currentCommitmentHashesIndex] = commitmentHash;
+                currentCommitmentHashesIndex++;
+            }
+        }
+
+        // 2. Handle current turn's proposal reveals with single proof
+        require(
+            verifier.verifyProof(
+                newProposals.a,
+                newProposals.b,
+                newProposals.c,
+                [
+                    uint256(keccak256(abi.encode(newProposals.proposals))),
+                    uint256(keccak256(abi.encode(newProposals.nullifiers))),
+                    uint256(gameId.getTurn()),
+                    uint256(gameId),
+                    uint256(keccak256(abi.encode(game.currentProposals))),
+                    uint256(players.length)
+                ]
+            ),
+            "Invalid batch proposal reveal proof"
+        );
+
+        // Verify nullifiers haven't been used
+        for (uint256 i = 0; i < newProposals.nullifiers.length; i++) {
+            require(!game.usedNullifiers[newProposals.nullifiers[i]], "Nullifier already used");
+            game.usedNullifiers[newProposals.nullifiers[i]] = true;
+        }
+
+        // Emit event and clean up
+        (, uint256[] memory scores) = gameId.getScores();
+        emit TurnEnded(gameId, gameId.getTurn(), players, scores, newProposals.proposals, proposerIndices, votes);
+
+        // Clean up for next turn
+        for (uint256 i = 0; i < players.length; ++i) {
             game.ongoingProposals[i] = "";
             game.playerVoted[players[i]] = false;
             game.ballotHashes[players[i]] = bytes32(0);
         }
-        // This data is to needed to correctly determine "PlayerMove" conditions during next turn
+        delete game.currentProposals; // Clear all current proposals
+
         game.numVotesPrevTurn = game.numVotesThisTurn;
         game.numVotesThisTurn = 0;
         game.numPrevProposals = game.numCommitments;
         game.numCommitments = 0;
 
-        _nextTurn(gameId, newProposals);
+        _nextTurn(gameId, newProposals.proposals);
     }
 }
