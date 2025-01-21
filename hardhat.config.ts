@@ -157,6 +157,9 @@ export default {
     DAO: {
       default: '0x520E00225C4a43B6c55474Db44a4a44199b4c3eE',
     },
+    player1: {
+      default: '0xFE87428cC8C72A3a79eD1cC7e2B5892c088d0af0',
+    },
   },
   mocha: {
     timeout: 400000,

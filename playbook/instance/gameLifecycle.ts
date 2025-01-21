@@ -239,7 +239,7 @@ task('gameLifecycle', 'Interactive guide through the game lifecycle').setAction(
       case 'Create new game': {
         const gameId = await instanceBase.createGame(
           instanceBase.adr.gameCreator1,
-          instanceBase.adr.gameMaster1.wallet.address,
+          instanceBase.adr.gameMaster1.address,
           1,
           false,
         );

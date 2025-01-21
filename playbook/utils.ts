@@ -19,7 +19,7 @@ import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { getDiscussionForTurn } from './instance/discussionTopics';
 export const RANKIFY_INSTANCE_CONTRACT_NAME = 'RANKIFY_INSTANCE_NAME';
 export const RANKIFY_INSTANCE_CONTRACT_VERSION = '0.0.1';
-export const RInstance_TIME_PER_TURN = 2500;
+export const RInstance_TIME_PER_TURN = 60 * 60 * 24;
 export const RInstance_MAX_PLAYERS = 6;
 export const RInstance_MIN_PLAYERS = 5;
 export const RInstance_MAX_TURNS = 3;
@@ -93,7 +93,6 @@ export const setupAddresses = async (
     ,
     ,
     //Using first ones in hardhat deploy scripts
-    _player1,
     _player2,
     _player3,
     _player4,
@@ -112,7 +111,9 @@ export const setupAddresses = async (
     _player17,
   ] = await ethers.getSigners();
 
-  const { deployer, owner } = await getNamedAccounts();
+  
+  const { deployer, owner, player1: _player1Address } = await getNamedAccounts();
+  const _player1 = await ethers.getSigner(_player1Address);
 
   const createRandomIdentityAndSeedEth = async (name: string) => {
     let newWallet = await _eth.Wallet.createRandom();
@@ -134,7 +135,8 @@ export const setupAddresses = async (
   const gameCreator2 = await createRandomIdentityAndSeedEth('gameCreator2');
   const gameCreator3 = await createRandomIdentityAndSeedEth('gameCreator3');
   const maliciousActor1 = await createRandomIdentityAndSeedEth('maliciousActor');
-  const gameMaster1 = await createRandomIdentityAndSeedEth('GM1');
+  //const gameMaster1 = await createRandomIdentityAndSeedEth('GM1');
+  const gameMaster1 = await hre.ethers.getSigner('0xaA63aA2D921F23f204B6Bcb43c2844Fb83c82eb9');
   const gameMaster2 = await createRandomIdentityAndSeedEth('GM2');
   const gameMaster3 = await createRandomIdentityAndSeedEth('GM3');
   const maliciousActor2 = await createRandomIdentityAndSeedEth('MaliciousActor2');
@@ -818,7 +820,7 @@ export const mockProposalSecrets = async ({
 }): Promise<ProposalSubmission> => {
   const _gmW = gm.wallet as Wallet;
   const proposal = getDiscussionForTurn(Number(turn), proposer.id);
-  const encryptedProposal = aes.encrypt(proposal, _gmW.privateKey).toString();
+  const encryptedProposal = aes.encrypt(proposal, '0xc0e1f7867142ab6f0b1d4aace344c710cc54ab9e41b2f88b53073b77e557e6d3').toString();
   const commitmentHash: string = utils.solidityKeccak256(['string'], [proposal]);
 
   const params: ProposalParams = {

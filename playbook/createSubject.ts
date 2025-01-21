@@ -8,7 +8,7 @@ task('createSubject', 'Creates a new subject with MAO distribution')
   .addOptionalParam('tokenName', 'Name of the token', 'tokenName')
   .addOptionalParam('tokenSymbol', 'Symbol of the token', 'tokenSymbol')
   .addOptionalParam('rankTokenUri', 'URI for the rank token', 'https://example.com/rank')
-  .addOptionalParam('rankTokenContractUri', 'URI for the rank token contract', 'https://example.com/rank')
+  .addOptionalParam('rankTokenContractUri', 'URI for the rank token contract', 'ipfs://Qmb995He9vswwKkq7xcqnahsL4dAvriWZwwUnWTuy2P8bq')
   .addOptionalParam('principalCost', 'Principal cost for ranking', '1')
   .addOptionalParam('principalTimeConstant', 'Time constant for principal', '3600')
   .addOptionalParam(

@@ -165,7 +165,7 @@ export class InstanceBase {
 
     console.log('\nSubmitting turn end transaction...');
     const tx = await this.rankifyInstance
-      .connect(this.adr.gameMaster1.wallet)
+      .connect(this.adr.gameMaster1)
       .endTurn(gameId, mappedVotes, shuffledProposals, newShuffling);
     // const receipt = await tx.wait();
     const scores = await this.rankifyInstance.getScores(gameId);
@@ -218,7 +218,7 @@ export class InstanceBase {
       currentT + Number(RInstanceSettings.RInstance_TIME_TO_JOIN) + 1,
     ]);
     await this.hre.network.provider.send('evm_mine');
-    await this.rankifyInstance.connect(this.adr.gameMaster1.wallet).startGame(gameId);
+    await this.rankifyInstance.connect(this.adr.gameMaster1).startGame(gameId);
     this.updateGameState(gameId, GameState.Started);
   };
 
@@ -240,7 +240,7 @@ export class InstanceBase {
     });
     if (submitNow) {
       for (let i = 0; i < players.length; i++) {
-        await gameContract.connect(gameMaster.wallet).submitProposal(this.ongoingProposals[i].params);
+        await gameContract.connect(gameMaster).submitProposal(this.ongoingProposals[i].params);
       }
     }
     return this.ongoingProposals;
