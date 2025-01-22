@@ -227,10 +227,15 @@ export class InstanceBase {
       currentT + Number(RInstanceSettings.RInstance_TIME_TO_JOIN) + 1,
     ]);
     await this.hre.network.provider.send('evm_mine');
-    await this.rankifyInstance
-      .connect(this.adr.gameMaster1.wallet)
-      .startGame(gameId)
-      .then(r => r.wait(1));
+    const started = await this.rankifyInstance.getTurn(gameId);
+    if (started.toNumber() !== 0) {
+      console.error('Game already started');
+    } else {
+      await this.rankifyInstance
+        .connect(this.adr.gameMaster1.wallet)
+        .startGame(gameId)
+        .then(r => r.wait(1));
+    }
     this.updateGameState(gameId, GameState.Started);
   };
 
@@ -268,21 +273,29 @@ export class InstanceBase {
   ) => {
     const promises = [];
     for (let i = 0; i < players.length; i++) {
-      if (!this.rankToken.address) throw new Error('Rank token undefined or unemployed');
-      (await this.rankToken.connect(players[i].wallet).setApprovalForAll(this.rankifyInstance.address, true)).wait(1);
+      const playerInGame = await this.rankifyInstance.getPlayersGame(players[i].wallet.address);
+      if (playerInGame.toNumber() !== 0) {
+        if (playerInGame.toNumber() !== Number(gameId)) {
+          console.error('Player already in another game');
+          throw new Error('Player already in another game');
+        }
+      } else {
+        if (!this.rankToken.address) throw new Error('Rank token undefined or unemployed');
+        (await this.rankToken.connect(players[i].wallet).setApprovalForAll(this.rankifyInstance.address, true)).wait(1);
 
-      promises.push(await gameContract.connect(players[i].wallet).joinGame(gameId));
-    }
-    await Promise.all(promises.map(p => p.wait(1)));
-    if (shiftTime) {
-      const currentT = await this.hre.ethers.provider.getBlock('latest').then(b => b.timestamp);
-      await this.hre.network.provider.send('evm_setNextBlockTimestamp', [
-        currentT + Number(RInstanceSettings.RInstance_TIME_TO_JOIN) + 1,
-      ]);
-      await this.hre.network.provider.send('evm_mine');
-    }
-    if (startGame && gameMaster) {
-      (await this.rankifyInstance.connect(gameMaster.wallet).startGame(gameId)).wait(1);
+        promises.push(await gameContract.connect(players[i].wallet).joinGame(gameId));
+      }
+      await Promise.all(promises.map(p => p.wait(1)));
+      if (shiftTime) {
+        const currentT = await this.hre.ethers.provider.getBlock('latest').then(b => b.timestamp);
+        await this.hre.network.provider.send('evm_setNextBlockTimestamp', [
+          currentT + Number(RInstanceSettings.RInstance_TIME_TO_JOIN) + 1,
+        ]);
+        await this.hre.network.provider.send('evm_mine');
+      }
+      if (startGame && gameMaster) {
+        (await this.rankifyInstance.connect(gameMaster.wallet).startGame(gameId)).wait(1);
+      }
     }
     this.updateGameState(gameId, GameState.PartyFilled);
   };
@@ -303,54 +316,57 @@ export class InstanceBase {
   }
 
   async makeTurn(gameId: BigNumberish, distribution: 'ftw' | 'semiUniform' | 'equal' = 'ftw'): Promise<void> {
-    console.log('\nMaking move for game:', gameId.toString());
-    const turn = await this.rankifyInstance.getTurn(gameId);
-    console.log('Current turn:', turn.toString());
+    const gameEnded = await this.rankifyInstance.isGameOver(gameId);
+    if (!gameEnded) {
+      console.log('\nMaking move for game:', gameId.toString());
+      const turn = await this.rankifyInstance.getTurn(gameId);
+      console.log('Current turn:', turn.toString());
 
-    const players = [this.adr.player1, this.adr.player2, this.adr.player3, this.adr.player4, this.adr.player5] as [
-      SignerIdentity,
-      SignerIdentity,
-      ...SignerIdentity[],
-    ];
+      const players = [this.adr.player1, this.adr.player2, this.adr.player3, this.adr.player4, this.adr.player5] as [
+        SignerIdentity,
+        SignerIdentity,
+        ...SignerIdentity[],
+      ];
 
-    // Submit votes if not first turn
-    if (turn.toNumber() !== 1) {
-      console.log('Submitting votes for turn:', turn.toString());
-      this.ongoingVotes = await this.mockValidVotes(
+      // Submit votes if not first turn
+      if (turn.toNumber() !== 1) {
+        console.log('Submitting votes for turn:', turn.toString());
+        this.ongoingVotes = await this.mockValidVotes(
+          players,
+          this.rankifyInstance,
+          gameId,
+          this.adr.gameMaster1,
+          true,
+          distribution,
+        );
+        console.log('Votes submitted:', this.ongoingVotes.length);
+      }
+
+      // Submit proposals
+      console.log('Submitting proposals...');
+      this.ongoingProposals = await this.mockValidProposals(
         players,
         this.rankifyInstance,
-        gameId,
         this.adr.gameMaster1,
+        gameId,
         true,
-        distribution,
       );
-      console.log('Votes submitted:', this.ongoingVotes.length);
-    }
+      console.log('Proposals submitted:', this.ongoingProposals.length);
 
-    // Submit proposals
-    console.log('Submitting proposals...');
-    this.ongoingProposals = await this.mockValidProposals(
-      players,
-      this.rankifyInstance,
-      this.adr.gameMaster1,
-      gameId,
-      true,
-    );
-    console.log('Proposals submitted:', this.ongoingProposals.length);
+      await this.endTurn(gameId);
 
-    await this.endTurn(gameId);
-
-    const isLastTurn = await this.rankifyInstance.isLastTurn(gameId);
-    const isOvertime = await this.rankifyInstance.isOvertime(gameId);
-    const isGameOver = await this.rankifyInstance.isGameOver(gameId);
-    if (isOvertime) {
-      this.updateGameState(gameId, GameState.Overtime);
-    } else if (isLastTurn) {
-      this.updateGameState(gameId, GameState.LastMove);
-    } else if (isGameOver) {
-      this.updateGameState(gameId, GameState.Ended);
-    } else {
-      this.updateGameState(gameId, GameState.NextMove);
+      const isLastTurn = await this.rankifyInstance.isLastTurn(gameId);
+      const isOvertime = await this.rankifyInstance.isOvertime(gameId);
+      const isGameOver = await this.rankifyInstance.isGameOver(gameId);
+      if (isOvertime) {
+        this.updateGameState(gameId, GameState.Overtime);
+      } else if (isLastTurn) {
+        this.updateGameState(gameId, GameState.LastMove);
+      } else if (isGameOver) {
+        this.updateGameState(gameId, GameState.Ended);
+      } else {
+        this.updateGameState(gameId, GameState.NextMove);
+      }
     }
   }
 
@@ -365,37 +381,40 @@ export class InstanceBase {
   }
 
   async endGame(gameId: number): Promise<void> {
-    const players = [this.adr.player1, this.adr.player2, this.adr.player3] as [
-      SignerIdentity,
-      SignerIdentity,
-      ...SignerIdentity[],
-    ];
-    console.log('Running to the end for game:', gameId.toString());
-    await this.runToTheEnd(gameId, this.adr.gameMaster1, players, 'equal');
-    console.log('Game ended');
-    const GameOverF = this.rankifyInstance.filters.GameOver(gameId);
-    console.log('Getting game over event for game:', gameId.toString());
-    const evts = await this.rankifyInstance.queryFilter(GameOverF);
-    const playerAddresses = evts[0].args.players;
-    const playerScores = evts[0].args.scores;
-    console.log('Game over event args:', evts[0].args);
-    console.log(
-      'Scores:',
-      playerAddresses.map((addr, i) => ({
-        address: addr,
-        score: playerScores[i].toString(),
-      })),
-    );
+    const gameEnded = await this.rankifyInstance.isGameOver(gameId);
+    if (!gameEnded) {
+      const players = [this.adr.player1, this.adr.player2, this.adr.player3] as [
+        SignerIdentity,
+        SignerIdentity,
+        ...SignerIdentity[],
+      ];
+      console.log('Running to the end for game:', gameId.toString());
+      await this.runToTheEnd(gameId, this.adr.gameMaster1, players, 'equal');
+      console.log('Game ended');
+      const GameOverF = this.rankifyInstance.filters.GameOver(gameId);
+      console.log('Getting game over event for game:', gameId.toString());
+      const evts = await this.rankifyInstance.queryFilter(GameOverF);
+      const playerAddresses = evts[0].args.players;
+      const playerScores = evts[0].args.scores;
+      console.log('Game over event args:', evts[0].args);
+      console.log(
+        'Scores:',
+        playerAddresses.map((addr, i) => ({
+          address: addr,
+          score: playerScores[i].toString(),
+        })),
+      );
 
-    // Find winner by highest score
-    const winnerIndex = playerScores.reduce((maxIndex, score, i) => {
-      return BigNumber.from(score).gt(BigNumber.from(playerScores[maxIndex])) ? i : maxIndex;
-    }, 0);
-    const winner = playerAddresses[winnerIndex];
+      // Find winner by highest score
+      const winnerIndex = playerScores.reduce((maxIndex, score, i) => {
+        return BigNumber.from(score).gt(BigNumber.from(playerScores[maxIndex])) ? i : maxIndex;
+      }, 0);
+      const winner = playerAddresses[winnerIndex];
 
-    const gameRank = await this.rankifyInstance.getGameRank(gameId);
-    const rewardBalance = await this.rankToken.balanceOf(winner, gameRank.add(1));
-    console.log(`Game ${gameId} ended. Winner ${winner} received ${rewardBalance.toString()} rank tokens.`);
+      const gameRank = await this.rankifyInstance.getGameRank(gameId);
+      const rewardBalance = await this.rankToken.balanceOf(winner, gameRank.add(1));
+      console.log(`Game ${gameId} ended. Winner ${winner} received ${rewardBalance.toString()} rank tokens.`);
+    }
     this.updateGameState(gameId, GameState.Ended);
   }
 
@@ -408,19 +427,25 @@ export class InstanceBase {
   }
 
   async openRegistration(gameId: BigNumberish): Promise<void> {
-    await this.rankifyInstance
-      .connect(this.adr.gameCreator1.wallet)
-      .openRegistration(gameId)
-      .then(r => r.wait(1));
+    const registrationOpened = await this.rankifyInstance.isRegistrationOpen(gameId);
+    if (!registrationOpened) {
+      await this.rankifyInstance
+        .connect(this.adr.gameCreator1.wallet)
+        .openRegistration(gameId)
+        .then(r => r.wait(1));
+    }
     this.updateGameState(gameId, GameState.RegistrationOpened);
   }
 
   async runTillLastTurn(gameId: number): Promise<void> {
-    await this.runToLastTurn(
-      gameId,
-      this.adr.gameMaster1,
-      [this.adr.player1, this.adr.player2, this.adr.player3],
-      'equal',
-    );
+    const isLastTurn = await this.rankifyInstance.isLastTurn(gameId);
+    if (!isLastTurn) {
+      await this.runToLastTurn(
+        gameId,
+        this.adr.gameMaster1,
+        [this.adr.player1, this.adr.player2, this.adr.player3],
+        'equal',
+      );
+    }
   }
 }
