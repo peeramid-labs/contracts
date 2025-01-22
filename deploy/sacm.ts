@@ -26,7 +26,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     if (process.env.NODE_ENV !== 'TEST') {
       console.warn('registering contract', registerAddress, sacmDeployment.address, codeId);
     }
-    await codeIndexContract.register(sacmDeployment.address);
+    await codeIndexContract.register(sacmDeployment.address).then(tx => tx.wait(1));
   }
 };
 

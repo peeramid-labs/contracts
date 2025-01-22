@@ -57,7 +57,8 @@ export class InstanceBase {
   createGame = async (signer: SignerIdentity, gameMaster: string, gameRank: BigNumberish, openNow?: boolean) => {
     await this.env.rankifyToken
       .connect(signer.wallet)
-      .approve(this.rankifyInstance.address, ethers.constants.MaxUint256);
+      .approve(this.rankifyInstance.address, ethers.constants.MaxUint256)
+      .then(r => r.wait(1));
     const params: IRankifyInstance.NewGameParamsInputStruct = {
       gameMaster: gameMaster,
       gameRank: gameRank,
@@ -69,9 +70,16 @@ export class InstanceBase {
       voteCredits: RInstanceSettings.RInstance_VOTE_CREDITS,
       minGameTime: RInstanceSettings.RInstance_MIN_GAME_TIME,
     };
-    await this.rankifyInstance.connect(signer.wallet).createGame(params);
+    await this.rankifyInstance
+      .connect(signer.wallet)
+      .createGame(params)
+      .then(r => r.wait(1));
     const gameId = await this.rankifyInstance.getContractState().then(state => state.numGames);
-    if (openNow) await this.rankifyInstance.connect(signer.wallet).openRegistration(gameId);
+    if (openNow)
+      await this.rankifyInstance
+        .connect(signer.wallet)
+        .openRegistration(gameId)
+        .then(r => r.wait(1));
     this.updateGameState(gameId, GameState.Created);
     return gameId;
   };
@@ -166,7 +174,8 @@ export class InstanceBase {
     console.log('\nSubmitting turn end transaction...');
     const tx = await this.rankifyInstance
       .connect(this.adr.gameMaster1.wallet)
-      .endTurn(gameId, mappedVotes, shuffledProposals, newShuffling);
+      .endTurn(gameId, mappedVotes, shuffledProposals, newShuffling)
+      .then(tx => tx.wait(1));
     // const receipt = await tx.wait();
     const scores = await this.rankifyInstance.getScores(gameId);
     console.log('Turn ended successfully');
@@ -218,7 +227,10 @@ export class InstanceBase {
       currentT + Number(RInstanceSettings.RInstance_TIME_TO_JOIN) + 1,
     ]);
     await this.hre.network.provider.send('evm_mine');
-    await this.rankifyInstance.connect(this.adr.gameMaster1.wallet).startGame(gameId);
+    await this.rankifyInstance
+      .connect(this.adr.gameMaster1.wallet)
+      .startGame(gameId)
+      .then(r => r.wait(1));
     this.updateGameState(gameId, GameState.Started);
   };
 
@@ -254,12 +266,14 @@ export class InstanceBase {
     startGame?: boolean,
     gameMaster?: SignerIdentity,
   ) => {
+    const promises = [];
     for (let i = 0; i < players.length; i++) {
       if (!this.rankToken.address) throw new Error('Rank token undefined or unemployed');
-      await this.rankToken.connect(players[i].wallet).setApprovalForAll(this.rankifyInstance.address, true);
+      (await this.rankToken.connect(players[i].wallet).setApprovalForAll(this.rankifyInstance.address, true)).wait(1);
 
-      await gameContract.connect(players[i].wallet).joinGame(gameId);
+      promises.push(await gameContract.connect(players[i].wallet).joinGame(gameId));
     }
+    await Promise.all(promises.map(p => p.wait(1)));
     if (shiftTime) {
       const currentT = await this.hre.ethers.provider.getBlock('latest').then(b => b.timestamp);
       await this.hre.network.provider.send('evm_setNextBlockTimestamp', [
@@ -268,7 +282,7 @@ export class InstanceBase {
       await this.hre.network.provider.send('evm_mine');
     }
     if (startGame && gameMaster) {
-      await this.rankifyInstance.connect(gameMaster.wallet).startGame(gameId);
+      (await this.rankifyInstance.connect(gameMaster.wallet).startGame(gameId)).wait(1);
     }
     this.updateGameState(gameId, GameState.PartyFilled);
   };
@@ -394,7 +408,10 @@ export class InstanceBase {
   }
 
   async openRegistration(gameId: BigNumberish): Promise<void> {
-    await this.rankifyInstance.connect(this.adr.gameCreator1.wallet).openRegistration(gameId);
+    await this.rankifyInstance
+      .connect(this.adr.gameCreator1.wallet)
+      .openRegistration(gameId)
+      .then(r => r.wait(1));
     this.updateGameState(gameId, GameState.RegistrationOpened);
   }
 

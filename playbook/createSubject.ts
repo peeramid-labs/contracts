@@ -8,7 +8,14 @@ task('createSubject', 'Creates a new subject with MAO distribution')
   .addOptionalParam('tokenName', 'Name of the token', 'tokenName')
   .addOptionalParam('tokenSymbol', 'Symbol of the token', 'tokenSymbol')
   .addOptionalParam('rankTokenUri', 'URI for the rank token', 'https://example.com/rank')
-  .addOptionalParam('rankTokenContractUri', 'URI for the rank token contract', 'https://example.com/rank')
+  .addOptionalParam(
+    'rankTokenContractUri',
+    'URI for the rank token contract',
+    'ipfs://QmTyThvjSqoW96mVjRSon1gJhtiK2kVpUTLLmuMf4LPEaU',
+  )
+  // QmTyThvjSqoW96mVjRSon1gJhtiK2kVpUTLLmuMf4LPEaU - peeramid fellowship council
+  // QmeSK57MRsJXS1bKZ2m6Sdi7TWQBECn5CxZSiXZDudSGtJ - audius foundation
+  // QmXiiiSuWP7UDVh7FR6yXNisPgJW75GgauDPD92LHoGTnG - eip fun discussions
   .addOptionalParam('principalCost', 'Principal cost for ranking', '1')
   .addOptionalParam('principalTimeConstant', 'Time constant for principal', '3600')
   .addOptionalParam(
@@ -51,8 +58,8 @@ task('createSubject', 'Creates a new subject with MAO distribution')
     const { DAO: owner } = await hre.getNamedAccounts();
     const oSigner = await hre.ethers.getSigner(owner);
     const tokenContract = new hre.ethers.Contract(token.address, token.abi, oSigner) as Rankify;
-    await tokenContract.mint(oSigner.address, hre.ethers.utils.parseEther('100'));
-    await tokenContract.approve(distributorContract.address, hre.ethers.constants.MaxUint256);
+    (await tokenContract.mint(oSigner.address, hre.ethers.utils.parseEther('100'))).wait(1);
+    (await tokenContract.approve(distributorContract.address, hre.ethers.constants.MaxUint256)).wait(1);
     const tx = await distributorContract.connect(oSigner).instantiate(distributorsID, data);
     const receipt = await tx.wait(1);
     const filter = distributorContract.filters.Instantiated(distributorsID);
@@ -77,63 +84,62 @@ task('createSubject', 'Creates a new subject with MAO distribution')
     };
   });
 
-task('makeDemoSubjects', 'Creates 4 demo subjects with different configurations')
-  .setAction(async (_, { run }) => {
-    console.log('Creating demo subjects...');
+task('makeDemoSubjects', 'Creates 4 demo subjects with different configurations').setAction(async (_, { run }) => {
+  console.log('Creating demo subjects...');
 
-    await run('createSubject', {
-      tokenName: 'Rankify inner discussions token',
-      tokenSymbol: 'RKFD',
-      rankTokenContractUri: 'ipfs://Qmb995He9vswwKkq7xcqnahsL4dAvriWZwwUnWTuy2P8bq',
-    });
-
-    await run('createSubject', {
-      tokenName: 'EIP fun discussions token',
-      tokenSymbol: 'EIPFD',
-      rankTokenContractUri: 'ipfs://QmXiiiSuWP7UDVh7FR6yXNisPgJW75GgauDPD92LHoGTnG',
-    });
-
-    await run('createSubject', {
-      tokenName: 'Rankify music challenge token',
-      tokenSymbol: 'RKFM',
-      rankTokenContractUri: 'ipfs://QmQR6mVos58TR7GYxRzyPSs9FAkeSCAR3VGT9q72dFsr9t',
-    });
-
-    await run('createSubject', {
-      tokenName: 'Rankify kids content token',
-      tokenSymbol: 'RKFK',
-      rankTokenContractUri: 'ipfs://Qmf8YjaAoH2Ho5Bgrd5xnnk5eBdmZwJC6JX15PjfaaQyZ8',
-    });
-
-    await run('createSubject', {
-      tokenName: 'Optimism Collective token',
-      tokenSymbol: 'OC',
-      rankTokenContractUri: 'ipfs://QmTDdnzRee6G5My4TDhaffWjCYp2d6rssmPQP4GMW5LuBd',
-    });
-
-    await run('createSubject', {
-      tokenName: 'Peeramid fellowship council token',
-      tokenSymbol: 'PFC',
-      rankTokenContractUri: 'ipfs://QmTyThvjSqoW96mVjRSon1gJhtiK2kVpUTLLmuMf4LPEaU',
-    });
-
-    await run('createSubject', {
-      tokenName: 'Arbitrum foundation token',
-      tokenSymbol: 'AF',
-      rankTokenContractUri: 'ipfs://QmSoLhj51VS2XXdVHrcLejaAXUtasi1wa1zEoTBpTwFFHs',
-    });
-
-    await run('createSubject', {
-      tokenName: 'Rankify book writers token',
-      tokenSymbol: 'RKFBW',
-      rankTokenContractUri: 'ipfs://QmP7Wo9fZhzn4dGDN1tp4xZ43vuE7HT8heTYo3PmVDVbBA',
-    });
-
-    await run('createSubject', {
-      tokenName: 'Open audius foundation token',
-      tokenSymbol: 'OA',
-      rankTokenContractUri: 'ipfs://QmRQHq1TzW2cAxzF66wGLxxnJ3vgirBgFfDrjGsPnp2VQ1',
-    });
-
-    console.log('Successfully created 8 demo subjects!');
+  await run('createSubject', {
+    tokenName: 'EIP fun discussions token',
+    tokenSymbol: 'EIPFD',
+    rankTokenContractUri: 'ipfs://QmWJXEhEnNXBtshVR1kR2vfHqU9vCNdcQKQipVAkHHAoU5',
   });
+
+  await run('createSubject', {
+    tokenName: 'Rankify inner discussions token',
+    tokenSymbol: 'RKFD',
+    rankTokenContractUri: 'ipfs://QmVzSvWjysUfVHzGMQ4y2EduXrVYLApZ3KHQb2gUTR4x6P',
+  });
+
+  await run('createSubject', {
+    tokenName: 'Arbitrum foundation token',
+    tokenSymbol: 'AF',
+    rankTokenContractUri: 'ipfs://QmQ2jQj5LXKuTzTcy4ANc57WbABurejbs9hRi4F18tKJWf',
+  });
+
+  await run('createSubject', {
+    tokenName: 'Optimism Collective token',
+    tokenSymbol: 'OC',
+    rankTokenContractUri: 'ipfs://QmTDdnzRee6G5My4TDhaffWjCYp2d6rssmPQP4GMW5LuBd',
+  });
+
+  await run('createSubject', {
+    tokenName: 'Open audius foundation token',
+    tokenSymbol: 'OA',
+    rankTokenContractUri: 'ipfs://QmWDUV8Eq1VewZsVGZWVzJMNXT8PrZnQqwy6SJfWFzVzBM',
+  });
+
+  await run('createSubject', {
+    tokenName: 'Rankify music challenge token',
+    tokenSymbol: 'RKFM',
+    rankTokenContractUri: 'ipfs://QmXnEA3WAn9VNyG2AgvR3a5GR68qD1ZLYRaDWQc66rou5M',
+  });
+
+  await run('createSubject', {
+    tokenName: 'Rankify kids content token',
+    tokenSymbol: 'RKFK',
+    rankTokenContractUri: 'ipfs://QmfKRxEM8QM355PvDaGoocgJiM629PBsUW8i2oBWsV4NJh',
+  });
+
+  await run('createSubject', {
+    tokenName: 'Rankify book writers token',
+    tokenSymbol: 'RKFBW',
+    rankTokenContractUri: 'ipfs://QmadNd9e2qPqoL9u8qqkfP2253yUMB7R3hfXibx4LKwnvn',
+  });
+
+  await run('createSubject', {
+    tokenName: 'Peeramid fellowship council token',
+    tokenSymbol: 'PFC',
+    rankTokenContractUri: 'ipfs://QmaUXPY7TTx9rGS8sgSvZvHRpi6eC8LkfTj1fBRsGBBEjh',
+  });
+
+  console.log('Successfully created 8 demo subjects!');
+});
