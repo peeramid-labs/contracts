@@ -82,27 +82,21 @@ task('makeDemoSubjects', 'Creates 4 demo subjects with different configurations'
     console.log('Creating demo subjects...');
 
     await run('createSubject', {
-      tokenName: 'Rankify inner discussions token',
-      tokenSymbol: 'RKFD',
-      rankTokenContractUri: 'ipfs://Qmb995He9vswwKkq7xcqnahsL4dAvriWZwwUnWTuy2P8bq',
-    });
-
-    await run('createSubject', {
       tokenName: 'EIP fun discussions token',
       tokenSymbol: 'EIPFD',
-      rankTokenContractUri: 'ipfs://QmXiiiSuWP7UDVh7FR6yXNisPgJW75GgauDPD92LHoGTnG',
+      rankTokenContractUri: 'ipfs://QmWJXEhEnNXBtshVR1kR2vfHqU9vCNdcQKQipVAkHHAoU5',
     });
 
     await run('createSubject', {
-      tokenName: 'Rankify music challenge token',
-      tokenSymbol: 'RKFM',
-      rankTokenContractUri: 'ipfs://QmQR6mVos58TR7GYxRzyPSs9FAkeSCAR3VGT9q72dFsr9t',
+      tokenName: 'Rankify inner discussions token',
+      tokenSymbol: 'RKFD',
+      rankTokenContractUri: 'ipfs://QmVzSvWjysUfVHzGMQ4y2EduXrVYLApZ3KHQb2gUTR4x6P',
     });
 
     await run('createSubject', {
-      tokenName: 'Rankify kids content token',
-      tokenSymbol: 'RKFK',
-      rankTokenContractUri: 'ipfs://Qmf8YjaAoH2Ho5Bgrd5xnnk5eBdmZwJC6JX15PjfaaQyZ8',
+      tokenName: 'Arbitrum foundation token',
+      tokenSymbol: 'AF',
+      rankTokenContractUri: 'ipfs://QmQ2jQj5LXKuTzTcy4ANc57WbABurejbs9hRi4F18tKJWf',
     });
 
     await run('createSubject', {
@@ -112,27 +106,33 @@ task('makeDemoSubjects', 'Creates 4 demo subjects with different configurations'
     });
 
     await run('createSubject', {
-      tokenName: 'Peeramid fellowship council token',
-      tokenSymbol: 'PFC',
-      rankTokenContractUri: 'ipfs://QmTyThvjSqoW96mVjRSon1gJhtiK2kVpUTLLmuMf4LPEaU',
+      tokenName: 'Open audius foundation token',
+      tokenSymbol: 'OA',
+      rankTokenContractUri: 'ipfs://QmWDUV8Eq1VewZsVGZWVzJMNXT8PrZnQqwy6SJfWFzVzBM',
     });
 
     await run('createSubject', {
-      tokenName: 'Arbitrum foundation token',
-      tokenSymbol: 'AF',
-      rankTokenContractUri: 'ipfs://QmSoLhj51VS2XXdVHrcLejaAXUtasi1wa1zEoTBpTwFFHs',
+      tokenName: 'Rankify music challenge token',
+      tokenSymbol: 'RKFM',
+      rankTokenContractUri: 'ipfs://QmXnEA3WAn9VNyG2AgvR3a5GR68qD1ZLYRaDWQc66rou5M',
+    });
+
+    await run('createSubject', {
+      tokenName: 'Rankify kids content token',
+      tokenSymbol: 'RKFK',
+      rankTokenContractUri: 'ipfs://QmfKRxEM8QM355PvDaGoocgJiM629PBsUW8i2oBWsV4NJh',
     });
 
     await run('createSubject', {
       tokenName: 'Rankify book writers token',
       tokenSymbol: 'RKFBW',
-      rankTokenContractUri: 'ipfs://QmP7Wo9fZhzn4dGDN1tp4xZ43vuE7HT8heTYo3PmVDVbBA',
+      rankTokenContractUri: 'ipfs://QmadNd9e2qPqoL9u8qqkfP2253yUMB7R3hfXibx4LKwnvn',
     });
 
     await run('createSubject', {
-      tokenName: 'Open audius foundation token',
-      tokenSymbol: 'OA',
-      rankTokenContractUri: 'ipfs://QmRQHq1TzW2cAxzF66wGLxxnJ3vgirBgFfDrjGsPnp2VQ1',
+      tokenName: 'Peeramid fellowship council token',
+      tokenSymbol: 'PFC',
+      rankTokenContractUri: 'ipfs://QmaUXPY7TTx9rGS8sgSvZvHRpi6eC8LkfTj1fBRsGBBEjh',
     });
 
     console.log('Successfully created 8 demo subjects!');

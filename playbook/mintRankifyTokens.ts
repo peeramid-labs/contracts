@@ -2,7 +2,7 @@ import { task } from 'hardhat/config';
 import { Rankify } from '../types';
 
 task('mintTokensTo', 'Mints tokens to owner')
-.addOptionalParam('address', 'Address to mint tokens to', '0x1c43f2D1ff0Fcc12a351A50889813fE47f683607')
+.addOptionalParam('address', 'Address to mint tokens to', '0xFE87428cC8C72A3a79eD1cC7e2B5892c088d0af0')
 .setAction(async (taskArgs, hre) => {
     const { getNamedAccounts } = hre;
     const { owner } = await getNamedAccounts();
