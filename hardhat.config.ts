@@ -160,6 +160,9 @@ export default {
     player1: {
       default: '0xFE87428cC8C72A3a79eD1cC7e2B5892c088d0af0',
     },
+    gameMaster1: {
+      default: '0xaA63aA2D921F23f204B6Bcb43c2844Fb83c82eb9',
+    },
   },
   mocha: {
     timeout: 400000,
