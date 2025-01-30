@@ -1,14 +1,15 @@
-import aes, { encrypt } from 'crypto-js/aes';
+import aes from 'crypto-js/aes';
+import { HttpNetworkHDAccountsConfig } from 'hardhat/types';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import {
-  Rankify,
-  MockERC1155,
-  MockERC20,
-  MockERC721,
-  RankToken,
-  MAODistribution,
-  DAODistributor,
-  ArguableVotingTournament,
+    Rankify,
+    MockERC1155,
+    MockERC20,
+    MockERC721,
+    RankToken,
+    MAODistribution,
+    DAODistributor,
+    ArguableVotingTournament,
 } from '../types';
 import { BigNumber, BigNumberish, BytesLike, TypedDataField, Wallet, ethers, utils } from 'ethers';
 // @ts-ignore
@@ -17,8 +18,9 @@ import { Deployment } from 'hardhat-deploy/types';
 import { HardhatEthersHelpers } from '@nomiclabs/hardhat-ethers/types';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { getDiscussionForTurn } from './instance/discussionTopics';
-import circomlibjs from 'circomlibjs';
-import { groth16 } from 'snarkjs';
+import { buildPoseidon } from 'circomlibjs';
+import { sharedSigner } from '../scripts/sharedKey';
+import { CalldataProposalsIntegrity18Groth16 } from 'zk';
 
 export const RANKIFY_INSTANCE_CONTRACT_NAME = 'RANKIFY_INSTANCE_NAME';
 export const RANKIFY_INSTANCE_CONTRACT_VERSION = '0.0.1';
@@ -35,7 +37,7 @@ export const RInstance_SUBJECT = 'Best Music on youtube';
 export interface SignerIdentity {
   name: string;
   id: string;
-  wallet: Wallet | SignerWithAddress;
+  wallet: Wallet;
 }
 export interface AdrSetupResult {
   contractDeployer: SignerIdentity;
@@ -83,196 +85,203 @@ export const addPlayerNameId = (idx: any) => {
   return { name: `player-${idx}`, id: `player-${idx}-id` };
 };
 
-export const setupAddresses = async (
-  getNamedAccounts: () => Promise<{
-    [name: string]: string;
-  }>,
-  _eth: typeof import('ethers/lib/ethers') & HardhatEthersHelpers,
-  hre: HardhatRuntimeEnvironment,
-): Promise<AdrSetupResult> => {
-  const { ethers } = hre;
-  const [
-    ,
-    ,
-    ,
-    //Using first ones in hardhat deploy scripts
-    _player1,
-    _player2,
-    _player3,
-    _player4,
-    _player5,
-    _player6,
-    _player7,
-    _player8,
-    _player9,
-    _player10,
-    _player11,
-    _player12,
-    _player13,
-    _player14,
-    _player15,
-    _player16,
-    _player17,
-  ] = await ethers.getSigners();
+export const setupAddresses =
+  (hre: HardhatRuntimeEnvironment) =>
+  async (
+    getNamedAccounts: () => Promise<{
+      [name: string]: string;
+    }>,
+    _eth: typeof import('ethers/lib/ethers') & HardhatEthersHelpers,
+  ): Promise<AdrSetupResult> => {
+    const { ethers } = hre;
+    const [
+      ,
+      ,
+      ,
+      //Using first ones in hardhat deploy scripts
+      _player1,
+      _player2,
+      _player3,
+      _player4,
+      _player5,
+      _player6,
+      _player7,
+      _player8,
+      _player9,
+      _player10,
+      _player11,
+      _player12,
+      _player13,
+      _player14,
+      _player15,
+      _player16,
+      _player17,
+    ] = await ethers.getSigners();
 
-  const { deployer, owner } = await getNamedAccounts();
+    const { deployer, owner } = await getNamedAccounts();
 
-  const createRandomIdentityAndSeedEth = async (name: string) => {
-    let newWallet = await _eth.Wallet.createRandom();
-    newWallet = newWallet.connect(_eth.provider);
-    await _player1.sendTransaction({
-      to: newWallet.address,
-      value: ethers.utils.parseEther('10'),
-    });
+    const createRandomIdentityAndSeedEth = async (name: string) => {
+      let newWallet = await _eth.Wallet.createRandom();
+      newWallet = newWallet.connect(_eth.provider);
+      await _player1.sendTransaction({
+        to: newWallet.address,
+        value: ethers.utils.parseEther('10'),
+      });
 
-    const newIdentity: SignerIdentity = {
-      wallet: newWallet,
-      name: name,
-      id: name + '-id',
+      const newIdentity: SignerIdentity = {
+        wallet: newWallet,
+        name: name,
+        id: name + '-id',
+      };
+      return newIdentity;
     };
-    return newIdentity;
-  };
 
-  const gameCreator1 = await createRandomIdentityAndSeedEth('gameCreator1');
-  const gameCreator2 = await createRandomIdentityAndSeedEth('gameCreator2');
-  const gameCreator3 = await createRandomIdentityAndSeedEth('gameCreator3');
-  const maliciousActor1 = await createRandomIdentityAndSeedEth('maliciousActor');
-  const gameMaster1 = await createRandomIdentityAndSeedEth('GM1');
-  const gameMaster2 = await createRandomIdentityAndSeedEth('GM2');
-  const gameMaster3 = await createRandomIdentityAndSeedEth('GM3');
-  const maliciousActor2 = await createRandomIdentityAndSeedEth('MaliciousActor2');
-  const maliciousActor3 = await createRandomIdentityAndSeedEth('MaliciousActor3');
-  const player18 = await createRandomIdentityAndSeedEth('player18');
+    const gameCreator1 = await createRandomIdentityAndSeedEth('gameCreator1');
+    const gameCreator2 = await createRandomIdentityAndSeedEth('gameCreator2');
+    const gameCreator3 = await createRandomIdentityAndSeedEth('gameCreator3');
+    const maliciousActor1 = await createRandomIdentityAndSeedEth('maliciousActor');
+    const gameMaster1 = await createRandomIdentityAndSeedEth('GM1');
+    const gameMaster2 = await createRandomIdentityAndSeedEth('GM2');
+    const gameMaster3 = await createRandomIdentityAndSeedEth('GM3');
+    const maliciousActor2 = await createRandomIdentityAndSeedEth('MaliciousActor2');
+    const maliciousActor3 = await createRandomIdentityAndSeedEth('MaliciousActor3');
+    const player18 = await createRandomIdentityAndSeedEth('player18');
 
-  const contractDeployer: SignerIdentity = {
-    wallet: await hre.ethers.getSigner(deployer),
-    name: 'contractDeployer',
-    id: 'contractDeployer-id',
-  };
+    //   if (hre.config.networks['localhost'].accounts instanceof HttpNetworkHDAccountsConfig)
+    // throw new Error('Wrong config on localhost');
+    const m = (hre.config.networks['localhost'].accounts as HttpNetworkHDAccountsConfig)['mnemonic'];
+    //   const keychain = ethers.Wallet.fromMnemonic(m, `m/44'/60'/0'/0/${i}`);
+    //   ethers.getSigners();
 
-  const gameOwner: SignerIdentity = {
-    wallet: await hre.ethers.getSigner(owner),
-    name: 'gameOwner',
-    id: 'gameOwner-id',
-  };
-  const player1: SignerIdentity = {
-    wallet: _player1,
-    name: 'player1',
-    id: 'player1-id',
-  };
-  const player2: SignerIdentity = {
-    wallet: _player2,
-    name: 'player2',
-    id: 'player2-id',
-  };
-  const player3: SignerIdentity = {
-    wallet: _player3,
-    name: 'player3',
-    id: 'player3-id',
-  };
-  const player4: SignerIdentity = {
-    wallet: _player4,
-    name: 'player4',
-    id: 'player4-id',
-  };
-  const player5: SignerIdentity = {
-    wallet: _player5,
-    name: 'player5',
-    id: 'player5-id',
-  };
-  const player6: SignerIdentity = {
-    wallet: _player6,
-    name: 'player6',
-    id: 'player6-id',
-  };
-  const player7: SignerIdentity = {
-    wallet: _player7,
-    name: 'player7',
-    id: 'player7-id',
-  };
-  const player8: SignerIdentity = {
-    wallet: _player8,
-    name: 'player8',
-    id: 'player8-id',
-  };
-  const player9: SignerIdentity = {
-    wallet: _player9,
-    name: 'player9',
-    id: 'player9-id',
-  };
-  const player10: SignerIdentity = {
-    wallet: _player10,
-    name: 'player10',
-    id: 'player10-id',
-  };
-  const player11: SignerIdentity = {
-    wallet: _player11,
-    name: 'player11',
-    id: 'player11-id',
-  };
-  const player12: SignerIdentity = {
-    wallet: _player12,
-    name: 'player12',
-    id: 'player12-id',
-  };
-  const player13: SignerIdentity = {
-    wallet: _player13,
-    name: 'player13',
-    id: 'player13-id',
-  };
-  const player14: SignerIdentity = {
-    wallet: _player14,
-    name: 'player14',
-    id: 'player14-id',
-  };
-  const player15: SignerIdentity = {
-    wallet: _player15,
-    name: 'player15',
-    id: 'player15-id',
-  };
-  const player16: SignerIdentity = {
-    wallet: _player16,
-    name: 'player16',
-    id: 'player16-id',
-  };
-  const player17: SignerIdentity = {
-    wallet: _player17,
-    name: 'player17',
-    id: 'player17-id',
-  };
+    const contractDeployer: SignerIdentity = {
+      wallet: ethers.Wallet.fromMnemonic(m, `m/44'/60'/0'/0/${0}`).connect(hre.ethers.provider),
+      name: 'contractDeployer',
+      id: 'contractDeployer-id',
+    };
 
-  return {
-    contractDeployer,
-    player1,
-    player2,
-    player3,
-    player4,
-    player5,
-    player6,
-    player7,
-    player8,
-    player9,
-    player10,
-    player11,
-    player12,
-    player13,
-    player14,
-    player15,
-    player16,
-    player17,
-    player18,
-    maliciousActor1,
-    gameCreator1,
-    gameCreator2,
-    gameCreator3,
-    gameMaster1,
-    gameMaster2,
-    gameMaster3,
-    maliciousActor2,
-    maliciousActor3,
-    gameOwner,
+    const gameOwner: SignerIdentity = {
+      wallet: ethers.Wallet.fromMnemonic(m, `m/44'/60'/0'/0/${1}`).connect(hre.ethers.provider),
+      name: 'gameOwner',
+      id: 'gameOwner-id',
+    };
+    const player1: SignerIdentity = {
+      wallet: ethers.Wallet.fromMnemonic(m, `m/44'/60'/0'/0/${2}`).connect(hre.ethers.provider),
+      name: 'player1',
+      id: 'player1-id',
+    };
+    const player2: SignerIdentity = {
+      wallet: ethers.Wallet.fromMnemonic(m, `m/44'/60'/0'/0/${3}`).connect(hre.ethers.provider),
+      name: 'player2',
+      id: 'player2-id',
+    };
+    const player3: SignerIdentity = {
+      wallet: ethers.Wallet.fromMnemonic(m, `m/44'/60'/0'/0/${4}`).connect(hre.ethers.provider),
+      name: 'player3',
+      id: 'player3-id',
+    };
+    const player4: SignerIdentity = {
+      wallet: ethers.Wallet.fromMnemonic(m, `m/44'/60'/0'/0/${5}`).connect(hre.ethers.provider),
+      name: 'player4',
+      id: 'player4-id',
+    };
+    const player5: SignerIdentity = {
+      wallet: ethers.Wallet.fromMnemonic(m, `m/44'/60'/0'/0/${6}`).connect(hre.ethers.provider),
+      name: 'player5',
+      id: 'player5-id',
+    };
+    const player6: SignerIdentity = {
+      wallet: ethers.Wallet.fromMnemonic(m, `m/44'/60'/0'/0/${7}`).connect(hre.ethers.provider),
+      name: 'player6',
+      id: 'player6-id',
+    };
+    const player7: SignerIdentity = {
+      wallet: ethers.Wallet.fromMnemonic(m, `m/44'/60'/0'/0/${8}`).connect(hre.ethers.provider),
+      name: 'player7',
+      id: 'player7-id',
+    };
+    const player8: SignerIdentity = {
+      wallet: ethers.Wallet.fromMnemonic(m, `m/44'/60'/0'/0/${9}`).connect(hre.ethers.provider),
+      name: 'player8',
+      id: 'player8-id',
+    };
+    const player9: SignerIdentity = {
+      wallet: ethers.Wallet.fromMnemonic(m, `m/44'/60'/0'/0/${10}`).connect(hre.ethers.provider),
+      name: 'player9',
+      id: 'player9-id',
+    };
+    const player10: SignerIdentity = {
+      wallet: ethers.Wallet.fromMnemonic(m, `m/44'/60'/0'/0/${11}`).connect(hre.ethers.provider),
+      name: 'player10',
+      id: 'player10-id',
+    };
+    const player11: SignerIdentity = {
+      wallet: ethers.Wallet.fromMnemonic(m, `m/44'/60'/0'/0/${12}`).connect(hre.ethers.provider),
+      name: 'player11',
+      id: 'player11-id',
+    };
+    const player12: SignerIdentity = {
+      wallet: ethers.Wallet.fromMnemonic(m, `m/44'/60'/0'/0/${13}`).connect(hre.ethers.provider),
+      name: 'player12',
+      id: 'player12-id',
+    };
+    const player13: SignerIdentity = {
+      wallet: ethers.Wallet.fromMnemonic(m, `m/44'/60'/0'/0/${14}`).connect(hre.ethers.provider),
+      name: 'player13',
+      id: 'player13-id',
+    };
+    const player14: SignerIdentity = {
+      wallet: ethers.Wallet.fromMnemonic(m, `m/44'/60'/0'/0/${15}`).connect(hre.ethers.provider),
+      name: 'player14',
+      id: 'player14-id',
+    };
+    const player15: SignerIdentity = {
+      wallet: ethers.Wallet.fromMnemonic(m, `m/44'/60'/0'/0/${16}`).connect(hre.ethers.provider),
+      name: 'player15',
+      id: 'player15-id',
+    };
+    const player16: SignerIdentity = {
+      wallet: ethers.Wallet.fromMnemonic(m, `m/44'/60'/0'/0/${17}`).connect(hre.ethers.provider),
+      name: 'player16',
+      id: 'player16-id',
+    };
+    const player17: SignerIdentity = {
+      wallet: ethers.Wallet.fromMnemonic(m, `m/44'/60'/0'/0/${18}`).connect(hre.ethers.provider),
+      name: 'player17',
+      id: 'player17-id',
+    };
+
+    return {
+      contractDeployer,
+      player1,
+      player2,
+      player3,
+      player4,
+      player5,
+      player6,
+      player7,
+      player8,
+      player9,
+      player10,
+      player11,
+      player12,
+      player13,
+      player14,
+      player15,
+      player16,
+      player17,
+      player18,
+      maliciousActor1,
+      gameCreator1,
+      gameCreator2,
+      gameCreator3,
+      gameMaster1,
+      gameMaster2,
+      gameMaster3,
+      maliciousActor2,
+      maliciousActor3,
+      gameOwner,
+    };
   };
-};
 
 const baseFee = 1 * 10 ** 18;
 
@@ -293,7 +302,7 @@ export const RInstanceSettings = {
   // RInstance_NUM_ACTIONS_TO_TAKE,
 };
 
-export const setupTest = async (hre: HardhatRuntimeEnvironment) => {
+export const setupPlaybook = async (hre: HardhatRuntimeEnvironment) => {
   const deployments = hre.deployments;
   await hre.run('deploy', {
     tags: 'MAO',
@@ -302,7 +311,7 @@ export const setupTest = async (hre: HardhatRuntimeEnvironment) => {
   const { getNamedAccounts } = hre;
   const { ethers: _eth } = hre;
   //   await deployments.fixture(['MAO'], { keepExistingDeployments: true });
-  const adr = await setupAddresses(getNamedAccounts, _eth, hre);
+  const adr = await setupAddresses(hre)(getNamedAccounts, _eth);
   const { deployer, owner } = await hre.getNamedAccounts();
 
   await adr.contractDeployer.wallet.sendTransaction({
@@ -491,7 +500,7 @@ export async function mineBlocks(count: any, hre: HardhatRuntimeEnvironment) {
 export interface ProposalParams {
   gameId: BigNumberish;
   encryptedProposal: string;
-  commitmentHash: BytesLike;
+  commitment: BigNumberish;
   proposer: string;
   gmSignature: BytesLike;
   voterSignature: BytesLike;
@@ -501,6 +510,15 @@ export interface ProposalSubmission {
   params: ProposalParams;
   proposal: string;
   proposerSignerId: SignerIdentity;
+  proposalValue: bigint;
+  randomnessValue: bigint;
+}
+
+export interface ProposalStruct {
+  proposals: ProposalSubmission[];
+  a: CalldataProposalsIntegrity18Groth16[0];
+  b: CalldataProposalsIntegrity18Groth16[1];
+  c: CalldataProposalsIntegrity18Groth16[2];
 }
 
 interface VoteMessage {
@@ -614,6 +632,7 @@ export const signPublicVoteMessage = async (
   return s;
 };
 
+// In real environment this should be game master specific secret
 const MOCK_SECRET = '123456';
 
 export const getTurnSalt = ({ gameId, turn }: { gameId: BigNumberish; turn: BigNumberish }) => {
@@ -855,12 +874,12 @@ const proposalTypes = {
     { type: 'uint256', name: 'gameId' },
     { type: 'address', name: 'proposer' },
     { type: 'string', name: 'encryptedProposal' },
-    { type: 'bytes32', name: 'commitmentHash' },
+    { type: 'uint256', name: 'commitment' },
   ],
   AuthorizeProposalSubmission: [
     { type: 'uint256', name: 'gameId' },
     { type: 'string', name: 'encryptedProposal' },
-    { type: 'bytes32', name: 'commitmentHash' },
+    { type: 'uint256', name: 'commitment' },
   ],
 };
 
@@ -870,8 +889,8 @@ async function signProposal(
   proposer: string,
   gameId: BigNumberish,
   encryptedProposal: string,
-  commitmentHash: string,
-  signer: SignerIdentity,
+  commitment: BigNumberish,
+  signer: Wallet | SignerWithAddress,
   isGM: boolean,
 ): Promise<string> {
   const { chainId } = await hre.ethers.provider.getNetwork();
@@ -890,16 +909,16 @@ async function signProposal(
         gameId,
         proposer,
         encryptedProposal,
-        commitmentHash,
+        commitment,
       }
     : {
         gameId,
         encryptedProposal,
-        commitmentHash,
+        commitment,
       };
 
   // Generate typed data hash matching Solidity's keccak256(abi.encode(...))
-  const typedDataHash = await signer.wallet._signTypedData(domain, { [type]: proposalTypes[type] }, value);
+  const typedDataHash = await signer._signTypedData(domain, { [type]: proposalTypes[type] }, value);
 
   return typedDataHash;
 }
@@ -912,18 +931,40 @@ export const mockProposalSecrets = async ({
   verifierAddress,
   hre,
 }: {
-  gm: SignerIdentity;
+  gm: Wallet;
   proposer: SignerIdentity;
   gameId: BigNumberish;
   turn: BigNumberish;
   verifierAddress: string;
   hre: HardhatRuntimeEnvironment;
 }): Promise<ProposalSubmission> => {
-  const _gmW = gm.wallet as Wallet;
   const proposal = getDiscussionForTurn(Number(turn), proposer.id);
-  const encryptedProposal = aes.encrypt(proposal, _gmW.privateKey).toString();
+  const poseidon = await buildPoseidon();
 
-  const commitmentHash: string = utils.solidityKeccak256(['string'], [proposal]);
+  const encryptedProposal = aes.encrypt(proposal, gm.publicKey).toString();
+
+  const pubKeyProposer = ethers.utils.recoverPublicKey(
+    ethers.utils.hashMessage(proposal),
+    await proposer.wallet.signMessage(proposal),
+  );
+  assert(ethers.utils.computeAddress(pubKeyProposer) === proposer.wallet.address, 'Proposer public key does not match');
+
+  const sharedKey = sharedSigner({
+    publicKey: pubKeyProposer,
+    signer: gm,
+    gameId,
+    turn,
+    contractAddress: verifierAddress,
+    chainId: await hre.getChainId(),
+  });
+
+  // Convert proposal to numeric value using keccak256
+  const proposalValue = BigInt(ethers.utils.solidityKeccak256(['string'], [proposal]));
+  const randomnessValue = BigInt(sharedKey);
+
+  // Calculate commitment using poseidon
+  const hash = poseidon([proposalValue, randomnessValue]);
+  const commitment = BigInt(poseidon.F.toObject(hash));
 
   // Get both GM and proposer signatures
   const gmSignature = await signProposal(
@@ -932,7 +973,7 @@ export const mockProposalSecrets = async ({
     proposer.wallet.address,
     gameId,
     encryptedProposal,
-    commitmentHash,
+    commitment,
     gm,
     true,
   );
@@ -943,15 +984,15 @@ export const mockProposalSecrets = async ({
     proposer.wallet.address,
     gameId,
     encryptedProposal,
-    commitmentHash,
-    proposer,
+    commitment,
+    proposer.wallet,
     false,
   );
 
   const params: ProposalParams = {
     gameId,
     encryptedProposal,
-    commitmentHash,
+    commitment,
     proposer: proposer.wallet.address,
     gmSignature,
     voterSignature,
@@ -961,6 +1002,8 @@ export const mockProposalSecrets = async ({
     params,
     proposal,
     proposerSignerId: proposer,
+    proposalValue,
+    randomnessValue,
   };
 };
 
@@ -971,27 +1014,64 @@ export const mockProposals = async ({
   verifierAddress,
   gm,
   hre,
+  idlers,
 }: {
   players: SignerIdentity[];
   gameId: BigNumberish;
   turn: BigNumberish;
   verifierAddress: string;
-  gm: SignerIdentity;
+  gm: Wallet;
   hre: HardhatRuntimeEnvironment;
-}) => {
+  idlers?: number[];
+}): Promise<ProposalStruct> => {
+  const chainId = await hre.getChainId();
   let proposals = [] as any as ProposalSubmission[];
   for (let i = 0; i < players.length; i++) {
-    let proposal = await mockProposalSecrets({
-      gm,
-      proposer: players[i],
-      gameId,
-      turn,
-      verifierAddress,
-      hre,
-    });
-    proposals.push(proposal);
+    if (idlers?.includes(i)) {
+      proposals.push({
+        params: {
+          gameId,
+          encryptedProposal: '',
+          commitment: 0n,
+          proposer: players[i].wallet.address,
+          gmSignature: '0x',
+          voterSignature: '0x',
+        },
+        proposal: '',
+        proposerSignerId: players[i],
+        proposalValue: 0n,
+        randomnessValue: 0n,
+      });
+    } else {
+      let proposal = await mockProposalSecrets({
+        gm,
+        proposer: players[i],
+        gameId,
+        turn,
+        verifierAddress,
+        hre,
+      });
+      proposals.push(proposal);
+    }
   }
-  return proposals;
+  // Generate ZK proof for batch reveal
+  const inputs = await createInputs({
+    numActive: players.length,
+    proposals: proposals.map(p => p.proposalValue),
+    commitmentRandomnesses: proposals.map(p => p.randomnessValue),
+  });
+
+  const circuit = await hre.zkit.getCircuit('ProposalsIntegrity18');
+  const proof = await circuit.generateProof(inputs);
+  const callData = await circuit.generateCalldata(proof);
+
+  return {
+    proposals,
+    // we need only a/b/c for the zk proof since proposals are treated as private inputs and verifier already knows commitment to them
+    a: callData[0],
+    b: callData[1],
+    c: callData[2],
+  };
 };
 
 const joinTypes = {
@@ -1027,61 +1107,60 @@ export const signJoiningGame = async (
   return { signature, hiddenSalt };
 };
 
-// Add ZK proof generation helper
-export async function generateBatchProposalProof(
-  proposals: string[],
-  proposerKeys: string[],
-  gameId: BigNumberish,
-  turn: BigNumberish,
-  commitmentHashes: string[],
-  numPlayers: number,
-) {
-  const poseidon = await circomlibjs.buildPoseidon();
-
-  // Define padding function first
-  const maxSize = 18; // Match circuit's max size
-  const padArray = <T>(arr: T[], defaultValue: T): T[] => {
-    return [...arr, ...Array(maxSize - arr.length).fill(defaultValue)];
-  };
-
-  const commitmentRandomnesses = padArray(
-    proposals.map(() => ethers.utils.randomBytes(32)),
-    ethers.utils.randomBytes(32),
-  );
-  const nullifierRandomnesses = padArray(
-    proposals.map(() => ethers.utils.randomBytes(32)),
-    ethers.utils.randomBytes(32),
-  );
-
-  const input = {
-    proposals: padArray(proposals, ''),
-    proposerKeys: padArray(proposerKeys, '0x0'),
-    commitmentRandomnesses,
-    nullifierRandomnesses,
-    gameId: gameId,
-    turn: turn,
-    commitmentHashes: padArray(commitmentHashes, '0x0'),
-    numPlayers: numPlayers,
-  };
-
-  const { proof, publicSignals } = await groth16.fullProve(
-    input,
-    'circuits/proposals_verify.wasm',
-    'circuits/proposals_verify.zkey',
-  );
-
-  return {
-    a: proof.pi_a.slice(0, 2),
-    b: [proof.pi_b[0].slice(0, 2), proof.pi_b[1].slice(0, 2)],
-    c: proof.pi_c.slice(0, 2),
-    nullifiers: publicSignals.slice(0, proposals.length),
-    proposals: proposals,
-  };
-}
+// https://datatracker.ietf.org/doc/html/rfc7919#appendix-A.1
+const ffdhe2048 = {
+  p: '0xFFFFFFFFFFFFFFFFADF85458A2BB4A9AAFDC5620273D3CF1D8B9C583CE2D3695A9E13641146433FBCC939DCE249B3EF97D2FE363630C75D8F681B202AEC4617AD3DF1ED5D5FD65612433F51F5F066ED0856365553DED1AF3B557135E7F57C935984F0C70E0E68B77E2A689DAF3EFE8721DF158A136ADE73530ACCA4F483A797ABC0AB182B324FB61D108A94BB2C8E3FBB96ADAB760D7F4681D4F42A3DE394DF4AE56EDE76372BB190B07A7C8EE0A6D709E02FCE1CDF7E2ECC03404CD28342F619172FE9CE98583FF8E4F1232EEF28183C3FE3B1B4C6FAD733BB5FCBC2EC22005C58EF1837D1683B2C6F34A26C1B2EFFA886B423861285C97FFFFFFFFFFFFFFFF',
+  g: 2,
+};
 
 export default {
   setupAddresses,
   setupEnvironment,
   addPlayerNameId,
   baseFee,
+  ffdhe2048,
+};
+
+// Helper to create test inputs
+export const createInputs = async ({
+  numActive,
+  proposals,
+  commitmentRandomnesses,
+}: {
+  numActive: number;
+  proposals: bigint[];
+  commitmentRandomnesses: bigint[];
+}) => {
+  const poseidon = await buildPoseidon();
+  const maxSize = 18;
+  const inputs = {
+    commitmentHashes: Array(maxSize).fill(0n),
+    proposals: Array(maxSize).fill(0n),
+    commitmentRandomnesses: Array(maxSize).fill(0n),
+  };
+
+  // Calculate zero hash
+  const zeroHash = BigInt(poseidon.F.toObject(poseidon([0n, 0n])));
+
+  // Fill values for all slots
+  for (let i = 0; i < maxSize; i++) {
+    if (i < numActive) {
+      // Active slots: use real values
+      const proposal = proposals[i];
+      const randomness = proposal != 0n ? commitmentRandomnesses[i] : 0n;
+      const hash = poseidon([proposal, randomness]);
+      const commitment = BigInt(poseidon.F.toObject(hash));
+
+      inputs.proposals[i] = proposal;
+      inputs.commitmentRandomnesses[i] = randomness;
+      inputs.commitmentHashes[i] = commitment;
+    } else {
+      // Inactive slots: use zeros and zero hash
+      inputs.proposals[i] = 0n;
+      inputs.commitmentRandomnesses[i] = 0n;
+      inputs.commitmentHashes[i] = zeroHash;
+    }
+  }
+
+  return inputs;
 };
