@@ -1,5 +1,5 @@
 import { RankifyDiamondInstance, RankToken } from '../../types';
-import { BigNumber, BigNumberish, ethers } from 'ethers';
+import { BigNumber, BigNumberish, ethers, Wallet } from 'ethers';
 import { IRankifyInstance } from '../../types/src/facets/RankifyInstanceMainFacet';
 import {
   mockVotes,
@@ -12,9 +12,11 @@ import {
   SignerIdentity,
   signJoiningGame,
   getTurnSalt,
+  ProposalStruct,
 } from '../utils';
 import { assert } from 'console';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 export enum GameState {
   Created,
@@ -32,7 +34,15 @@ export class InstanceBase {
   adr: AdrSetupResult;
   rankifyInstance: RankifyDiamondInstance;
   ongoingVotes: MockVote[] = [];
-  ongoingProposals: ProposalSubmission[] = [];
+  proposalsData: ProposalStruct = {
+    a: [0n, 0n],
+    b: [
+      [0n, 0n],
+      [0n, 0n],
+    ],
+    c: [0n, 0n],
+    proposals: [],
+  };
   hre: HardhatRuntimeEnvironment;
   private gameStates: Map<number, GameState> = new Map();
   private proposalShuffling: Map<number, number[]> = new Map(); // gameId -> shuffled indices
@@ -134,7 +144,7 @@ export class InstanceBase {
     console.log('New shuffling:', newShuffling);
 
     // Process proposals and votes
-    const proposals = this.ongoingProposals.map(p => p.proposal);
+    const proposals = this.proposalsData.proposals.map(p => p.proposal);
     console.log('Original proposals:', proposals);
     const shuffledProposals = newShuffling.map(i => proposals[i]);
     console.log('Shuffled proposals:', shuffledProposals);
@@ -169,7 +179,7 @@ export class InstanceBase {
     const turnSalt = getTurnSalt({ gameId: gameId, turn: turn });
     const tx = await this.rankifyInstance
       .connect(this.adr.gameMaster1.wallet)
-      .endTurn(gameId, mappedVotes, shuffledProposals, newShuffling, turnSalt);
+      .endTurn(gameId, mappedVotes, { ...this.proposalsData, proposals: shuffledProposals }, newShuffling, turnSalt);
     // const receipt = await tx.wait();
     const scores = await this.rankifyInstance.getScores(gameId);
     console.log('Turn ended successfully');
@@ -242,20 +252,20 @@ export class InstanceBase {
   ) => {
     const turn = await gameContract.getTurn(gameId);
 
-    this.ongoingProposals = await mockProposals({
+    this.proposalsData = await mockProposals({
       hre: this.hre,
       players: players,
       gameId: gameId,
       turn: turn,
       verifierAddress: gameContract.address,
-      gm: gameMaster,
+      gm: gameMaster.wallet,
     });
     if (submitNow) {
       for (let i = 0; i < players.length; i++) {
-        await gameContract.connect(gameMaster.wallet).submitProposal(this.ongoingProposals[i].params);
+        await gameContract.connect(gameMaster.wallet).submitProposal(this.proposalsData.proposals[i].params);
       }
     }
-    return this.ongoingProposals;
+    return this.proposalsData;
   };
 
   fillParty = async (
@@ -333,14 +343,14 @@ export class InstanceBase {
 
     // Submit proposals
     console.log('Submitting proposals...');
-    this.ongoingProposals = await this.mockValidProposals(
+    this.proposalsData = await this.mockValidProposals(
       players,
       this.rankifyInstance,
       this.adr.gameMaster1,
       gameId,
       true,
     );
-    console.log('Proposals submitted:', this.ongoingProposals.length);
+    console.log('Proposals submitted:', this.proposalsData.proposals.length);
 
     await this.endTurn(gameId);
 

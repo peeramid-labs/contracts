@@ -2,7 +2,7 @@ import { DAODistributor, RankifyDiamondInstance, RankToken } from '../../types';
 import { task } from 'hardhat/config';
 import inquirer from 'inquirer';
 import { InstanceBase, GameState } from './InstanceBase';
-import { setupTest } from '../utils';
+import { setupPlaybook } from '../utils';
 import { SignerIdentity } from '../utils';
 
 type GameAction = 'openRegistration' | 'fillParty' | 'startGame' | 'nextMove' | 'lastMove' | 'overtime' | 'endGame';
@@ -193,7 +193,7 @@ async function handleGameState(instanceBase: InstanceBase, gameId: number) {
 }
 
 task('gameLifecycle', 'Interactive guide through the game lifecycle').setAction(async (_, hre) => {
-  const setupEnv = await setupTest(hre);
+  const setupEnv = await setupPlaybook(hre);
   hre.tracer.enabled = true;
   const { ethers } = hre;
   // Initial setup

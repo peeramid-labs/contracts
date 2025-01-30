@@ -3,6 +3,8 @@ import { TASK_COMPILE_SOLIDITY_EMIT_ARTIFACTS } from 'hardhat/builtin-tasks/task
 import { join } from 'path';
 import { writeFile, mkdir, readFile } from 'fs/promises';
 import { inspect } from 'util';
+import '@solarity/hardhat-zkit';
+import '@solarity/chai-zkit';
 import '@nomicfoundation/hardhat-chai-matchers';
 import 'hardhat-diamond-abi';
 import '@nomicfoundation/hardhat-toolbox';
@@ -55,7 +57,7 @@ task('diamond-abi-viem-export', 'Generates the rankify diamond viem abi file').s
   }
 });
 
-task('defaultDistributionId', 'Prints the default distribution id', async (taskArgs, hre) => {
+task('defaultDistributionId', 'Prints the default distribution id', async (taskArgs: { print: boolean }, hre) => {
   const id = hre.ethers.utils.formatBytes32String(process.env.DEFAULT_DISTRIBUTION_NAME ?? 'MAO Distribution');
   if (taskArgs.print) console.log(id);
   return id;
@@ -91,37 +93,35 @@ task('getSuperInterface', 'Prints the super interface of a contract').setAction(
   });
   console.log(JSON.stringify(return_value, null, 2));
 });
-task('replaceFacet', 'Upgrades facet')
-  .addParam('facet', 'facet')
-  .addParam('address', 'contract address')
-  .setAction(async (taskArgs, hre) => {
-    const accounts = await hre.ethers.getSigners();
-    const response = await replaceFacet(taskArgs.address, taskArgs.facet, accounts[0]);
-  });
-
-task('addFacet', 'adds a facet')
-  .addParam('facet', 'facet')
-  .addParam('address', 'contract address')
-  .setAction(async (taskArgs, hre) => {
-    const Facet = await hre.ethers.getContractFactory(taskArgs.facet);
-    const accounts = await hre.ethers.getSigners();
-    const facet = await Facet.deploy();
-    await facet.deployed();
-
-    const response = await cutFacets({
-      facets: [facet],
-      diamondAddress: taskArgs.address,
-      signer: accounts[0],
-    });
-  });
-
-// task("PublishIPNS", "Publishes IPNS with new pointer")
-//   .addParam("value")
-//   .setAction(async (taskArgs) => {
-//     await ipfsUtils.publish(`${taskArgs.value}`);
-//   });
 
 export default {
+  zkit: {
+    compilerVersion: '2.2.0',
+    circuitsDir: 'circuits',
+    compilationSettings: {
+      artifactsDir: 'zk_artifacts',
+      onlyFiles: [],
+      skipFiles: [],
+      c: false,
+      json: false,
+      optimization: 'O1',
+    },
+    setupSettings: {
+      contributionSettings: {
+        provingSystem: 'groth16', // or "plonk"
+        contributions: 2,
+      },
+      onlyFiles: [],
+      skipFiles: [],
+      ptauDownload: true,
+    },
+    verifiersSettings: {
+      verifiersDir: 'src/verifiers',
+      verifiersType: 'sol', // or "vy"
+    },
+    typesDir: 'types/zk',
+    quiet: false,
+  },
   docgen: {
     outputDir: './docs/contracts',
     pages: 'files',

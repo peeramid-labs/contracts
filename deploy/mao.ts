@@ -173,6 +173,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   }
 
   const rankifyToken = await deployments.get('Rankify');
+  const proposalIntegrity18Groth16VerifierDeployment = await deployments.get('ProposalsIntegrity18Groth16Verifier');
   const result = await deploy('MAODistribution', {
     from: deployer,
     skipIfAlreadyDeployed: true,
@@ -180,6 +181,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       _trustedForwarder,
       rankifyToken.address,
       DAO,
+      proposalIntegrity18Groth16VerifierDeployment.address,
       rankTokenCodeId,
       arguableVotingTournamentCodeId,
       accessManagerId,
@@ -208,5 +210,5 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 };
 
 export default func;
-func.dependencies = ['ERC7744', 'sacm', 'distributor', 'rankify'];
+func.dependencies = ['ERC7744', 'sacm', 'distributor', 'rankify', 'verifiers'];
 func.tags = ['MAO'];

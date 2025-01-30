@@ -52,7 +52,7 @@ contract MAODistribution is IDistribution, CodeIndexer {
     address private immutable _paymentToken;
     address private immutable _beneficiary;
     uint256 private immutable _minParticipantsInCircle;
-
+    address private immutable _proposalIntegrityVerifier;
     /**
      * @notice Initializes the contract with the provided parameters and performs necessary checks.
      * @dev Retrieves contract addresses from a contract index using the provided identifiers
@@ -73,6 +73,7 @@ contract MAODistribution is IDistribution, CodeIndexer {
         address trustedForwarder,
         address paymentToken,
         address beneficiary,
+        address proposalIntegrityVerifier,
         bytes32 rankTokenCodeId,
         bytes32 RankifyDIistributionId,
         bytes32 accessManagerId,
@@ -89,7 +90,11 @@ contract MAODistribution is IDistribution, CodeIndexer {
         _distributionVersion = LibSemver.toUint256(distributionVersion);
         _rankTokenBase = getContractsIndex().get(rankTokenCodeId);
         _governanceERC20Base = getContractsIndex().get(governanceERC20BaseId);
+        _proposalIntegrityVerifier = proposalIntegrityVerifier;
 
+        if (_proposalIntegrityVerifier == address(0)) {
+            revert("Verifier not set");
+        }
         if (_governanceERC20Base == address(0)) {
             revert("Governance ERC20 base not found");
         }
@@ -206,7 +211,8 @@ contract MAODistribution is IDistribution, CodeIndexer {
             minimumParticipantsInCircle: _minParticipantsInCircle,
             paymentToken: _paymentToken,
             beneficiary: _beneficiary,
-            derivedToken: derivedToken
+            derivedToken: derivedToken,
+            proposalIntegrityVerifier: _proposalIntegrityVerifier
         });
 
         RankifyInstanceInit(RankifyDistrAddresses[0]).init(

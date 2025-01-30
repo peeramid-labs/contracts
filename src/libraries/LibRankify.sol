@@ -51,6 +51,7 @@ library LibRankify {
         address beneficiary;
         uint256 minimumParticipantsInCircle;
         address derivedToken;
+        address proposalIntegrityVerifier;
     }
 
 
@@ -77,10 +78,10 @@ library LibRankify {
         uint256 numVotesPrevTurn;
         LibQuadraticVoting.qVotingStruct voting;
         mapping(uint256 => string) ongoingProposals; //Previous Turn Proposals (These are being voted on)
-        mapping(address => bytes32) proposalCommitmentHashes; //Current turn Proposal submission
+        mapping(address => uint256) proposalCommitment;  // Changed from bytes32 to uint256
         mapping(address => bytes32) ballotHashes;
         mapping(address => bool) playerVoted;
-        mapping(bytes32 => bool) usedNullifiers;  // Track used nullifiers
+        mapping(uint256 => bool) usedNullifierHashes;  // Track used nullifierHashes
     }
 
     /**
@@ -508,7 +509,7 @@ library LibRankify {
         if (game.numPrevProposals < game.voting.minQuadraticPositions) expectVote = false; // If there is not enough proposals then round is skipped votes cannot be filled
         bool madeMove = true;
         if (expectVote && !game.playerVoted[player]) madeMove = false;
-        if (expectProposal && game.proposalCommitmentHashes[player] == "") madeMove = false;
+        if (expectProposal && game.proposalCommitment[player] == 0) madeMove = false;
         if (madeMove) gameId.playerMove(player);
         return madeMove;
     }
