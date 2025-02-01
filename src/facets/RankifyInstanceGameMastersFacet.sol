@@ -13,7 +13,7 @@ import "hardhat/console.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import "../vendor/diamond/libraries/LibDiamond.sol";
 import {IErrors} from "../interfaces/IErrors.sol";
-import {ProposalsIntegrity18Groth16Verifier} from "../verifiers/ProposalsIntegrity18Groth16Verifier.sol";
+import {ProposalsIntegrity15Groth16Verifier} from "../verifiers/ProposalsIntegrity15Groth16Verifier.sol";
 /**
  * @title RankifyInstanceGameMastersFacet
  * @notice Facet handling game master functionality for Rankify instances
@@ -21,6 +21,10 @@ import {ProposalsIntegrity18Groth16Verifier} from "../verifiers/ProposalsIntegri
  * @author Peeramid Labs, 2024
  */
 contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
+
+    // This is the precompiled value of Poseidon2(0,0)
+    uint256 private constant zeroPoseidon2 =
+        14744269619966411208579211824598458697587494354926760081771325075741142829156;
     error ballotIntegrityCheckFailed(bytes32 ballotHash, bytes32 ballotHashFromVotes);
     using LibTBG for uint256;
     using LibRankify for uint256;
@@ -256,34 +260,12 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
         _afterNextTurn(gameId, newProposals);
     }
 
-    /**
-     * @dev Ends the current turn of a game with the provided game ID. `gameId` is the ID of the game. `votes` is the array of votes.
-     *  `newProposals` is the array of new proposals for the upcoming voting round.
-     *  `proposerIndices` is the array of indices of the proposers in the previous voting round.
-     *
-     * emits a _ProposalScore_ event for each player if the turn is not the first.
-     * emits a _TurnEnded_ event.
-     *
-     * Modifies:
-     *
-     * - Calls the `_nextTurn` function with `gameId` and `newProposals`.
-     * - Resets the number of commitments of the game with `gameId` to 0.
-     * - Resets the proposal commitment hash and ongoing proposal of each player in the game with `gameId`.
-     *
-     * Requirements:
-     *
-     * - The caller must be a game master of the game with `gameId`.
-     * - The game with `gameId` must have started.
-     * - The game with `gameId` must not be over.
-     * -  newProposals array MUST be sorted randomly to ensure privacy
-     * votes and proposerIndices MUST correspond to players array from game.getPlayers()
-     */
     function endTurn(
         uint256 gameId,
         uint256[][] memory votes,
         BatchProposalReveal memory newProposals,
         uint256[] memory proposerIndices,
-        bytes32 turnSalt
+        uint256 shuffleSalt
     ) public {
         gameId.enforceIsGM(msg.sender);
         gameId.enforceHasStarted();
@@ -300,7 +282,7 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
             for (uint256 player = 0; player < players.length; ++player) {
                 votesSorted[player] = new uint256[](players.length);
                 bytes32 ballotHash = game.ballotHashes[players[player]];
-                bytes32 playerSalt = keccak256(abi.encodePacked(players[player], turnSalt));
+                bytes32 playerSalt = keccak256(abi.encodePacked(players[player], shuffleSalt));
                 bytes32 ballotHashFromVotes = keccak256(abi.encodePacked(votes[player], playerSalt));
                 if (game.playerVoted[players[player]]) {
                     require(
@@ -339,26 +321,30 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
             }
         }
         {
-            uint256[18] memory PropIntegrityPublicInputs;
-            if (players.length > 18) {
-                revert("Too many players, current ZKP circuit only supports 18 players");
-            }
+            uint256[32] memory PropIntegrityPublicInputs;
 
-            uint256 zeroHashPoseidon2 = 14744269619966411208579211824598458697587494354926760081771325075741142829156;
+            require(players.length <= 15, "Too many players, current ZKP circuit only supports 15 players");
+            require(newProposals.proposals.length == 15, "Invalid proposal count");
+            require(proposerIndices.length == 15, "Invalid permutation length");
 
             for (uint256 i = 0; i < players.length; ++i) {
                 uint256 commitment = game.proposalCommitment[players[i]];
-                PropIntegrityPublicInputs[i] = commitment != 0 ? commitment : zeroHashPoseidon2;
+                PropIntegrityPublicInputs[i] = commitment != 0 ? commitment : zeroPoseidon2;
             }
             // Fill remaining slots with zero hashes
-            for (uint256 i = players.length; i < 18; ++i) {
-                PropIntegrityPublicInputs[i] = zeroHashPoseidon2;
+            for (uint256 i = players.length; i < 15; ++i) {
+                PropIntegrityPublicInputs[i] = zeroPoseidon2;
             }
+            for (uint256 i = 15; i < 30; ++i) {
+                PropIntegrityPublicInputs[i] = uint256(keccak256(abi.encode(newProposals.proposals[i - 15])));
+            }
+            PropIntegrityPublicInputs[30] = game.permutationCommitment;
+            PropIntegrityPublicInputs[31] = players.length;
             LibRankify.InstanceState storage instanceState = LibRankify.instanceState();
 
             // 2. Handle current turn's proposal reveals with single proof
             require(
-                ProposalsIntegrity18Groth16Verifier(instanceState.commonParams.proposalIntegrityVerifier).verifyProof(
+                ProposalsIntegrity15Groth16Verifier(instanceState.commonParams.proposalIntegrityVerifier).verifyProof(
                     newProposals.a,
                     newProposals.b,
                     newProposals.c,
@@ -366,14 +352,6 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
                 ),
                 "Invalid batch proposal reveal proof"
             );
-
-            // Verify nullifierHashes haven't been used
-            for (uint256 i = 0; i < PropIntegrityPublicInputs.length; i++) {
-                if (PropIntegrityPublicInputs[i] != zeroHashPoseidon2) {
-                require(!game.usedNullifierHashes[PropIntegrityPublicInputs[i]], "Nullifier already used");
-                    game.usedNullifierHashes[PropIntegrityPublicInputs[i]] = true;
-                }
-            }
         }
 
         // Emit event and clean up
@@ -392,7 +370,7 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
         game.numVotesThisTurn = 0;
         game.numPrevProposals = game.numCommitments;
         game.numCommitments = 0;
-
+        game.permutationCommitment = uint256(shuffleSalt);
         _nextTurn(gameId, newProposals.proposals);
     }
 }

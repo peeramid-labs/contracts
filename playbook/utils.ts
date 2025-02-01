@@ -2,14 +2,14 @@ import aes from 'crypto-js/aes';
 import { HttpNetworkHDAccountsConfig } from 'hardhat/types';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import {
-    Rankify,
-    MockERC1155,
-    MockERC20,
-    MockERC721,
-    RankToken,
-    MAODistribution,
-    DAODistributor,
-    ArguableVotingTournament,
+  Rankify,
+  MockERC1155,
+  MockERC20,
+  MockERC721,
+  RankToken,
+  MAODistribution,
+  DAODistributor,
+  ArguableVotingTournament,
 } from '../types';
 import { BigNumber, BigNumberish, BytesLike, TypedDataField, Wallet, ethers, utils } from 'ethers';
 // @ts-ignore
@@ -20,7 +20,7 @@ import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { getDiscussionForTurn } from './instance/discussionTopics';
 import { buildPoseidon } from 'circomlibjs';
 import { sharedSigner } from '../scripts/sharedKey';
-import { CalldataProposalsIntegrity18Groth16 } from 'zk';
+import { CalldataProposalsIntegrity15Groth16, PrivateProposalsIntegrity15Groth16 } from 'zk';
 
 export const RANKIFY_INSTANCE_CONTRACT_NAME = 'RANKIFY_INSTANCE_NAME';
 export const RANKIFY_INSTANCE_CONTRACT_VERSION = '0.0.1';
@@ -509,16 +509,16 @@ export interface ProposalParams {
 export interface ProposalSubmission {
   params: ProposalParams;
   proposal: string;
-  proposerSignerId: SignerIdentity;
+  proposerSignerId?: SignerIdentity;
   proposalValue: bigint;
   randomnessValue: bigint;
 }
 
 export interface ProposalStruct {
   proposals: ProposalSubmission[];
-  a: CalldataProposalsIntegrity18Groth16[0];
-  b: CalldataProposalsIntegrity18Groth16[1];
-  c: CalldataProposalsIntegrity18Groth16[2];
+  a: CalldataProposalsIntegrity15Groth16[0];
+  b: CalldataProposalsIntegrity15Groth16[1];
+  c: CalldataProposalsIntegrity15Groth16[2];
 }
 
 interface VoteMessage {
@@ -635,20 +635,69 @@ export const signPublicVoteMessage = async (
 // In real environment this should be game master specific secret
 const MOCK_SECRET = '123456';
 
-export const getTurnSalt = ({ gameId, turn }: { gameId: BigNumberish; turn: BigNumberish }) => {
-  return utils.solidityKeccak256(['string', 'uint256', 'uint256'], [MOCK_SECRET, gameId, turn]);
+// Renamed from getTurnSalt to getShuffleSalt to match contract
+export const getShuffleSalt = async ({
+  gameId,
+  turn,
+  verifierAddress,
+  chainId,
+  gm,
+}: {
+  gameId: BigNumberish;
+  turn: BigNumberish;
+  verifierAddress: string;
+  chainId: BigNumberish;
+  gm: SignerIdentity | Wallet;
+}): Promise<BytesLike> => {
+  const domain = {
+    name: 'Rankify',
+    version: '1',
+    chainId: chainId,
+    verifyingContract: verifierAddress,
+  };
+
+  const types = {
+    ShuffleSalt: [
+      { name: 'gameId', type: 'uint256' },
+      { name: 'turn', type: 'uint256' },
+    ],
+  };
+
+  const value = {
+    gameId,
+    turn,
+  };
+
+  const signer = 'wallet' in gm ? gm.wallet : gm;
+  const signature = await signer._signTypedData(domain, types, value);
+  const salt = ethers.utils.hexZeroPad(ethers.utils.hexlify(ethers.utils.keccak256(signature)), 32);
+  return salt;
 };
 
-export const getTurnPlayersSalt = ({
+export const getPlayerVoteSalt = ({
   gameId,
   turn,
   player,
+  verifierAddress,
+  chainId,
+  gm,
 }: {
   gameId: BigNumberish;
   turn: BigNumberish;
   player: string;
+  verifierAddress: string;
+  chainId: BigNumberish;
+  gm: SignerIdentity | Wallet;
 }) => {
-  return utils.solidityKeccak256(['address', 'bytes32'], [player, getTurnSalt({ gameId, turn })]);
+  return getShuffleSalt({
+    gameId,
+    turn,
+    verifierAddress,
+    chainId,
+    gm,
+  }).then(salt => {
+    return utils.solidityKeccak256(['address', 'bytes32'], [player, salt]);
+  });
 };
 
 // Add new function to sign votes
@@ -729,10 +778,15 @@ export const mockVote = async ({
   verifierAddress: string;
   hre: HardhatRuntimeEnvironment;
 }): Promise<MockVote> => {
-  const playerSalt = getTurnPlayersSalt({
+  const chainId = await hre.getChainId();
+
+  const playerSalt = await getPlayerVoteSalt({
     gameId,
     turn,
     player: voter.wallet.address,
+    verifierAddress,
+    chainId,
+    gm,
   });
 
   const ballot = {
@@ -964,7 +1018,7 @@ export const mockProposalSecrets = async ({
 
   // Calculate commitment using poseidon
   const hash = poseidon([proposalValue, randomnessValue]);
-  const commitment = BigInt(poseidon.F.toObject(hash));
+  const poseidonCommitment = BigInt(poseidon.F.toObject(hash));
 
   // Get both GM and proposer signatures
   const gmSignature = await signProposal(
@@ -973,7 +1027,7 @@ export const mockProposalSecrets = async ({
     proposer.wallet.address,
     gameId,
     encryptedProposal,
-    commitment,
+    poseidonCommitment,
     gm,
     true,
   );
@@ -984,7 +1038,7 @@ export const mockProposalSecrets = async ({
     proposer.wallet.address,
     gameId,
     encryptedProposal,
-    commitment,
+    poseidonCommitment,
     proposer.wallet,
     false,
   );
@@ -992,7 +1046,7 @@ export const mockProposalSecrets = async ({
   const params: ProposalParams = {
     gameId,
     encryptedProposal,
-    commitment,
+    commitment: poseidonCommitment,
     proposer: proposer.wallet.address,
     gmSignature,
     voterSignature,
@@ -1007,43 +1061,44 @@ export const mockProposalSecrets = async ({
   };
 };
 
+// Update mockProposals to use deterministic permutation
 export const mockProposals = async ({
+  hre,
   players,
   gameId,
   turn,
   verifierAddress,
   gm,
-  hre,
   idlers,
 }: {
+  hre: HardhatRuntimeEnvironment;
   players: SignerIdentity[];
   gameId: BigNumberish;
   turn: BigNumberish;
   verifierAddress: string;
   gm: Wallet;
-  hre: HardhatRuntimeEnvironment;
   idlers?: number[];
 }): Promise<ProposalStruct> => {
-  const chainId = await hre.getChainId();
-  let proposals = [] as any as ProposalSubmission[];
-  for (let i = 0; i < players.length; i++) {
-    if (idlers?.includes(i)) {
-      proposals.push({
-        params: {
-          gameId,
-          encryptedProposal: '',
-          commitment: 0n,
-          proposer: players[i].wallet.address,
-          gmSignature: '0x',
-          voterSignature: '0x',
-        },
-        proposal: '',
-        proposerSignerId: players[i],
-        proposalValue: 0n,
-        randomnessValue: 0n,
-      });
-    } else {
-      let proposal = await mockProposalSecrets({
+  const proposals: ProposalSubmission[] = [];
+  const commitments: bigint[] = [];
+  const randomnesses: bigint[] = [];
+  const permutedProposals: bigint[] = [];
+
+  // Generate deterministic permutation
+  const { permutation, permutationRandomness, permutationCommitment } = await generateDeterministicPermutation({
+    gameId,
+    turn,
+    verifierAddress,
+    chainId: await hre.getChainId(),
+    gm,
+    size: players.length,
+  });
+
+  // Fill up to 15 slots
+  for (let i = 0; i < 15; i++) {
+    if (i < players.length && (!idlers || !idlers.includes(i))) {
+      // Active player who is not idle
+      const proposalSecrets = await mockProposalSecrets({
         gm,
         proposer: players[i],
         gameId,
@@ -1051,23 +1106,48 @@ export const mockProposals = async ({
         verifierAddress,
         hre,
       });
-      proposals.push(proposal);
+      proposals.push(proposalSecrets);
+      commitments.push(BigInt(proposalSecrets.params.commitment.toString()));
+      randomnesses.push(proposalSecrets.randomnessValue);
+      permutedProposals.push(proposalSecrets.proposalValue);
+    } else {
+      // Idle player or padding slot
+      const emptyProposal: ProposalSubmission = {
+        proposal: '',
+        params: {
+          gameId,
+          encryptedProposal: '',
+          commitment: '0x0',
+          proposer: ethers.constants.AddressZero,
+          gmSignature: '0x',
+          voterSignature: '0x',
+        },
+        proposalValue: 0n,
+        randomnessValue: 0n,
+      };
+      proposals.push(emptyProposal);
+      commitments.push(0n);
+      randomnesses.push(0n);
+      permutedProposals.push(0n);
     }
   }
-  // Generate ZK proof for batch reveal
-  const inputs = await createInputs({
-    numActive: players.length,
-    proposals: proposals.map(p => p.proposalValue),
-    commitmentRandomnesses: proposals.map(p => p.randomnessValue),
-  });
 
-  const circuit = await hre.zkit.getCircuit('ProposalsIntegrity18');
+  // Generate proof inputs
+  const inputs = {
+    commitments,
+    permutedProposals,
+    permutationCommitment,
+    permutation,
+    randomnesses,
+    permutationRandomness,
+  };
+
+  const circuit = await hre.zkit.getCircuit('ProposalsIntegrity15');
   const proof = await circuit.generateProof(inputs);
   const callData = await circuit.generateCalldata(proof);
 
   return {
     proposals,
-    // we need only a/b/c for the zk proof since proposals are treated as private inputs and verifier already knows commitment to them
     a: callData[0],
     b: callData[1],
     c: callData[2],
@@ -1119,48 +1199,4 @@ export default {
   addPlayerNameId,
   baseFee,
   ffdhe2048,
-};
-
-// Helper to create test inputs
-export const createInputs = async ({
-  numActive,
-  proposals,
-  commitmentRandomnesses,
-}: {
-  numActive: number;
-  proposals: bigint[];
-  commitmentRandomnesses: bigint[];
-}) => {
-  const poseidon = await buildPoseidon();
-  const maxSize = 18;
-  const inputs = {
-    commitmentHashes: Array(maxSize).fill(0n),
-    proposals: Array(maxSize).fill(0n),
-    commitmentRandomnesses: Array(maxSize).fill(0n),
-  };
-
-  // Calculate zero hash
-  const zeroHash = BigInt(poseidon.F.toObject(poseidon([0n, 0n])));
-
-  // Fill values for all slots
-  for (let i = 0; i < maxSize; i++) {
-    if (i < numActive) {
-      // Active slots: use real values
-      const proposal = proposals[i];
-      const randomness = proposal != 0n ? commitmentRandomnesses[i] : 0n;
-      const hash = poseidon([proposal, randomness]);
-      const commitment = BigInt(poseidon.F.toObject(hash));
-
-      inputs.proposals[i] = proposal;
-      inputs.commitmentRandomnesses[i] = randomness;
-      inputs.commitmentHashes[i] = commitment;
-    } else {
-      // Inactive slots: use zeros and zero hash
-      inputs.proposals[i] = 0n;
-      inputs.commitmentRandomnesses[i] = 0n;
-      inputs.commitmentHashes[i] = zeroHash;
-    }
-  }
-
-  return inputs;
 };

@@ -76,6 +76,7 @@ library LibRankify {
         uint256 numCommitments;
         uint256 numVotesThisTurn;
         uint256 numVotesPrevTurn;
+        uint256 permutationCommitment;
         LibQuadraticVoting.qVotingStruct voting;
         mapping(uint256 => string) ongoingProposals; //Previous Turn Proposals (These are being voted on)
         mapping(address => uint256) proposalCommitment;  // Changed from bytes32 to uint256
