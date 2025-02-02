@@ -327,20 +327,36 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
             require(newProposals.proposals.length == 15, "Invalid proposal count");
             require(proposerIndices.length == 15, "Invalid permutation length");
 
-            for (uint256 i = 0; i < players.length; ++i) {
-                uint256 commitment = game.proposalCommitment[players[i]];
-                PropIntegrityPublicInputs[i] = commitment != 0 ? commitment : zeroPoseidon2;
+            // Fill public inputs with commitments
+            {
+                for (uint256 i = 0; i < players.length; ++i) {
+                    uint256 commitment = game.proposalCommitment[players[i]];
+                    // console.log("commitment:", commitment);
+                    PropIntegrityPublicInputs[i] = commitment != 0 ? commitment : zeroPoseidon2;
+                    console.log("PropIntegrityPublicInputs:", PropIntegrityPublicInputs[i]);
+                }
+                // Fill remaining slots with zero hashes
+                for (uint256 i = players.length; i < 15; ++i) {
+                    PropIntegrityPublicInputs[i] = zeroPoseidon2;
+                    console.log("PropIntegrityPublicInputs:", PropIntegrityPublicInputs[i]);
+                }
             }
-            // Fill remaining slots with zero hashes
-            for (uint256 i = players.length; i < 15; ++i) {
-                PropIntegrityPublicInputs[i] = zeroPoseidon2;
-            }
+            bytes32 emptyProposalHash = keccak256(abi.encodePacked(""));
+            // Fill public inputs with proposals
             for (uint256 i = 15; i < 30; ++i) {
-                PropIntegrityPublicInputs[i] = uint256(keccak256(abi.encode(newProposals.proposals[i - 15])));
+                bytes32 proposalHash = keccak256(abi.encodePacked(newProposals.proposals[i - 15]));
+                if (i - 15 < players.length && proposalHash != emptyProposalHash) {
+                    PropIntegrityPublicInputs[i] = uint256(proposalHash);
+                } else {
+                    PropIntegrityPublicInputs[i] = 0;
+                }
+                console.log("PropIntegrityPublicInputs:", PropIntegrityPublicInputs[i]);
             }
             PropIntegrityPublicInputs[30] = game.permutationCommitment;
             PropIntegrityPublicInputs[31] = players.length;
             LibRankify.InstanceState storage instanceState = LibRankify.instanceState();
+            console.log("PropIntegrityPublicInputs[30]:", PropIntegrityPublicInputs[30]);
+            console.log("PropIntegrityPublicInputs[31]:", PropIntegrityPublicInputs[31]);
 
             // 2. Handle current turn's proposal reveals with single proof
             require(

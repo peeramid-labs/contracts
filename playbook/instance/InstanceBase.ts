@@ -11,8 +11,7 @@ import {
   AdrSetupResult,
   SignerIdentity,
   signJoiningGame,
-  getTurnSalt,
-  ProposalStruct,
+  ProposalsIntegrity,
 } from '../utils';
 import { assert } from 'console';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
@@ -34,7 +33,7 @@ export class InstanceBase {
   adr: AdrSetupResult;
   rankifyInstance: RankifyDiamondInstance;
   ongoingVotes: MockVote[] = [];
-  proposalsData: ProposalStruct = {
+  proposalsData: ProposalsIntegrity = {
     a: [0n, 0n],
     b: [
       [0n, 0n],
@@ -42,6 +41,7 @@ export class InstanceBase {
     ],
     c: [0n, 0n],
     proposals: [],
+    permutation: [],
   };
   hre: HardhatRuntimeEnvironment;
   private gameStates: Map<number, GameState> = new Map();

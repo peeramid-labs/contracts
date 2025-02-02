@@ -21,7 +21,7 @@ export const createInputs = async ({
   turn: BigNumberish;
   verifierAddress: string;
   chainId: BigNumberish;
-  gm: SignerIdentity | Wallet;
+  gm: Wallet;
 }): Promise<PrivateProposalsIntegrity15Groth16> => {
   const poseidon = await buildPoseidon();
   const maxSize = 15;

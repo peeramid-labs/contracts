@@ -198,6 +198,13 @@ library LibRankify {
      * - Mints new rank tokens.
      */
     function newGame(NewGameParams memory params) internal {
+        // address signer = ECDSA.recover(digest, gameMasterSignature);
+        //TODO: add this back in start game to verify commitment from game master
+        // require(
+        //     params.gameMaster == signer,
+        //     IErrors.invalidECDSARecoverSigner(digest, "LibRankify::newGame->invalid signature")
+        // );
+
         enforceIsInitialized();
         CommonParams storage commonParams = instanceState().commonParams;
 

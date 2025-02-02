@@ -21,6 +21,7 @@ import { getDiscussionForTurn } from './instance/discussionTopics';
 import { buildPoseidon } from 'circomlibjs';
 import { sharedSigner } from '../scripts/sharedKey';
 import { CalldataProposalsIntegrity15Groth16, PrivateProposalsIntegrity15Groth16 } from 'zk';
+import { createInputs, generateDeterministicPermutation } from '../scripts/proofs';
 
 export const RANKIFY_INSTANCE_CONTRACT_NAME = 'RANKIFY_INSTANCE_NAME';
 export const RANKIFY_INSTANCE_CONTRACT_VERSION = '0.0.1';
@@ -514,11 +515,12 @@ export interface ProposalSubmission {
   randomnessValue: bigint;
 }
 
-export interface ProposalStruct {
-  proposals: ProposalSubmission[];
+export interface ProposalsIntegrity {
+  proposals: string[];
   a: CalldataProposalsIntegrity15Groth16[0];
   b: CalldataProposalsIntegrity15Groth16[1];
   c: CalldataProposalsIntegrity15Groth16[2];
+  permutation: BigNumberish[];
 }
 
 interface VoteMessage {
@@ -635,52 +637,14 @@ export const signPublicVoteMessage = async (
 // In real environment this should be game master specific secret
 const MOCK_SECRET = '123456';
 
-// Renamed from getTurnSalt to getShuffleSalt to match contract
-export const getShuffleSalt = async ({
-  gameId,
-  turn,
-  verifierAddress,
-  chainId,
-  gm,
-}: {
-  gameId: BigNumberish;
-  turn: BigNumberish;
-  verifierAddress: string;
-  chainId: BigNumberish;
-  gm: SignerIdentity | Wallet;
-}): Promise<BytesLike> => {
-  const domain = {
-    name: 'Rankify',
-    version: '1',
-    chainId: chainId,
-    verifyingContract: verifierAddress,
-  };
-
-  const types = {
-    ShuffleSalt: [
-      { name: 'gameId', type: 'uint256' },
-      { name: 'turn', type: 'uint256' },
-    ],
-  };
-
-  const value = {
-    gameId,
-    turn,
-  };
-
-  const signer = 'wallet' in gm ? gm.wallet : gm;
-  const signature = await signer._signTypedData(domain, types, value);
-  const salt = ethers.utils.hexZeroPad(ethers.utils.hexlify(ethers.utils.keccak256(signature)), 32);
-  return salt;
-};
-
-export const getPlayerVoteSalt = ({
+export const getPlayerVoteSalt = async ({
   gameId,
   turn,
   player,
   verifierAddress,
   chainId,
   gm,
+  size,
 }: {
   gameId: BigNumberish;
   turn: BigNumberish;
@@ -688,15 +652,17 @@ export const getPlayerVoteSalt = ({
   verifierAddress: string;
   chainId: BigNumberish;
   gm: SignerIdentity | Wallet;
+  size: number;
 }) => {
-  return getShuffleSalt({
+  return generateDeterministicPermutation({
     gameId,
     turn,
     verifierAddress,
     chainId,
     gm,
-  }).then(salt => {
-    return utils.solidityKeccak256(['address', 'bytes32'], [player, salt]);
+    size,
+  }).then(perm => {
+    return utils.solidityKeccak256(['address', 'uint256'], [player, perm.permutationCommitment]);
   });
 };
 
@@ -769,6 +735,7 @@ export const mockVote = async ({
   vote,
   verifierAddress,
   hre,
+  gameSize,
 }: {
   voter: SignerIdentity;
   gameId: BigNumberish;
@@ -777,6 +744,7 @@ export const mockVote = async ({
   vote: BigNumberish[];
   verifierAddress: string;
   hre: HardhatRuntimeEnvironment;
+  gameSize: number;
 }): Promise<MockVote> => {
   const chainId = await hre.getChainId();
 
@@ -787,6 +755,7 @@ export const mockVote = async ({
     verifierAddress,
     chainId,
     gm,
+    size: gameSize,
   });
 
   const ballot = {
@@ -917,6 +886,7 @@ export const mockVotes = async ({
         gm,
         verifierAddress,
         vote: playerVote,
+        gameSize: players.length,
       }),
     );
   }
@@ -1060,7 +1030,7 @@ export const mockProposalSecrets = async ({
     randomnessValue,
   };
 };
-
+const maxSize = 15;
 // Update mockProposals to use deterministic permutation
 export const mockProposals = async ({
   hre,
@@ -1078,79 +1048,106 @@ export const mockProposals = async ({
   verifierAddress: string;
   gm: Wallet;
   idlers?: number[];
-}): Promise<ProposalStruct> => {
+}): Promise<ProposalSubmission[]> => {
   const proposals: ProposalSubmission[] = [];
-  const commitments: bigint[] = [];
-  const randomnesses: bigint[] = [];
-  const permutedProposals: bigint[] = [];
 
-  // Generate deterministic permutation
-  const { permutation, permutationRandomness, permutationCommitment } = await generateDeterministicPermutation({
-    gameId,
-    turn,
-    verifierAddress,
-    chainId: await hre.getChainId(),
-    gm,
-    size: players.length,
-  });
-
-  // Fill up to 15 slots
-  for (let i = 0; i < 15; i++) {
-    if (i < players.length && (!idlers || !idlers.includes(i))) {
-      // Active player who is not idle
-      const proposalSecrets = await mockProposalSecrets({
+  for (let i = 0; i < maxSize; i++) {
+    let proposal: ProposalSubmission;
+    if (i < players.length && !idlers?.includes(i)) {
+      proposal = await mockProposalSecrets({
+        hre,
         gm,
         proposer: players[i],
         gameId,
         turn,
         verifierAddress,
-        hre,
       });
-      proposals.push(proposalSecrets);
-      commitments.push(BigInt(proposalSecrets.params.commitment.toString()));
-      randomnesses.push(proposalSecrets.randomnessValue);
-      permutedProposals.push(proposalSecrets.proposalValue);
     } else {
-      // Idle player or padding slot
-      const emptyProposal: ProposalSubmission = {
-        proposal: '',
+      proposal = {
         params: {
           gameId,
-          encryptedProposal: '',
-          commitment: '0x0',
+          encryptedProposal: '0x',
+          commitment: 0,
           proposer: ethers.constants.AddressZero,
           gmSignature: '0x',
           voterSignature: '0x',
         },
+        proposal: '',
         proposalValue: 0n,
         randomnessValue: 0n,
       };
-      proposals.push(emptyProposal);
-      commitments.push(0n);
-      randomnesses.push(0n);
-      permutedProposals.push(0n);
     }
+    proposals.push(proposal);
   }
 
-  // Generate proof inputs
-  const inputs = {
-    commitments,
-    permutedProposals,
-    permutationCommitment,
-    permutation,
-    randomnesses,
-    permutationRandomness,
-  };
+  return proposals;
+};
+
+export const mockProposalsIntegrity = async ({
+  hre,
+  players,
+  gameId,
+  turn,
+  verifierAddress,
+  gm,
+  idlers,
+  proposalSubmissionData,
+}: {
+  hre: HardhatRuntimeEnvironment;
+  players: SignerIdentity[];
+  gameId: BigNumberish;
+  turn: BigNumberish;
+  verifierAddress: string;
+  gm: Wallet;
+  idlers?: number[];
+  proposalSubmissionData?: ProposalSubmission[];
+}): Promise<ProposalsIntegrity> => {
+  const proposals =
+    proposalSubmissionData ||
+    (await mockProposals({
+      hre,
+      players,
+      gameId,
+      turn,
+      verifierAddress,
+      gm,
+      idlers,
+    }));
+
+  const inputs = await createInputs({
+    numActive: players.length,
+    proposals: proposals.map(proposal => proposal.proposalValue),
+    commitmentRandomnesses: proposals.map(proposal => proposal.randomnessValue),
+    gameId,
+    turn,
+    verifierAddress,
+    chainId: await hre.getChainId(),
+    gm,
+  });
+  console.log(
+    'proposal values',
+    proposals.map(proposal => proposal.proposalValue),
+  );
+  console.log('inputs', inputs);
 
   const circuit = await hre.zkit.getCircuit('ProposalsIntegrity15');
   const proof = await circuit.generateProof(inputs);
   const callData = await circuit.generateCalldata(proof);
 
+  // Apply permutation to proposals array
+  const permutedProposals = [...proposals];
+  for (let i = 0; i < maxSize; i++) {
+    if (i < players.length) {
+      permutedProposals[i] = proposals[inputs.permutation[i]];
+    }
+  }
+
   return {
-    proposals,
+    proposals: permutedProposals.map(proposal => proposal.proposal),
     a: callData[0],
     b: callData[1],
     c: callData[2],
+    permutation: inputs.permutation,
   };
 };
 
@@ -1187,16 +1184,9 @@ export const signJoiningGame = async (
   return { signature, hiddenSalt };
 };
 
-// https://datatracker.ietf.org/doc/html/rfc7919#appendix-A.1
-const ffdhe2048 = {
-  p: '0xFFFFFFFFFFFFFFFFADF85458A2BB4A9AAFDC5620273D3CF1D8B9C583CE2D3695A9E13641146433FBCC939DCE249B3EF97D2FE363630C75D8F681B202AEC4617AD3DF1ED5D5FD65612433F51F5F066ED0856365553DED1AF3B557135E7F57C935984F0C70E0E68B77E2A689DAF3EFE8721DF158A136ADE73530ACCA4F483A797ABC0AB182B324FB61D108A94BB2C8E3FBB96ADAB760D7F4681D4F42A3DE394DF4AE56EDE76372BB190B07A7C8EE0A6D709E02FCE1CDF7E2ECC03404CD28342F619172FE9CE98583FF8E4F1232EEF28183C3FE3B1B4C6FAD733BB5FCBC2EC22005C58EF1837D1683B2C6F34A26C1B2EFFA886B423861285C97FFFFFFFFFFFFFFFF',
-  g: 2,
-};
-
 export default {
   setupAddresses,
   setupEnvironment,
   addPlayerNameId,
   baseFee,
-  ffdhe2048,
 };

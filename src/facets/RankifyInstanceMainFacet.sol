@@ -45,6 +45,19 @@ contract RankifyInstanceMainFacet is
      *         - Emitting the game creation event
      */
     function createGame(LibRankify.NewGameParams memory params) private nonReentrant {
+        //TODO: add this back in start  game to verify commitment from game master
+        //  bytes32 digest = _hashTypedDataV4(
+        //     keccak256(
+        //         abi.encode(
+        //             keccak256(
+        //                 "AttestGameCreation(uint256 gameId,uint256 commitment)"
+        //             ),
+        //             params.gameId,
+        //             params.gmCommitment
+        //         )
+        //     )
+        // );
+
         LibRankify.newGame(params);
         LibCoinVending.ConfigPosition memory emptyConfig;
         LibCoinVending.configure(bytes32(params.gameId), emptyConfig);
@@ -171,14 +184,17 @@ contract RankifyInstanceMainFacet is
     /**
      * @dev Starts a game with the provided game ID early. `gameId` is the ID of the game.
      * @param gameId The ID of the game.
+     * @param permutationCommitment The commitment to the permutation issued by the game master.
      * @notice This function:
      *         - Calls the `enforceGameExists` function.
      *         - Calls the `startGameEarly` function.
      *         - Emits a _GameStarted_ event.
      */
-    function startGame(uint256 gameId) public {
+    function startGame(uint256 gameId, uint256 permutationCommitment) public {
         gameId.enforceGameExists();
         gameId.startGameEarly();
+        LibRankify.GameState storage game = gameId.getGameState();
+        game.permutationCommitment = permutationCommitment;
         emit GameStarted(gameId);
     }
 
