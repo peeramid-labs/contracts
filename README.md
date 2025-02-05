@@ -2,9 +2,6 @@
 
 Smart contract infrastructure for [rankify.it](https://rankify.it) - A platform for building bottom-up self-organized organizations with use of autonomous competence identification and continuous voting proposing protocols .
 
-## Overview
-
-Rankify Contracts provide the foundation for creating and managing Meritocratic Autonomous Organizations (MAO) using a  tournament system for autonomous competence identification. The system leverages the Diamond pattern for upgradeable smart contracts and integrates with Ethereum Distribution System toi deploy governance tokens compatible with governance frameworks like Aragon OSx or OpenZeppelin.
 
 ## Architecture
 

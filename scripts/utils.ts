@@ -155,7 +155,7 @@ export const setupAddresses =
     const { deployer, owner } = await getNamedAccounts();
 
     const createRandomIdentityAndSeedEth = async (name: string) => {
-      let newWallet = await _eth.Wallet.createRandom();
+      let newWallet = new _eth.Wallet(_eth.utils.solidityKeccak256(['string'], [name]));
       newWallet = newWallet.connect(_eth.provider);
       await _player1.sendTransaction({
         to: newWallet.address,
