@@ -67,6 +67,17 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
         uint256 commitment,
         string proposalEncryptedByGM
     );
+
+    /**
+     * @dev Represents a proposal for a game.
+     * @param gameId The ID of the game
+     * @param encryptedProposal The encrypted proposal, may be treated as simply restricted URI.
+     * @param commitment The commitment to the proposal
+     * @param proposer The address of the proposer
+     * @param gmSignature The ECDSA signature of the game master
+     * @param voterSignature The ECDSA signature of the voter
+     * @notice gmSignature and voterSignature are ECDSA signatures for verification
+     */
     struct ProposalParams {
         uint256 gameId;
         string encryptedProposal;
@@ -78,6 +89,15 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
 
     event VoteSubmitted(uint256 indexed gameId, uint256 indexed turn, address indexed player, string votesHidden);
 
+    /**
+     * @dev Represents a batch of proposal reveals for a game.
+     * @param proposals Array of revealed proposals
+     * @param a ZK proof components
+     * @param b ZK proof components
+     * @param c ZK proof components
+     * @param permutationCommitment The commitment to the permutation
+     * @notice permutationCommitment must be poseidon(sponge(nextTurnPermutation), nullifier). For sponge implementation see poseidonSpongeT3
+     */
     struct BatchProposalReveal {
         string[] proposals; // Array of revealed proposals
         uint[2] a; // ZK proof components
@@ -171,12 +191,9 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
     }
 
     /**
-     * @dev Submits a proposal for a game. `proposalData` is the proposal data.
-     *
-     * Requirements:
-     *
-     * - The game with `proposalData.gameId` must exist.
-     * - The caller must be a game master of the game with `proposalData.gameId`.
+     * @dev submits a proposal for a game. `params` is the proposal data.
+     * @param params ProposalParams
+     * @notice this can be submitted by either player or game master, params contain ECDSA signatures for verification
      */
     function submitProposal(ProposalParams memory params) public {
         params.gameId.enforceGameExists();
@@ -247,6 +264,14 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
         }
     }
 
+    /**
+     * @dev Hashes the inputs using Poseidon sponge function.
+     * @param inputs Array of inputs to hash
+     * @param size Size of the inputs array
+     * @param poseidon5 Address of Poseidon5 contract
+     * @param poseidon6 Address of Poseidon6 contract
+     * @return hash3 The final hash
+     */
     function poseidonSpongeT3(
         uint256[] memory inputs,
         uint256 size,
@@ -314,12 +339,12 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
     }
 
     /**
-     * @dev Handles the end of the turn for a game with the provided game ID. `gameId` is the ID of the game. `votes` is the array of votes. `newProposals` is the array of new proposals. `permutation` is the permutation of the players. `shuffleSalt` is the shuffle salt.
      *
-     * Modifies:
-     *
-     * - Sets the ongoing proposals of the game with `gameId` to `newProposals`.
-     * - Increments the number of ongoing proposals of the game with `gameId` by the number of `newProposals`.
+     * @param gameId Id of the game
+     * @param votes votes revealed for the previous turn
+     * @param newProposals The new proposals for the current turn, see BatchProposalReveal
+     * @param permutation The permutation of the players
+     * @param shuffleSalt The shuffle salt
      */
     function endTurn(
         uint256 gameId,

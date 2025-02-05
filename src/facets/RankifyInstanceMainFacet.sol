@@ -433,6 +433,11 @@ contract RankifyInstanceMainFacet is
         emit RankTokenExited(msg.sender, rankId, amount, _toMint);
     }
 
+    /**
+     * @dev Returns the winner of the game with the specified ID
+     * @param gameId The ID of the game
+     * @return address The winner of the game
+     */
     function gameWinner(uint256 gameId) public view returns (address) {
         return gameId.getGameState().winner;
     }
