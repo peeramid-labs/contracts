@@ -3,6 +3,42 @@ import { BigNumberish, Wallet, ethers, utils } from 'ethers';
 import { ProposalSubmission, SignerIdentity } from './utils';
 import { PrivateProposalsIntegrity15Groth16, ProofProposalsIntegrity15Groth16 } from 'zk';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
+import * as fs from 'fs';
+import * as path from 'path';
+
+// Runtime cache
+const cachedProofs = new Map<string, ProofProposalsIntegrity15Groth16>();
+
+// Persistent cache helpers
+const CACHE_DIR = '.zkproofs-cache';
+
+function getCacheFilePath(key: string): string {
+  if (!fs.existsSync(CACHE_DIR)) {
+    fs.mkdirSync(CACHE_DIR, { recursive: true });
+  }
+  return path.join(CACHE_DIR, `${key}.json`);
+}
+
+function saveToCache(key: string, proof: ProofProposalsIntegrity15Groth16) {
+  try {
+    fs.writeFileSync(getCacheFilePath(key), JSON.stringify(proof));
+  } catch (error) {
+    console.warn('Failed to save proof to cache:', error);
+  }
+}
+
+function loadFromCache(key: string): ProofProposalsIntegrity15Groth16 | null {
+  try {
+    const filePath = getCacheFilePath(key);
+    if (fs.existsSync(filePath)) {
+      return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    }
+  } catch (error) {
+    console.warn('Failed to load proof from cache:', error);
+  }
+  return null;
+}
+
 // Helper to create test inputs
 export const createInputs = async ({
   numActive,
@@ -94,7 +130,7 @@ const getSeed = async ({
 
   return BigInt(seed);
 };
-const cachedProofs = new Map<string, ProofProposalsIntegrity15Groth16>();
+
 export const generateEndTurnIntegrity = async ({
   gameId,
   turn,
@@ -146,10 +182,22 @@ export const generateEndTurnIntegrity = async ({
 
   const circuit = await hre.zkit.getCircuit('ProposalsIntegrity15');
   const inputsKey = ethers.utils.solidityKeccak256(['string'], [JSON.stringify(inputs)]);
+
+  // Check runtime cache first
   if (!cachedProofs.has(inputsKey)) {
-    const proof = await circuit.generateProof(inputs);
-    cachedProofs.set(inputsKey, proof);
+    // Check persistent cache
+    const persistentProof = loadFromCache(inputsKey);
+    if (persistentProof) {
+      cachedProofs.set(inputsKey, persistentProof);
+    } else {
+      // Generate new proof
+      const proof = await circuit.generateProof(inputs);
+      cachedProofs.set(inputsKey, proof);
+      // Save to persistent cache
+      saveToCache(inputsKey, proof);
+    }
   }
+
   const proof = cachedProofs.get(inputsKey);
   if (!proof) {
     throw new Error('Proof not found');
