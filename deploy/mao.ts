@@ -11,6 +11,7 @@ import {
   RANKIFY_INSTANCE_CONTRACT_VERSION,
   RInstance_MIN_PLAYERS,
 } from '../playbook/utils';
+import { poseidonContract } from 'circomlibjs';
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployments, getNamedAccounts } = hre;
@@ -172,8 +173,24 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     log('GovernanceToken already registered in CodeIndex');
   }
 
+  const pc = poseidonContract;
+  const ph5 = await deploy('Poseidon5', {
+    from: deployer,
+    contract: { abi: pc.generateABI(5), bytecode: pc.createCode(5) },
+  });
+
+  const ph6 = await deploy('Poseidon6', {
+    from: deployer,
+    contract: { abi: pc.generateABI(6), bytecode: pc.createCode(6) },
+  });
+
+  const ph2 = await deploy('Poseidon2', {
+    from: deployer,
+    contract: { abi: pc.generateABI(2), bytecode: pc.createCode(2) },
+  });
+
   const rankifyToken = await deployments.get('Rankify');
-  const proposalIntegrity18Groth16VerifierDeployment = await deployments.get('ProposalsIntegrity18Groth16Verifier');
+  const proposalIntegrity18Groth16VerifierDeployment = await deployments.get('ProposalsIntegrity15Groth16Verifier');
   const result = await deploy('MAODistribution', {
     from: deployer,
     skipIfAlreadyDeployed: true,
@@ -181,7 +198,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       _trustedForwarder,
       rankifyToken.address,
       DAO,
-      proposalIntegrity18Groth16VerifierDeployment.address,
+      [proposalIntegrity18Groth16VerifierDeployment.address, ph5.address, ph6.address, ph2.address],
       rankTokenCodeId,
       arguableVotingTournamentCodeId,
       accessManagerId,

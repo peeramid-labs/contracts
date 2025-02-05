@@ -14,6 +14,19 @@ import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import "../vendor/diamond/libraries/LibDiamond.sol";
 import {IErrors} from "../interfaces/IErrors.sol";
 import {ProposalsIntegrity15Groth16Verifier} from "../verifiers/ProposalsIntegrity15Groth16Verifier.sol";
+
+interface IPoseidon5 {
+    function poseidon(bytes32[5] memory inputs) external view returns (bytes32);
+}
+
+interface IPoseidon6 {
+    function poseidon(bytes32[6] memory inputs) external view returns (bytes32);
+}
+
+interface IPoseidon2 {
+    function poseidon(bytes32[2] memory inputs) external view returns (bytes32);
+}
+
 /**
  * @title RankifyInstanceGameMastersFacet
  * @notice Facet handling game master functionality for Rankify instances
@@ -21,7 +34,6 @@ import {ProposalsIntegrity15Groth16Verifier} from "../verifiers/ProposalsIntegri
  * @author Peeramid Labs, 2024
  */
 contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
-
     // This is the precompiled value of Poseidon2(0,0)
     uint256 private constant zeroPoseidon2 =
         14744269619966411208579211824598458697587494354926760081771325075741142829156;
@@ -71,6 +83,7 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
         uint[2] a; // ZK proof components
         uint[2][2] b;
         uint[2] c;
+        uint256 permutationCommitment;
     }
 
     /**
@@ -234,6 +247,46 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
         }
     }
 
+    function poseidonSpongeT3(
+        uint256[] memory inputs,
+        uint256 size,
+        address poseidon5,
+        address poseidon6
+    ) internal view returns (bytes32) {
+        // console.log("begin hashing poseidon5");
+        //verify that permutation is correct
+        bytes32 hash1 = IPoseidon5(poseidon5).poseidon(
+            [
+                bytes32(size > 0 ? inputs[0] : 0),
+                bytes32(size > 1 ? inputs[1] : 1),
+                bytes32(size > 2 ? inputs[2] : 2),
+                bytes32(size > 3 ? inputs[3] : 3),
+                bytes32(size > 4 ? inputs[4] : 4)
+            ]
+        );
+        bytes32 hash2 = IPoseidon6(poseidon6).poseidon(
+            [
+                hash1,
+                bytes32(size > 5 ? inputs[5] : 5),
+                bytes32(size > 6 ? inputs[6] : 6),
+                bytes32(size > 7 ? inputs[7] : 7),
+                bytes32(size > 8 ? inputs[8] : 8),
+                bytes32(size > 9 ? inputs[9] : 9)
+            ]
+        );
+        bytes32 hash3 = IPoseidon6(poseidon6).poseidon(
+            [
+                hash2,
+                bytes32(size > 10 ? inputs[10] : 10),
+                bytes32(size > 11 ? inputs[11] : 11),
+                bytes32(size > 12 ? inputs[12] : 12),
+                bytes32(size > 13 ? inputs[13] : 13),
+                bytes32(size > 14 ? inputs[14] : 14)
+            ]
+        );
+        return hash3;
+    }
+
     /**
      * @dev Handles the next turn of a game with the provided game ID. `gameId` is the ID of the game. `newProposals` is the array of new proposals.
      *
@@ -260,11 +313,19 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
         _afterNextTurn(gameId, newProposals);
     }
 
+    /**
+     * @dev Handles the end of the turn for a game with the provided game ID. `gameId` is the ID of the game. `votes` is the array of votes. `newProposals` is the array of new proposals. `permutation` is the permutation of the players. `shuffleSalt` is the shuffle salt.
+     *
+     * Modifies:
+     *
+     * - Sets the ongoing proposals of the game with `gameId` to `newProposals`.
+     * - Increments the number of ongoing proposals of the game with `gameId` by the number of `newProposals`.
+     */
     function endTurn(
         uint256 gameId,
         uint256[][] memory votes,
         BatchProposalReveal memory newProposals,
-        uint256[] memory proposerIndices,
+        uint256[] memory permutation,
         uint256 shuffleSalt
     ) public {
         gameId.enforceIsGM(msg.sender);
@@ -276,69 +337,77 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
 
         if (turn != 1) {
             // 1. Handle previous turn's voting and scoring
-            uint256[][] memory votesSorted = new uint256[][](players.length);
+            {
+                uint256[][] memory votesSorted = new uint256[][](players.length);
 
-            // Verify vote integrity
-            for (uint256 player = 0; player < players.length; ++player) {
-                votesSorted[player] = new uint256[](players.length);
-                bytes32 ballotHash = game.ballotHashes[players[player]];
-                bytes32 playerSalt = keccak256(abi.encodePacked(players[player], shuffleSalt));
-                bytes32 ballotHashFromVotes = keccak256(abi.encodePacked(votes[player], playerSalt));
-                if (game.playerVoted[players[player]]) {
-                    require(
-                        ballotHash == ballotHashFromVotes,
-                        ballotIntegrityCheckFailed(ballotHash, ballotHashFromVotes)
-                    );
-                }
-            }
-
-            // Verify proposer indices for previous turn's proposals
-            bool[] memory used = new bool[](players.length);
-            for (uint256 i = 0; i < proposerIndices.length; i++) {
-                require(proposerIndices[i] < players.length, "Invalid proposer index");
-                require(!used[proposerIndices[i]], "Duplicate proposer index");
-                used[proposerIndices[i]] = true;
-            }
-
-            // Sort votes according to previous turn's proposer indices
-            for (uint256 votee = 0; votee < players.length; ++votee) {
-                // proposerIndices is the index of the player in the previous voting round
-                uint256 voteesColumn = proposerIndices[votee];
-                // We slice the votes array to get the votes for the current player
-                if (voteesColumn < players.length) {
-                    // if index is above length of players array, it means the player did not propose
-                    for (uint256 voter = 0; voter < players.length; voter++) {
-                        votesSorted[voter][votee] = votes[voter][voteesColumn];
+                // Verify vote integrity
+                for (uint256 player = 0; player < players.length; ++player) {
+                    votesSorted[player] = new uint256[](players.length);
+                    bytes32 ballotHash = game.ballotHashes[players[player]];
+                    bytes32 playerSalt = keccak256(abi.encodePacked(players[player], shuffleSalt));
+                    bytes32 ballotHashFromVotes = keccak256(abi.encodePacked(votes[player], playerSalt));
+                    // console.log("playerSalt", uint256(playerSalt));
+                    // console.log("shuffleSalt", uint256(shuffleSalt));
+                    // console.log("ballotHashFromVotes", uint256(ballotHashFromVotes));
+                    if (game.playerVoted[players[player]]) {
+                        require(
+                            ballotHash == ballotHashFromVotes,
+                            ballotIntegrityCheckFailed(ballotHash, ballotHashFromVotes)
+                        );
                     }
                 }
-            }
 
-            // Calculate scores for previous turn's proposals
-            (, uint256[] memory roundScores) = gameId.calculateScoresQuadratic(votesSorted, proposerIndices);
-            for (uint256 i = 0; i < players.length; ++i) {
-                string memory proposal = game.ongoingProposals[proposerIndices[i]];
-                emit ProposalScore(gameId, turn, proposal, proposal, roundScores[i]);
+                // Verify proposer indices for previous turn's proposals
+                bool[] memory used = new bool[](players.length);
+                for (uint256 i = 0; i < players.length; i++) {
+                    require(permutation[i] < players.length, "Invalid proposer index");
+                    require(!used[permutation[i]], "Duplicate proposer index");
+                    used[permutation[i]] = true;
+                }
+
+                // Sort votes according to previous turn's proposer indices
+                for (uint256 proposer = 0; proposer < players.length; ++proposer) {
+                    // permutation is the index where players proposal was shuffled in to
+                    // uint256 proposalCol = permutation[proposer];
+                    // We slice the votes array to get the votes for the current player
+
+                    for (uint256 candidate = 0; candidate < players.length; candidate++) {
+                        votesSorted[proposer][permutation[candidate]] = votes[proposer][candidate];
+                    }
+                    assert(votesSorted[proposer][proposer] == 0); // did not vote for himself
+                }
+
+                // Calculate scores for previous turn's proposals
+                (, uint256[] memory roundScores) = gameId.calculateScores(votesSorted);
+
+                string[] memory proposals = new string[](players.length);
+                for (uint256 i = 0; i < players.length; ++i) {
+                    proposals[i] = game.ongoingProposals[permutation[i]];
+                }
+                for (uint256 i = 0; i < players.length; ++i) {
+                    // console.log("permutation[i]", permutation[i]);
+                    // console.log("proposal[i](sorted)", game.ongoingProposals[i]);
+                    string memory proposal = proposals[i];
+                    emit ProposalScore(gameId, turn, proposal, proposal, roundScores[i]);
+                }
             }
         }
+        LibRankify.InstanceState storage instanceState = LibRankify.instanceState();
         {
             uint256[32] memory PropIntegrityPublicInputs;
 
             require(players.length <= 15, "Too many players, current ZKP circuit only supports 15 players");
             require(newProposals.proposals.length == 15, "Invalid proposal count");
-            require(proposerIndices.length == 15, "Invalid permutation length");
 
             // Fill public inputs with commitments
             {
                 for (uint256 i = 0; i < players.length; ++i) {
                     uint256 commitment = game.proposalCommitment[players[i]];
-                    // console.log("commitment:", commitment);
                     PropIntegrityPublicInputs[i] = commitment != 0 ? commitment : zeroPoseidon2;
-                    console.log("PropIntegrityPublicInputs:", PropIntegrityPublicInputs[i]);
                 }
                 // Fill remaining slots with zero hashes
                 for (uint256 i = players.length; i < 15; ++i) {
                     PropIntegrityPublicInputs[i] = zeroPoseidon2;
-                    console.log("PropIntegrityPublicInputs:", PropIntegrityPublicInputs[i]);
                 }
             }
             bytes32 emptyProposalHash = keccak256(abi.encodePacked(""));
@@ -350,13 +419,10 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
                 } else {
                     PropIntegrityPublicInputs[i] = 0;
                 }
-                console.log("PropIntegrityPublicInputs:", PropIntegrityPublicInputs[i]);
             }
-            PropIntegrityPublicInputs[30] = game.permutationCommitment;
+
+            PropIntegrityPublicInputs[30] = newProposals.permutationCommitment;
             PropIntegrityPublicInputs[31] = players.length;
-            LibRankify.InstanceState storage instanceState = LibRankify.instanceState();
-            console.log("PropIntegrityPublicInputs[30]:", PropIntegrityPublicInputs[30]);
-            console.log("PropIntegrityPublicInputs[31]:", PropIntegrityPublicInputs[31]);
 
             // 2. Handle current turn's proposal reveals with single proof
             require(
@@ -369,10 +435,26 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
                 "Invalid batch proposal reveal proof"
             );
         }
+        {
+            bytes32 hash4 = IPoseidon2(instanceState.commonParams.poseidon2).poseidon(
+                [
+                    poseidonSpongeT3(
+                        permutation,
+                        players.length,
+                        instanceState.commonParams.poseidon5,
+                        instanceState.commonParams.poseidon6
+                    ),
+                    bytes32(shuffleSalt)
+                ]
+            );
+            // console.log("hash4", uint256(hash4));
+            // console.log("comparing hashes", shuffleSalt, game.permutationCommitment);
+            require(hash4 == bytes32(game.permutationCommitment), "Invalid permutation commitment");
+        }
 
         // Emit event and clean up
         (, uint256[] memory scores) = gameId.getScores();
-        emit TurnEnded(gameId, gameId.getTurn(), players, scores, newProposals.proposals, proposerIndices, votes);
+        emit TurnEnded(gameId, gameId.getTurn(), players, scores, newProposals.proposals, permutation, votes);
 
         // Clean up for next turn
         for (uint256 i = 0; i < players.length; ++i) {
@@ -386,7 +468,7 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
         game.numVotesThisTurn = 0;
         game.numPrevProposals = game.numCommitments;
         game.numCommitments = 0;
-        game.permutationCommitment = uint256(shuffleSalt);
+        game.permutationCommitment = uint256(newProposals.permutationCommitment);
         _nextTurn(gameId, newProposals.proposals);
     }
 }

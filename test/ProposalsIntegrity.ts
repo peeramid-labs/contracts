@@ -8,8 +8,6 @@ import { ProposalsIntegrity15 } from 'zk';
 import { createInputs } from '../scripts/proofs';
 import { ethers } from 'hardhat';
 
-// import { Multiplier } from '@zkit'; // zktype circuit-object
-
 describe('ProposalsIntegrity', () => {
   let poseidon: any;
   let circuit: ProposalsIntegrity15;

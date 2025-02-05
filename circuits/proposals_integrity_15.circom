@@ -24,10 +24,10 @@ template ProposalIntegrity() {
 // Verify multiple proposals in a single proof
 template ProposalsIntegrity15() {
     // Public inputs
-    signal input numActive;              // Number of active players
     signal input commitments[15];        // Ongoing turn commitments Poseidon(proposal, randomness)
     signal input permutedProposals[15];  // proposals that are revealed in the current turn.
     signal input permutationCommitment;  // Commitment to the shuffling order hash(permutation[], permutationRandomness)
+    signal input numActive;              // Number of active players
 
     // Private inputs for each proposal (arrays of size 16)
     signal input permutation[15];       // Permutation of the proposals that are revealed in the current turn
@@ -64,11 +64,8 @@ template ProposalsIntegrity15() {
         isActiveSlot[i].in[1] <== numActive;
     }
 
-    // Create and verify permutation commitment
-    component permutationHasher = Poseidon(16);
 
     for (var i = 0; i < 15; i++) {
-        permutationHasher.inputs[i] <== permutation[i];
         partialSums[i][0] <== 0;
         tempProposals[i][0] <== 0;
         rangeChecks[i] = LessThan(8);
@@ -78,8 +75,8 @@ template ProposalsIntegrity15() {
 
         for (var j = 0; j < 15; j++) {
             isEqualPermutation[i][j] = IsEqual();
-            isEqualPermutation[i][j].in[0] <== permutation[j];
-            isEqualPermutation[i][j].in[1] <== i;
+            isEqualPermutation[i][j].in[0] <== permutation[i];
+            isEqualPermutation[i][j].in[1] <== j;
 
             tempProposals[i][j + 1] <== tempProposals[i][j] + isEqualPermutation[i][j].out * permutedProposals[j];
             partialSums[i][j + 1] <== partialSums[i][j] + isEqualPermutation[i][j].out;
@@ -94,8 +91,36 @@ template ProposalsIntegrity15() {
         proposals[i] <== tempProposals[i][15];
     }
 
-    permutationHasher.inputs[15] <== permutationRandomness;
-    permutationCommitment === permutationHasher.out;
+    // Create and verify permutation commitment
+    component permutationHasher1 = Poseidon(5);
+    component permutationHasher2 = Poseidon(6);
+    component permutationHasher3 = Poseidon(6);
+    component permutationHasher4 = Poseidon(2);
+
+    permutationHasher1.inputs[0] <== permutation[0];
+    permutationHasher1.inputs[1] <== permutation[1];
+    permutationHasher1.inputs[2] <== permutation[2];
+    permutationHasher1.inputs[3] <== permutation[3];
+    permutationHasher1.inputs[4] <== permutation[4];
+
+    permutationHasher2.inputs[0] <== permutationHasher1.out;
+    permutationHasher2.inputs[1] <== permutation[5];
+    permutationHasher2.inputs[2] <== permutation[6];
+    permutationHasher2.inputs[3] <== permutation[7];
+    permutationHasher2.inputs[4] <== permutation[8];
+    permutationHasher2.inputs[5] <== permutation[9];
+
+    permutationHasher3.inputs[0] <== permutationHasher2.out;
+    permutationHasher3.inputs[1] <== permutation[10];
+    permutationHasher3.inputs[2] <== permutation[11];
+    permutationHasher3.inputs[3] <== permutation[12];
+    permutationHasher3.inputs[4] <== permutation[13];
+    permutationHasher3.inputs[5] <== permutation[14];
+
+    permutationHasher4.inputs[0] <== permutationHasher3.out;
+    permutationHasher4.inputs[1] <== permutationRandomness;
+
+    permutationCommitment === permutationHasher4.out;
 
      // Verify each proposal
     for (var i = 0; i < 15; i++) {
@@ -108,4 +133,4 @@ template ProposalsIntegrity15() {
 
 }
 
-component main { public [ numActive, commitments, permutedProposals, permutationCommitment ] } = ProposalsIntegrity15();
+component main { public [ commitments, permutedProposals, permutationCommitment, numActive ] } = ProposalsIntegrity15();

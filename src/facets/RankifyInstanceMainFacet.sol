@@ -432,4 +432,8 @@ contract RankifyInstanceMainFacet is
         tokenContract.mint(msg.sender, _toMint);
         emit RankTokenExited(msg.sender, rankId, amount, _toMint);
     }
+
+    function gameWinner(uint256 gameId) public view returns (address) {
+        return gameId.getGameState().winner;
+    }
 }

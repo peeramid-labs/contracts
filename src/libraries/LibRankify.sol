@@ -52,6 +52,9 @@ library LibRankify {
         uint256 minimumParticipantsInCircle;
         address derivedToken;
         address proposalIntegrityVerifier;
+        address poseidon5;
+        address poseidon6;
+        address poseidon2;
     }
 
 
@@ -79,10 +82,10 @@ library LibRankify {
         uint256 permutationCommitment;
         LibQuadraticVoting.qVotingStruct voting;
         mapping(uint256 => string) ongoingProposals; //Previous Turn Proposals (These are being voted on)
-        mapping(address => uint256) proposalCommitment;  // Changed from bytes32 to uint256
+        mapping(address => uint256) proposalCommitment;
         mapping(address => bytes32) ballotHashes;
         mapping(address => bool) playerVoted;
-        mapping(uint256 => bool) usedNullifierHashes;  // Track used nullifierHashes
+        address winner;
     }
 
     /**
@@ -446,6 +449,7 @@ library LibRankify {
             rankTokenContract.burn(leaderboard[0], game.rank, 1);
         }
         rankTokenContract.safeTransferFrom(address(this), leaderboard[0], game.rank + 1, 1, "");
+        game.winner = leaderboard[0];
     }
 
     /**
@@ -530,10 +534,9 @@ library LibRankify {
      * - An array of updated scores for each player.
      * - An array of scores calculated for the current round.
      */
-    function calculateScoresQuadratic(
+    function calculateScores(
         uint256 gameId,
-        uint256[][] memory votesRevealed,
-        uint256[] memory proposerIndices
+        uint256[][] memory votesRevealed
     ) internal returns (uint256[] memory, uint256[] memory) {
         address[] memory players = gameId.getPlayers();
         uint256[] memory scores = new uint256[](players.length);
@@ -543,19 +546,17 @@ library LibRankify {
         for (uint256 i = 0; i < players.length; ++i) {
             playerVoted[i] = gameId._getState().isActive[players[i]];
         }
-        uint256[] memory roundScores = game.voting.computeScoresByVPIndex(
-            votesRevealed,
-            playerVoted,
-            proposerIndices.length
-        );
+        uint256[] memory roundScores = game.voting.tallyVotes(votesRevealed, playerVoted);
         for (uint256 playerIdx = 0; playerIdx < players.length; playerIdx++) {
             //for each player
-            if (proposerIndices[playerIdx] < players.length) {
+            if (game.proposalCommitment[players[playerIdx]] != 0) {
                 //if player proposal exists
                 scores[playerIdx] = gameId.getScore(players[playerIdx]) + roundScores[playerIdx];
                 gameId.setScore(players[playerIdx], scores[playerIdx]);
             } else {
                 //Player did not propose
+                // TODO: implement tests for this
+                // require(roundScores[playerIdx] == 0, "LibRankify->calculateScores: player got votes without proposing");
             }
         }
         return (scores, roundScores);

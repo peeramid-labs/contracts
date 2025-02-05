@@ -10,6 +10,7 @@ import {
   MAODistribution,
   DAODistributor,
   ArguableVotingTournament,
+  RankifyInstanceGameMastersFacet,
 } from '../types';
 import { BigNumber, BigNumberish, BytesLike, TypedDataField, Wallet, ethers, utils } from 'ethers';
 // @ts-ignore
@@ -20,8 +21,7 @@ import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { getDiscussionForTurn } from './instance/discussionTopics';
 import { buildPoseidon } from 'circomlibjs';
 import { sharedSigner } from '../scripts/sharedKey';
-import { CalldataProposalsIntegrity15Groth16, PrivateProposalsIntegrity15Groth16 } from 'zk';
-import { createInputs, generateDeterministicPermutation } from '../scripts/proofs';
+import { generateDeterministicPermutation, generateEndTurnIntegrity } from '../scripts/proofs';
 
 export const RANKIFY_INSTANCE_CONTRACT_NAME = 'RANKIFY_INSTANCE_NAME';
 export const RANKIFY_INSTANCE_CONTRACT_VERSION = '0.0.1';
@@ -516,11 +516,10 @@ export interface ProposalSubmission {
 }
 
 export interface ProposalsIntegrity {
-  proposals: string[];
-  a: CalldataProposalsIntegrity15Groth16[0];
-  b: CalldataProposalsIntegrity15Groth16[1];
-  c: CalldataProposalsIntegrity15Groth16[2];
+  newProposals: RankifyInstanceGameMastersFacet.BatchProposalRevealStruct;
   permutation: BigNumberish[];
+  proposalsNotPermuted: string[];
+  nullifier: bigint;
 }
 
 interface VoteMessage {
@@ -651,18 +650,18 @@ export const getPlayerVoteSalt = async ({
   player: string;
   verifierAddress: string;
   chainId: BigNumberish;
-  gm: SignerIdentity | Wallet;
+  gm: Wallet;
   size: number;
 }) => {
   return generateDeterministicPermutation({
     gameId,
-    turn,
+    turn: Number(turn) - 1,
     verifierAddress,
     chainId,
     gm,
     size,
   }).then(perm => {
-    return utils.solidityKeccak256(['address', 'uint256'], [player, perm.permutationCommitment]);
+    return utils.solidityKeccak256(['address', 'uint256'], [player, perm.secret]);
   });
 };
 
@@ -673,7 +672,7 @@ async function signVote(
   voter: string,
   gameId: BigNumberish,
   sealedBallotId: string,
-  signer: SignerIdentity,
+  signer: Wallet,
   ballotHash: string,
   isGM: boolean,
 ): Promise<string> {
@@ -714,7 +713,7 @@ async function signVote(
         ballotHash: ballotHash,
       };
 
-  return signer.wallet._signTypedData(domain, types, value);
+  return signer._signTypedData(domain, types, value);
 }
 export interface MockVote {
   vote: BigNumberish[];
@@ -727,7 +726,7 @@ export interface MockVote {
   gmSignature: string;
   voterSignature: string;
 }
-export const mockVote = async ({
+export const attestVote = async ({
   voter,
   gm,
   gameId,
@@ -740,7 +739,7 @@ export const mockVote = async ({
   voter: SignerIdentity;
   gameId: BigNumberish;
   turn: BigNumberish;
-  gm: SignerIdentity;
+  gm: Wallet;
   vote: BigNumberish[];
   verifierAddress: string;
   hre: HardhatRuntimeEnvironment;
@@ -780,7 +779,7 @@ export const mockVote = async ({
     voter.wallet.address,
     gameId,
     ballotId,
-    voter,
+    voter.wallet,
     ballotHash,
     false,
   );
@@ -830,11 +829,20 @@ export const mockVotes = async ({
   hre: HardhatRuntimeEnvironment;
   gameId: BigNumberish;
   turn: BigNumberish;
-  gm: SignerIdentity;
+  gm: Wallet;
   verifierAddress: string;
   players: [SignerIdentity, SignerIdentity, ...SignerIdentity[]];
   distribution: 'ftw' | 'semiUniform' | 'equal' | 'zeros';
 }): Promise<MockVote[]> => {
+  const chainId = await hre.getChainId();
+  const { permutation } = await generateDeterministicPermutation({
+    gameId,
+    turn: Number(turn) - 1,
+    verifierAddress,
+    chainId,
+    gm,
+    size: players.length,
+  });
   const votes: MockVote[] = [];
   for (let k = 0; k < players.length; k++) {
     let creditsLeft = RInstance_VOTE_CREDITS;
@@ -843,7 +851,9 @@ export const mockVotes = async ({
       playerVote = players.map(() => 0);
     }
     if (distribution == 'ftw') {
-      playerVote = players.map((proposer, idx) => {
+      //   this is on smart contract -> votesSorted[proposer][permutation[candidate]] = votes[proposer][candidate];
+      //   We need to prepare votes to be permuted so that sorting produces winner at minimal index k (skipping voting for himself)
+      const votesToPermute = players.map((proposer, idx) => {
         if (k !== idx) {
           const voteWeight = Math.floor(Math.sqrt(creditsLeft));
           creditsLeft -= voteWeight * voteWeight;
@@ -851,6 +861,12 @@ export const mockVotes = async ({
         } else {
           return 0;
         }
+      });
+      // now apply permutation to votesToPermute so that
+      // on smart contract -> votesSorted[proposer][permutation[candidate]] = votesPermuted[proposer][candidate];
+      // form [3,2,1,0,0] (skipping K==player)
+      playerVote = votesToPermute.map((vote, idx) => {
+        return votesToPermute[permutation[idx]];
       });
     } else if (distribution == 'semiUniform') {
       const votesToDistribute = players.map(() => {
@@ -862,23 +878,27 @@ export const mockVotes = async ({
       do {
         votesDistributed = shuffle(votesToDistribute);
       } while (votesDistributed[k] !== 0);
-      playerVote = [...votesDistributed];
+      playerVote = votesDistributed.map((vote, idx) => {
+        return votesDistributed[permutation[idx]];
+      });
     } else if (distribution == 'equal') {
       const lowSide = k >= players.length / 2 ? false : true;
       let _votes = players.map((proposer, idx) => {
         const voteWeight = Math.floor(Math.sqrt(creditsLeft));
-        if (players.length % 2 !== 0 && k !== Math.floor(players.length / 2)) {
-          //Just skipp odd voter
+        if (players.length % 2 !== 0 && permutation[k] !== Math.floor(players.length / 2)) {
+          //Just skip odd voter
           creditsLeft -= voteWeight * voteWeight;
           return voteWeight;
         } else return 0;
       });
-      playerVote = lowSide ? [..._votes.reverse()] : [..._votes];
-      console.assert(playerVote[k] == 0);
+      playerVote = lowSide
+        ? [..._votes.reverse().map((vote, idx) => _votes[permutation[idx]])]
+        : [..._votes.map((vote, idx) => _votes[permutation[idx]])];
+      console.assert(playerVote[permutation[k]] == 0);
     }
 
     votes.push(
-      await mockVote({
+      await attestVote({
         hre,
         voter: players[k],
         gameId,
@@ -947,6 +967,16 @@ async function signProposal(
   return typedDataHash;
 }
 
+declare global {
+  interface BigInt {
+    toJSON(): string;
+  }
+}
+
+BigInt.prototype.toJSON = function () {
+  return this.toString();
+};
+
 export const mockProposalSecrets = async ({
   gm,
   proposer,
@@ -984,7 +1014,7 @@ export const mockProposalSecrets = async ({
 
   // Convert proposal to numeric value using keccak256
   const proposalValue = BigInt(ethers.utils.solidityKeccak256(['string'], [proposal]));
-  const randomnessValue = BigInt(sharedKey);
+  const randomnessValue = BigInt(utils.solidityKeccak256(['string'], [sharedKey]));
 
   // Calculate commitment using poseidon
   const hash = poseidon([proposalValue, randomnessValue]);
@@ -1114,40 +1144,28 @@ export const mockProposalsIntegrity = async ({
       idlers,
     }));
 
-  const inputs = await createInputs({
-    numActive: players.length,
-    proposals: proposals.map(proposal => proposal.proposalValue),
-    commitmentRandomnesses: proposals.map(proposal => proposal.randomnessValue),
+  const { commitment, nullifier, permutation, permutedProposals, a, b, c } = await generateEndTurnIntegrity({
     gameId,
     turn,
     verifierAddress,
     chainId: await hre.getChainId(),
     gm,
+    size: players.length,
+    proposals,
+    hre,
   });
-  console.log(
-    'proposal values',
-    proposals.map(proposal => proposal.proposalValue),
-  );
-  console.log('inputs', inputs);
-
-  const circuit = await hre.zkit.getCircuit('ProposalsIntegrity15');
-  const proof = await circuit.generateProof(inputs);
-  const callData = await circuit.generateCalldata(proof);
-
-  // Apply permutation to proposals array
-  const permutedProposals = [...proposals];
-  for (let i = 0; i < maxSize; i++) {
-    if (i < players.length) {
-      permutedProposals[i] = proposals[inputs.permutation[i]];
-    }
-  }
 
   return {
-    proposals: permutedProposals.map(proposal => proposal.proposal),
-    a: callData[0],
-    b: callData[1],
-    c: callData[2],
-    permutation: inputs.permutation,
+    newProposals: {
+      a,
+      b,
+      c,
+      proposals: permutedProposals,
+      permutationCommitment: commitment,
+    },
+    permutation,
+    proposalsNotPermuted: proposals.map(proposal => proposal.proposal),
+    nullifier,
   };
 };
 
