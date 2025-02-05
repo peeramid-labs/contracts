@@ -1,4 +1,4 @@
-import { Distributor } from '../../types';
+import { Distributor } from '../types';
 import { BytesLike } from 'ethers';
 import { Signer } from 'ethers';
 

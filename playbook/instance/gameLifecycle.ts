@@ -2,8 +2,8 @@ import { DAODistributor, RankifyDiamondInstance, RankToken } from '../../types';
 import { task } from 'hardhat/config';
 import inquirer from 'inquirer';
 import { InstanceBase, GameState } from './InstanceBase';
-import { setupPlaybook } from '../utils';
-import { SignerIdentity } from '../utils';
+import { setupPlaybook } from '../../scripts/utils';
+import { SignerIdentity } from '../../scripts/utils';
 
 type GameAction = 'openRegistration' | 'fillParty' | 'startGame' | 'nextMove' | 'lastMove' | 'overtime' | 'endGame';
 

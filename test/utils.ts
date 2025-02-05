@@ -1,18 +1,18 @@
 import hre, { deployments } from 'hardhat';
 import { ethers } from 'hardhat';
 import {
-    Rankify,
-    MockERC1155,
-    MockERC20,
-    MockERC721,
-    RankToken,
-    MAODistribution,
-    DAODistributor,
-    ArguableVotingTournament,
+  Rankify,
+  MockERC1155,
+  MockERC20,
+  MockERC721,
+  RankToken,
+  MAODistribution,
+  DAODistributor,
+  ArguableVotingTournament,
 } from '../types';
 // @ts-ignore
 import { Deployment } from 'hardhat-deploy/types';
-import { AdrSetupResult, setupAddresses as setupAdrPb } from '../playbook/utils';
+import { AdrSetupResult, setupAddresses as setupAdrPb } from '../scripts/utils';
 
 export interface EnvSetupResult {
   rankifyToken: Rankify;
@@ -30,22 +30,20 @@ export const addPlayerNameId = (idx: any) => {
 
 export const setupAddresses = setupAdrPb(hre);
 
-
 const baseFee = 1 * 10 ** 18;
 
 import {
-    RInstance_TIME_PER_TURN,
-    RInstance_MAX_PLAYERS,
-    RInstance_MIN_PLAYERS,
-    RInstance_MAX_TURNS,
-    RInstance_TIME_TO_JOIN,
-    RInstance_GAME_PRICE,
-    RInstance_JOIN_GAME_PRICE,
-    RInstance_NUM_WINNERS,
-    RInstance_VOTE_CREDITS,
-    RInstance_SUBJECT,
-} from '../playbook/utils';
-
+  RInstance_TIME_PER_TURN,
+  RInstance_MAX_PLAYERS,
+  RInstance_MIN_PLAYERS,
+  RInstance_MAX_TURNS,
+  RInstance_TIME_TO_JOIN,
+  RInstance_GAME_PRICE,
+  RInstance_JOIN_GAME_PRICE,
+  RInstance_NUM_WINNERS,
+  RInstance_VOTE_CREDITS,
+  RInstance_SUBJECT,
+} from '../scripts/utils';
 
 export const RInstanceSettings = {
   RInstance_TIME_PER_TURN,

@@ -4,7 +4,7 @@ import hre, { deployments } from 'hardhat';
 import { setupTest } from './utils';
 import { AdrSetupResult, EnvSetupResult, RInstanceSettings } from '../playbook/utils';
 import { RankifyDiamondInstance, RankToken, Rankify } from '../types';
-import addDistribution from '../scripts/playbooks/addDistribution';
+import addDistribution from '../scripts/addDistribution';
 import { getCodeIdFromArtifact } from '../scripts/getCodeId';
 import { MAODistribution } from '../types/src/distributions/MAODistribution';
 import { generateDistributorData } from '../scripts/libraries/generateDistributorData';

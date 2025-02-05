@@ -1,21 +1,19 @@
 import { RankifyDiamondInstance, RankToken } from '../../types';
-import { BigNumber, BigNumberish, ethers, Wallet } from 'ethers';
+import { BigNumber, BigNumberish, ethers } from 'ethers';
 import { IRankifyInstance } from '../../types/src/facets/RankifyInstanceMainFacet';
 import {
-  mockVotes,
-  mockProposals,
-  MockVote,
-  ProposalSubmission,
-  RInstanceSettings,
-  EnvSetupResult,
-  AdrSetupResult,
-  SignerIdentity,
-  signJoiningGame,
-  ProposalsIntegrity,
-} from '../utils';
+    mockVotes,
+    mockProposals,
+    MockVote, RInstanceSettings,
+    EnvSetupResult,
+    AdrSetupResult,
+    SignerIdentity,
+    signJoiningGame,
+    ProposalsIntegrity
+} from '../../scripts/utils';
 import { assert } from 'console';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+
 
 export enum GameState {
   Created,
@@ -34,14 +32,19 @@ export class InstanceBase {
   rankifyInstance: RankifyDiamondInstance;
   ongoingVotes: MockVote[] = [];
   proposalsData: ProposalsIntegrity = {
-    a: [0n, 0n],
-    b: [
-      [0n, 0n],
-      [0n, 0n],
-    ],
-    c: [0n, 0n],
-    proposals: [],
+    newProposals: {
+      proposals: [],
+      a: [0n, 0n],
+      b: [
+        [0n, 0n],
+        [0n, 0n],
+      ],
+      c: [0n, 0n],
+      permutationCommitment: 0n,
+    },
     permutation: [],
+    proposalsNotPermuted: [],
+    nullifier: 0n,
   };
   hre: HardhatRuntimeEnvironment;
   private gameStates: Map<number, GameState> = new Map();
@@ -144,7 +147,7 @@ export class InstanceBase {
     console.log('New shuffling:', newShuffling);
 
     // Process proposals and votes
-    const proposals = this.proposalsData.proposals.map(p => p.proposal);
+    const proposals = this.proposalsData.newProposals.proposals;
     console.log('Original proposals:', proposals);
     const shuffledProposals = newShuffling.map(i => proposals[i]);
     console.log('Shuffled proposals:', shuffledProposals);
@@ -212,7 +215,7 @@ export class InstanceBase {
       turn: turn,
       verifierAddress: gameContract.address,
       players: players,
-      gm: gameMaster,
+      gm: gameMaster.wallet,
       distribution: distribution ?? 'semiUniform',
     });
     if (submitNow) {

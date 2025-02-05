@@ -1,6 +1,6 @@
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import aes from 'crypto-js/aes';
 import { HttpNetworkHDAccountsConfig } from 'hardhat/types';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import {
   Rankify,
   MockERC1155,
@@ -12,16 +12,49 @@ import {
   ArguableVotingTournament,
   RankifyInstanceGameMastersFacet,
 } from '../types';
-import { BigNumber, BigNumberish, BytesLike, TypedDataField, Wallet, ethers, utils } from 'ethers';
+import { BigNumberish, BytesLike, TypedDataField, Wallet, BigNumber, constants, utils } from 'ethers';
 // @ts-ignore
 import { assert } from 'console';
 import { Deployment } from 'hardhat-deploy/types';
 import { HardhatEthersHelpers } from '@nomiclabs/hardhat-ethers/types';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
-import { getDiscussionForTurn } from './instance/discussionTopics';
+import { getDiscussionForTurn } from './discussionTopics';
 import { buildPoseidon } from 'circomlibjs';
-import { sharedSigner } from '../scripts/sharedKey';
-import { generateDeterministicPermutation, generateEndTurnIntegrity } from '../scripts/proofs';
+import { sharedSigner } from './sharedKey';
+import { generateDeterministicPermutation, generateEndTurnIntegrity } from './proofs';
+
+export function getInterfaceID(contractInterface: any) {
+  let interfaceID: BigNumber = constants.Zero;
+  const functions: string[] = Object.keys(contractInterface.functions);
+  for (let i = 0; i < functions.length; i++) {
+    interfaceID = interfaceID.xor(contractInterface.getSighash(functions[i]));
+  }
+
+  return interfaceID;
+}
+
+export async function transferOwnership(
+  hre: HardhatRuntimeEnvironment,
+  signer: Wallet | SignerWithAddress,
+  newOwnerAddress: string,
+  diamondAddress: string,
+) {
+  const ownershipFacet = await hre.ethers.getContractAt('OwnershipFacet', diamondAddress);
+  const tx = await ownershipFacet.connect(signer).transferOwnership(newOwnerAddress);
+  // console.log("Diamond cut tx: ", tx.hash);
+  const receipt = await tx.wait();
+  if (!receipt.status) {
+    throw Error(`Transfer ownership failed: ${tx.hash}`);
+  }
+}
+
+export function getProcessEnv(print: boolean, key: string) {
+  const ret = process.env[key];
+  if (!ret) {
+    throw new Error(key + ' must be exported in env');
+  }
+  return print ? 'X'.repeat(ret.length) : ret;
+}
 
 export const RANKIFY_INSTANCE_CONTRACT_NAME = 'RANKIFY_INSTANCE_NAME';
 export const RANKIFY_INSTANCE_CONTRACT_VERSION = '0.0.1';
@@ -30,8 +63,8 @@ export const RInstance_MAX_PLAYERS = 6;
 export const RInstance_MIN_PLAYERS = 5;
 export const RInstance_MAX_TURNS = 3;
 export const RInstance_TIME_TO_JOIN = '200';
-export const RInstance_GAME_PRICE = ethers.utils.parseEther('0.001');
-export const RInstance_JOIN_GAME_PRICE = ethers.utils.parseEther('0.001');
+export const RInstance_GAME_PRICE = utils.parseEther('0.001');
+export const RInstance_JOIN_GAME_PRICE = utils.parseEther('0.001');
 export const RInstance_NUM_WINNERS = 3;
 export const RInstance_VOTE_CREDITS = 14;
 export const RInstance_SUBJECT = 'Best Music on youtube';
@@ -300,7 +333,6 @@ export const RInstanceSettings = {
   PRINCIPAL_TIME_CONSTANT: 3600,
   RInstance_MIN_GAME_TIME: 360,
   PRINCIPAL_COST: utils.parseEther('1'),
-  // RInstance_NUM_ACTIONS_TO_TAKE,
 };
 
 export const setupPlaybook = async (hre: HardhatRuntimeEnvironment) => {
@@ -997,11 +1029,11 @@ export const mockProposalSecrets = async ({
 
   const encryptedProposal = aes.encrypt(proposal, gm.publicKey).toString();
 
-  const pubKeyProposer = ethers.utils.recoverPublicKey(
-    ethers.utils.hashMessage(proposal),
+  const pubKeyProposer = utils.recoverPublicKey(
+    utils.hashMessage(proposal),
     await proposer.wallet.signMessage(proposal),
   );
-  assert(ethers.utils.computeAddress(pubKeyProposer) === proposer.wallet.address, 'Proposer public key does not match');
+  assert(utils.computeAddress(pubKeyProposer) === proposer.wallet.address, 'Proposer public key does not match');
 
   const sharedKey = sharedSigner({
     publicKey: pubKeyProposer,
@@ -1013,7 +1045,7 @@ export const mockProposalSecrets = async ({
   });
 
   // Convert proposal to numeric value using keccak256
-  const proposalValue = BigInt(ethers.utils.solidityKeccak256(['string'], [proposal]));
+  const proposalValue = BigInt(utils.solidityKeccak256(['string'], [proposal]));
   const randomnessValue = BigInt(utils.solidityKeccak256(['string'], [sharedKey]));
 
   // Calculate commitment using poseidon
@@ -1098,7 +1130,7 @@ export const mockProposals = async ({
           gameId,
           encryptedProposal: '0x',
           commitment: 0,
-          proposer: ethers.constants.AddressZero,
+          proposer: constants.AddressZero,
           gmSignature: '0x',
           voterSignature: '0x',
         },
@@ -1113,7 +1145,7 @@ export const mockProposals = async ({
   return proposals;
 };
 
-export const mockProposalsIntegrity = async ({
+export const getProposalsIntegrity = async ({
   hre,
   players,
   gameId,

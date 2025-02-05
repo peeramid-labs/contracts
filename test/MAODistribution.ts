@@ -5,9 +5,9 @@ import hre from 'hardhat';
 import { expect } from 'chai';
 import { MAODistribution, DAODistributor, Rankify, RankifyDiamondInstance } from '../types';
 import { setupTest } from './utils';
-import { AdrSetupResult } from '../playbook/utils';
+import { AdrSetupResult } from '../scripts/utils';
 import { getCodeIdFromArtifact } from '../scripts/getCodeId';
-import addDistribution from '../scripts/playbooks/addDistribution';
+import addDistribution from '../scripts/addDistribution';
 import { generateDistributorData } from '../scripts/libraries/generateDistributorData';
 
 describe('MAODistribution', async function () {

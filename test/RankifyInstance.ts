@@ -9,22 +9,20 @@ import {
   RANKIFY_INSTANCE_CONTRACT_NAME,
   RANKIFY_INSTANCE_CONTRACT_VERSION,
   signJoiningGame,
-  ProposalsIntegrity,
-  mockProposalsIntegrity,
+  getProposalsIntegrity,
   ProposalSubmission,
-  mockProposals as mockRawProposals,
-} from '../playbook/utils';
+} from '../scripts/utils';
 import { setupTest } from './utils';
-import { RInstanceSettings, mineBlocks, mockProposals, mockVotes, getPlayers } from '../playbook/utils';
+import { RInstanceSettings, mineBlocks, mockProposals, mockVotes, getPlayers } from '../scripts/utils';
 import { expect } from 'chai';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
 import { DistributableGovernanceERC20, Rankify, RankifyDiamondInstance, RankToken } from '../types/';
 import { LibCoinVending } from '../types/src/facets/RankifyInstanceRequirementsFacet';
 import { IRankifyInstance } from '../types/src/facets/RankifyInstanceMainFacet';
 import { deployments, ethers as ethersDirect } from 'hardhat';
-import { BigNumber, BigNumberish, BytesLike } from 'ethers';
+import { BigNumber, BigNumberish } from 'ethers';
 import { assert } from 'console';
-import addDistribution from '../scripts/playbooks/addDistribution';
+import addDistribution from '../scripts/addDistribution';
 import hre from 'hardhat';
 const path = require('path');
 
@@ -80,7 +78,7 @@ const endTurn = async (gameId: BigNumberish, gameContract: RankifyDiamondInstanc
   const chainId = await hre.getChainId();
   const players = await rankifyInstance.getPlayers(gameId);
 
-  const { newProposals, permutation, nullifier } = await mockProposalsIntegrity({
+  const { newProposals, permutation, nullifier } = await getProposalsIntegrity({
     hre,
     players: getPlayers(adr, players.length),
     gameId,
@@ -127,7 +125,7 @@ const runToTheEnd = async (
       votes = await mockValidVotes(players, gameContract, gameId, gameMaster, true, distribution);
     }
 
-    const { newProposals, permutation, nullifier } = await mockProposalsIntegrity({
+    const { newProposals, permutation, nullifier } = await getProposalsIntegrity({
       hre,
       players,
       gameId,
@@ -177,7 +175,7 @@ const endWithIntegrity = async ({
   idlers?: number[];
 }) => {
   const turn = await gameContract.getTurn(gameId);
-  const { newProposals, permutation, nullifier } = await mockProposalsIntegrity({
+  const { newProposals, permutation, nullifier } = await getProposalsIntegrity({
     hre: hre,
     players,
     gameId,
@@ -1202,7 +1200,7 @@ describe(scriptName, () => {
             player => player.wallet.address,
           );
           // const turnSalt = await getTestShuffleSalt(1, 1, adr.gameMaster1);
-          const integrity = await mockProposalsIntegrity({
+          const integrity = await getProposalsIntegrity({
             hre: hre,
             players: getPlayers(adr, RInstanceSettings.RInstance_MAX_PLAYERS),
             gameId: 1,
@@ -1454,7 +1452,7 @@ describe(scriptName, () => {
                 const players = getPlayers(adr, playersCnt);
                 const turn = await rankifyInstance.getTurn(1);
                 // const turnSalt = await getTestShuffleSalt(1, turn, adr.gameMaster1);
-                const integrity = await mockProposalsIntegrity({
+                const integrity = await getProposalsIntegrity({
                   hre: hre,
                   players,
                   gameId: 1,
@@ -1575,7 +1573,7 @@ describe(scriptName, () => {
                   const turn = await rankifyInstance.getTurn(1);
                   // const turnSalt = await getTestShuffleSalt(1, turn, adr.gameMaster1);
 
-                  const integrity = await mockProposalsIntegrity({
+                  const integrity = await getProposalsIntegrity({
                     hre: hre,
                     players,
                     gameId: 1,
@@ -1684,7 +1682,7 @@ describe(scriptName, () => {
                     submitNow: true,
                     // idlers: players.map((_, i) => i),
                   });
-                  const integrity = await mockProposalsIntegrity({
+                  const integrity = await getProposalsIntegrity({
                     hre: hre,
                     players: players,
                     gameId: 1,
@@ -1730,7 +1728,7 @@ describe(scriptName, () => {
                   const evts = (await rankifyInstance.queryFilter(rankifyInstance.filters.ProposalScore(1, turn))).map(
                     e => e.args,
                   );
-                  const { proposalsNotPermuted: prevProposalsNotPermuted } = await mockProposalsIntegrity({
+                  const { proposalsNotPermuted: prevProposalsNotPermuted } = await getProposalsIntegrity({
                     hre: hre,
                     players: players,
                     gameId: 1,
@@ -1937,7 +1935,7 @@ describe(scriptName, () => {
             ).to.be.revertedWith('Game over');
           }
           // const turnSalt = await getTestShuffleSalt(1, await rankifyInstance.getTurn(1), adr.gameMaster1);
-          const integrity = await mockProposalsIntegrity({
+          const integrity = await getProposalsIntegrity({
             hre: hre,
             players: getPlayers(adr, RInstanceSettings.RInstance_MAX_PLAYERS),
             gameId: 1,

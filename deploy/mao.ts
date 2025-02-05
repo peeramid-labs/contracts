@@ -10,7 +10,7 @@ import {
   RANKIFY_INSTANCE_CONTRACT_NAME,
   RANKIFY_INSTANCE_CONTRACT_VERSION,
   RInstance_MIN_PLAYERS,
-} from '../playbook/utils';
+} from '../scripts/utils';
 import { poseidonContract } from 'circomlibjs';
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {

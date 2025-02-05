@@ -1,6 +1,6 @@
 import { buildPoseidon } from 'circomlibjs';
 import { BigNumberish, Wallet, ethers, utils } from 'ethers';
-import { ProposalSubmission, SignerIdentity } from '../playbook/utils';
+import { ProposalSubmission, SignerIdentity } from './utils';
 import { PrivateProposalsIntegrity15Groth16, ProofProposalsIntegrity15Groth16 } from 'zk';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 // Helper to create test inputs
