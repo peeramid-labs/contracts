@@ -57,7 +57,6 @@ library LibRankify {
         address poseidon2;
     }
 
-
     /**
      * @dev Comprehensive state structure for an individual game
      * @param rank Required rank level for participation
