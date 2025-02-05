@@ -2,18 +2,20 @@ import { RankifyDiamondInstance, RankToken } from '../../types';
 import { BigNumber, BigNumberish, ethers } from 'ethers';
 import { IRankifyInstance } from '../../types/src/facets/RankifyInstanceMainFacet';
 import {
-    mockVotes,
-    mockProposals,
-    MockVote, RInstanceSettings,
-    EnvSetupResult,
-    AdrSetupResult,
-    SignerIdentity,
-    signJoiningGame,
-    ProposalsIntegrity
+  mockVotes,
+  mockProposals,
+  MockVote,
+  RInstanceSettings,
+  EnvSetupResult,
+  AdrSetupResult,
+  SignerIdentity,
+  signJoiningGame,
+  ProposalsIntegrity,
+  getProposalsIntegrity,
 } from '../../scripts/utils';
 import { assert } from 'console';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
-
+import { generateDeterministicPermutation } from '../../scripts/proofs';
 
 export enum GameState {
   Created,
@@ -179,10 +181,16 @@ export class InstanceBase {
     }
 
     console.log('\nSubmitting turn end transaction...');
-    const turnSalt = getTurnSalt({ gameId: gameId, turn: turn });
+
     const tx = await this.rankifyInstance
       .connect(this.adr.gameMaster1.wallet)
-      .endTurn(gameId, mappedVotes, { ...this.proposalsData, proposals: shuffledProposals }, newShuffling, turnSalt);
+      .endTurn(
+        gameId,
+        mappedVotes,
+        this.proposalsData.newProposals,
+        this.proposalsData.permutation,
+        this.proposalsData.nullifier,
+      );
     // const receipt = await tx.wait();
     const scores = await this.rankifyInstance.getScores(gameId);
     console.log('Turn ended successfully');
@@ -242,7 +250,18 @@ export class InstanceBase {
       currentT + Number(RInstanceSettings.RInstance_TIME_TO_JOIN) + 1,
     ]);
     await this.hre.network.provider.send('evm_mine');
-    await this.rankifyInstance.connect(this.adr.gameMaster1.wallet).startGame(gameId);
+
+    await this.rankifyInstance.connect(this.adr.gameMaster1.wallet).startGame(
+      gameId,
+      await generateDeterministicPermutation({
+        gameId: gameId,
+        turn: 0,
+        verifierAddress: this.rankifyInstance.address,
+        chainId: await this.hre.getChainId(),
+        gm: this.adr.gameMaster1.wallet,
+        size: await this.rankifyInstance.getPlayers(gameId).then(players => players.length),
+      }).then(perm => perm.commitment),
+    );
     this.updateGameState(gameId, GameState.Started);
   };
 
@@ -255,7 +274,20 @@ export class InstanceBase {
   ) => {
     const turn = await gameContract.getTurn(gameId);
 
-    this.proposalsData = await mockProposals({
+    // this.proposalsData = await mockProposals({
+    //   hre: this.hre,
+    //   players: players,
+    //   gameId: gameId,
+    //   turn: turn,
+    //   verifierAddress: gameContract.address,
+    //   gm: gameMaster.wallet,
+    // });
+    // if (submitNow) {
+    //   for (let i = 0; i < players.length; i++) {
+    //     await gameContract.connect(gameMaster.wallet).submitProposal(this.proposalsData.proposals[i].params);
+    //   }
+    // }
+    this.proposalsData = await getProposalsIntegrity({
       hre: this.hre,
       players: players,
       gameId: gameId,
@@ -263,11 +295,6 @@ export class InstanceBase {
       verifierAddress: gameContract.address,
       gm: gameMaster.wallet,
     });
-    if (submitNow) {
-      for (let i = 0; i < players.length; i++) {
-        await gameContract.connect(gameMaster.wallet).submitProposal(this.proposalsData.proposals[i].params);
-      }
-    }
     return this.proposalsData;
   };
 
@@ -299,7 +326,17 @@ export class InstanceBase {
       await this.hre.network.provider.send('evm_mine');
     }
     if (startGame && gameMaster) {
-      await this.rankifyInstance.connect(gameMaster.wallet).startGame(gameId);
+      await this.rankifyInstance.connect(gameMaster.wallet).startGame(
+        gameId,
+        await generateDeterministicPermutation({
+          gameId: gameId,
+          turn: 0,
+          verifierAddress: this.rankifyInstance.address,
+          chainId: await this.hre.getChainId(),
+          gm: gameMaster.wallet,
+          size: await this.rankifyInstance.getPlayers(gameId).then(players => players.length),
+        }).then(perm => perm.commitment),
+      );
     }
     this.updateGameState(gameId, GameState.PartyFilled);
   };
@@ -353,7 +390,7 @@ export class InstanceBase {
       gameId,
       true,
     );
-    console.log('Proposals submitted:', this.proposalsData.proposals.length);
+    console.log('Proposals submitted:', this.proposalsData.newProposals.proposals.length);
 
     await this.endTurn(gameId);
 
