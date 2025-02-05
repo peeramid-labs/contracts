@@ -72,8 +72,6 @@
         function endTurn(
             uint256 gameId,
             uint256[][] memory votes,
-            string[] memory newProposals, //REFERRING TO UPCOMING VOTING ROUND
-            uint256[] memory proposerIndices //REFERRING TO game.players index in PREVIOUS VOTING ROUND
             BatchProposalReveal memory newProposals,
             uint256[] memory permutation,
             uint256 shuffleSalt
