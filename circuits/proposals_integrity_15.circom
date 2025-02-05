@@ -5,7 +5,10 @@ include "../node_modules/circomlib/circuits/comparators.circom";
 include "../node_modules/circomlib/circuits/mux1.circom";
 include "../node_modules/circomlib/circuits/gates.circom";
 
-// Verify a single proposal
+/**
+ * @title ProposalIntegrity
+ * @dev This circuit verifies the integrity of a single proposal by checking the commitment hash
+ */
 template ProposalIntegrity() {
     // Public inputs
     signal input commitment;
@@ -21,7 +24,18 @@ template ProposalIntegrity() {
     commitment === commitmentHasher.out;
 }
 
-// Verify multiple proposals in a single proof
+/**
+ * @title ProposalsIntegrity15
+ * @dev This circuit verifies the integrity of 15 proposals in a single proof.
+ * @param commitments Ongoing turn commitments Poseidon(proposal, randomness)
+ * @param permutedProposals proposals that are revealed in the current turn.
+ * @param permutationCommitment Commitment to the shuffling order hash(sponge(permutation[0...14]), permutationRandomness)
+ * @param numActive Number of active players (0...14)
+ * @param permutation (_private_) Random permutation of the proposals that are revealed in the current turn
+ * @param randomnesses (_private_) Randomness for the proposals, known only to player and GM
+ * @param permutationRandomness (_private_) Randomness for the permutation, known only to GM
+ * @notice sponge is calculating intermediate poseidon values as solidity limit is 6 inputs for Poseidon implementation of circomlib
+ */
 template ProposalsIntegrity15() {
     // Public inputs
     signal input commitments[15];        // Ongoing turn commitments Poseidon(proposal, randomness)
@@ -29,7 +43,7 @@ template ProposalsIntegrity15() {
     signal input permutationCommitment;  // Commitment to the shuffling order hash(permutation[], permutationRandomness)
     signal input numActive;              // Number of active players
 
-    // Private inputs for each proposal (arrays of size 16)
+    // Private inputs for each proposal (arrays of size 15)
     signal input permutation[15];       // Permutation of the proposals that are revealed in the current turn
     signal input randomnesses[15];      // randomnesses
     signal input permutationRandomness; // Randomness for the permutation
@@ -92,6 +106,9 @@ template ProposalsIntegrity15() {
     }
 
     // Create and verify permutation commitment
+    /**
+     * @notice sponge is calculating intermediate poseidon values as solidity limit is 6 inputs for Poseidon implementation of circomlib
+     */
     component permutationHasher1 = Poseidon(5);
     component permutationHasher2 = Poseidon(6);
     component permutationHasher3 = Poseidon(6);
