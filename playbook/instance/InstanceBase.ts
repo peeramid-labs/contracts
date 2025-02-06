@@ -1,5 +1,5 @@
 import { RankifyDiamondInstance, RankToken } from '../../types';
-import { BigNumber, BigNumberish, ethers } from 'ethers';
+import { BigNumber, BigNumberish, ethers, Wallet } from 'ethers';
 import { IRankifyInstance } from '../../types/src/facets/RankifyInstanceMainFacet';
 import {
   mockVotes,
@@ -13,6 +13,8 @@ import {
 } from '../utils';
 import { assert } from 'console';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
+import cryptoJs from "crypto-js";
+import aes from "crypto-js/aes";
 
 export enum GameState {
   Created,
@@ -152,16 +154,17 @@ export class InstanceBase {
     const mappedVotes =
       turnNumber === 1
         ? []
-        : votes.map(vote => {
-            assert(vote.length === playersLength, 'Vote length must match players length');
-            const mappedVote = new Array(playersLength).fill(0);
-            previousShuffling.forEach((oldIndex, newIndex) => {
-              mappedVote[newIndex] = vote[oldIndex];
-            });
-            return mappedVote;
+        : votes.map((vote, index) => {
+          assert(vote.length === playersLength, 'Vote length must match players length');
+          const mappedVote = new Array(playersLength).fill(0);
+          previousShuffling.forEach((newIndex, oldIndex) => {
+            mappedVote[newIndex] = this.ongoingVotes[index].shuffled ? vote[newIndex] : vote[oldIndex];
           });
-    console.log('Mapped votes:', mappedVotes);
+          return mappedVote;
+        });
 
+    console.log('Mapped votes:', mappedVotes);
+ 
     // Store new shuffling
     if (!isLastTurn) {
       this.proposalShuffling.set(Number(gameId), newShuffling);
@@ -172,9 +175,10 @@ export class InstanceBase {
     }
 
     console.log('\nSubmitting turn end transaction...');
+    console.log('Previous shuffling:', previousShuffling);
     const tx = await this.rankifyInstance
       .connect(this.adr.gameMaster1.wallet)
-      .endTurn(gameId, mappedVotes, shuffledProposals, newShuffling)
+      .endTurn(gameId, mappedVotes, shuffledProposals, previousShuffling)
       .then(tx => tx.wait(1));
     // const receipt = await tx.wait();
     const scores = await this.rankifyInstance.getScores(gameId);
@@ -211,11 +215,28 @@ export class InstanceBase {
       distribution: distribution ?? 'semiUniform',
     });
     if (submitNow) {
-      //   const votersAddresses = players.map(player => player.wallet.address);
+      const gameMasterPK = process.env.GM_KEY || '';
       for (let i = 0; i < players.length; i++) {
-        await gameContract
-          .connect(gameMaster.wallet)
-          .submitVote(gameId, this.ongoingVotes[i].voteHidden, players[i].wallet.address);
+        const playerVotedEvents = await gameContract.queryFilter(
+          gameContract.filters.VoteSubmitted(gameId, turn, players[i].wallet.address),
+        );
+        if (playerVotedEvents.length === 0) {
+          await gameContract
+            .connect(gameMaster.wallet)
+            .submitVote(gameId, this.ongoingVotes[i].voteHidden, players[i].wallet.address);
+        } else {
+          console.log('Player ', players[i].wallet.address, ' already voted! Replacing mock with real one');
+          this.ongoingVotes[i].voteHidden = playerVotedEvents[0].args.votesHidden;
+          try {
+            const decryptedVote = JSON.parse(aes.decrypt(playerVotedEvents[0].args.votesHidden, gameMasterPK).toString(cryptoJs.enc.Utf8));
+            console.log('Decrypted vote:', decryptedVote);
+            this.ongoingVotes[i].vote = decryptedVote.map((v: string) => Number(v));
+            this.ongoingVotes[i].shuffled = true;
+            console.log('Decrypted and reshuffled vote:', this.ongoingVotes[i].vote);
+          } catch (e) {
+            console.error('Failed to decrypt vote');
+          }
+        }
       }
     }
     return this.ongoingVotes;
@@ -247,21 +268,41 @@ export class InstanceBase {
     submitNow?: boolean,
   ) => {
     const turn = await gameContract.getTurn(gameId);
+    const gameMasterPK = process.env.GM_KEY || '';
 
     this.ongoingProposals = await mockProposals({
       players: players,
       gameId: gameId,
       turn: turn,
       verifierAddress: gameContract.address,
-      gm: gameMaster,
+      gmPK: gameMasterPK,
     });
+
     if (submitNow) {
       for (let i = 0; i < players.length; i++) {
-        await gameContract.connect(gameMaster.wallet).submitProposal(this.ongoingProposals[i].params);
+        const playerProposedEvents = await gameContract.queryFilter(
+          gameContract.filters.ProposalSubmitted(gameId, turn, this.ongoingProposals[i].params.proposer),
+        );
+        if (playerProposedEvents.length == 0) {
+          await gameContract.connect(gameMaster.wallet).submitProposal(this.ongoingProposals[i].params);
+        } else {
+          console.log('Player ', players[i].wallet.address, ' already proposed! Replacing mock with real one');
+          this.ongoingProposals[i].params.encryptedProposal = playerProposedEvents[0].args.proposalEncryptedByGM
+          this.ongoingProposals[i].params.commitmentHash = playerProposedEvents[0].args.commitmentHash
+          try {
+            this.ongoingProposals[i].proposal = aes.decrypt(playerProposedEvents[0].args.proposalEncryptedByGM, gameMasterPK).toString(cryptoJs.enc.Utf8);
+            console.log('Proposal decrypted: ' + this.ongoingProposals[i].proposal);
+          } catch (e) {
+            console.log('Failed to decrypt proposal. Probably not encrypted', e);
+          }
+        }
       }
     }
+
     return this.ongoingProposals;
   };
+
+
 
   fillParty = async (
     players: [SignerIdentity, SignerIdentity, ...SignerIdentity[]],
