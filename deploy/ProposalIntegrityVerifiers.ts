@@ -9,7 +9,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  const proposalIntegrity15Groth16VerifierDeployment = await deploy('ProposalsIntegrity15Groth16Verifier', {
+  const proposalsIntegrity15PlonkVerifier = await deploy('ProposalsIntegrity15PlonkVerifier', {
     from: deployer,
     args: [],
     skipIfAlreadyDeployed: true,
@@ -19,7 +19,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     ERC7744Abi,
     '0xC0dE1D2F7662c63796E544B2647b2A94EE658E07',
   )) as ERC7744;
-  const code = await hre.ethers.provider.getCode(proposalIntegrity15Groth16VerifierDeployment.address);
+  const code = await hre.ethers.provider.getCode(proposalsIntegrity15PlonkVerifier.address);
   const codeId = ethers.utils.keccak256(code);
   const registerAddress = await codeIndexContract.get(codeId);
   if (registerAddress == ethers.constants.AddressZero) {
@@ -27,11 +27,11 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       console.warn(
         'registering contract',
         registerAddress,
-        proposalIntegrity15Groth16VerifierDeployment.address,
+        proposalsIntegrity15PlonkVerifier.address,
         codeId,
       );
     }
-    await codeIndexContract.register(proposalIntegrity15Groth16VerifierDeployment.address);
+    await codeIndexContract.register(proposalsIntegrity15PlonkVerifier.address);
   }
 };
 

@@ -190,7 +190,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   });
 
   const rankifyToken = await deployments.get('Rankify');
-  const proposalIntegrity18Groth16VerifierDeployment = await deployments.get('ProposalsIntegrity15Groth16Verifier');
+  const proposalIntegrity15PlonkVerifierDeployment = await deployments.get('ProposalsIntegrity15PlonkVerifier');
   const result = await deploy('MAODistribution', {
     from: deployer,
     skipIfAlreadyDeployed: true,
@@ -198,7 +198,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       _trustedForwarder,
       rankifyToken.address,
       DAO,
-      [proposalIntegrity18Groth16VerifierDeployment.address, ph5.address, ph6.address, ph2.address],
+      [proposalIntegrity15PlonkVerifierDeployment.address, ph5.address, ph6.address, ph2.address],
       rankTokenCodeId,
       arguableVotingTournamentCodeId,
       accessManagerId,

@@ -1176,7 +1176,7 @@ export const getProposalsIntegrity = async ({
       idlers,
     }));
 
-  const { commitment, nullifier, permutation, permutedProposals, a, b, c } = await generateEndTurnIntegrity({
+  const { commitment, nullifier, permutation, permutedProposals, proof } = await generateEndTurnIntegrity({
     gameId,
     turn,
     verifierAddress,
@@ -1189,9 +1189,7 @@ export const getProposalsIntegrity = async ({
 
   return {
     newProposals: {
-      a,
-      b,
-      c,
+      proof,
       proposals: permutedProposals,
       permutationCommitment: commitment,
     },

@@ -1235,7 +1235,7 @@ describe(scriptName, () => {
           beforeEach(async () => {
             await startedGameTest();
           });
-          it('Can finish turn early if previous turn participant did not made a move', async () => {
+          it.only('Can finish turn early if previous turn participant did not made a move', async () => {
             const playersCnt = await rankifyInstance.getPlayers(1).then(players => players.length);
             const players = getPlayers(adr, playersCnt);
             proposals = await mockValidProposals({

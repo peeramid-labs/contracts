@@ -1,13 +1,10 @@
 import { buildPoseidon } from 'circomlibjs';
 import { BigNumberish, Wallet, ethers, utils } from 'ethers';
 import { ProposalSubmission, SignerIdentity } from './utils';
-import { PrivateProposalsIntegrity15Groth16, ProofProposalsIntegrity15Groth16 } from 'zk';
+import { PrivateProposalsIntegrity15Plonk, ProofProposalsIntegrity15Plonk } from 'zk';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import * as fs from 'fs';
 import * as path from 'path';
-
-// Runtime cache
-const cachedProofs = new Map<string, ProofProposalsIntegrity15Groth16>();
 
 // Persistent cache helpers
 const CACHE_DIR = '.zkproofs-cache';
@@ -19,7 +16,7 @@ function getCacheFilePath(key: string): string {
   return path.join(CACHE_DIR, `${key}.json`);
 }
 
-function saveToCache(key: string, proof: ProofProposalsIntegrity15Groth16) {
+function saveToCache(key: string, proof: ProofProposalsIntegrity15Plonk) {
   try {
     fs.writeFileSync(getCacheFilePath(key), JSON.stringify(proof));
   } catch (error) {
@@ -27,7 +24,7 @@ function saveToCache(key: string, proof: ProofProposalsIntegrity15Groth16) {
   }
 }
 
-function loadFromCache(key: string): ProofProposalsIntegrity15Groth16 | null {
+function loadFromCache(key: string): ProofProposalsIntegrity15Plonk | null {
   try {
     const filePath = getCacheFilePath(key);
     if (fs.existsSync(filePath)) {
@@ -58,7 +55,7 @@ export const createInputs = async ({
   verifierAddress: string;
   chainId: BigNumberish;
   gm: Wallet;
-}): Promise<PrivateProposalsIntegrity15Groth16> => {
+}): Promise<PrivateProposalsIntegrity15Plonk> => {
   const poseidon = await buildPoseidon();
   const maxSize = 15;
 
@@ -130,7 +127,7 @@ const getSeed = async ({
 
   return BigInt(seed);
 };
-
+const cachedProofs = new Map<string, ProofProposalsIntegrity15Plonk>();
 export const generateEndTurnIntegrity = async ({
   gameId,
   turn,
@@ -183,35 +180,40 @@ export const generateEndTurnIntegrity = async ({
   const circuit = await hre.zkit.getCircuit('ProposalsIntegrity15');
   const inputsKey = ethers.utils.solidityKeccak256(['string'], [JSON.stringify(inputs)]);
 
-  // Check runtime cache first
-  if (!cachedProofs.has(inputsKey)) {
-    // Check persistent cache
-    const persistentProof = loadFromCache(inputsKey);
-    if (persistentProof) {
-      cachedProofs.set(inputsKey, persistentProof);
-    } else {
-      // Generate new proof
+//   // Check runtime cache first
+//   if (!cachedProofs.has(inputsKey)) {
+//     // Check persistent cache
+//     const persistentProof = loadFromCache(inputsKey);
+//     if (persistentProof) {
+//       cachedProofs.set(inputsKey, persistentProof);
+//     } else {
+//       // Generate new proof
+//       //   const _inpt = { permuttedProposals: inputs.permutedProposals.map() ,...inputs}
       const proof = await circuit.generateProof(inputs);
-      cachedProofs.set(inputsKey, proof);
-      // Save to persistent cache
-      saveToCache(inputsKey, proof);
-    }
-  }
+//       cachedProofs.set(inputsKey, proof);
+//       // Save to persistent cache
+//       saveToCache(inputsKey, proof);
+//     }
+//   }
 
-  const proof = cachedProofs.get(inputsKey);
+//   const proof = cachedProofs.get(inputsKey);
   if (!proof) {
     throw new Error('Proof not found');
   }
   const callData = await circuit.generateCalldata(proof);
-
+  console.log('--------proof.publicSignals----');
+  console.log(proof.publicSignals);
+  console.log('------------');
+  console.log(inputs);
+  console.log('------inputs------');
+  console.log(callData.map(d => d.map(dd => BigInt(dd))));
+  console.log('-----callData-------');
   return {
     commitment: inputs.permutationCommitment,
     nullifier,
     permutation: permutation.slice(0, size),
     permutedProposals: permutedProposals.map(proposal => proposal.proposal),
-    a: callData[0],
-    b: callData[1],
-    c: callData[2],
+    proof: callData[0],
   };
 };
 

@@ -13,7 +13,7 @@ import "hardhat/console.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import "../vendor/diamond/libraries/LibDiamond.sol";
 import {IErrors} from "../interfaces/IErrors.sol";
-import {ProposalsIntegrity15Groth16Verifier} from "../verifiers/ProposalsIntegrity15Groth16Verifier.sol";
+import {ProposalsIntegrity15PlonkVerifier} from "../verifiers/ProposalsIntegrity15PlonkVerifier.sol";
 
 interface IPoseidon5 {
     function poseidon(bytes32[5] memory inputs) external view returns (bytes32);
@@ -100,9 +100,7 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
      */
     struct BatchProposalReveal {
         string[] proposals; // Array of revealed proposals
-        uint[2] a; // ZK proof components
-        uint[2][2] b;
-        uint[2] c;
+        uint256[24] proof; // ZK proof components
         uint256 permutationCommitment;
     }
 
@@ -439,8 +437,13 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
             // Fill public inputs with proposals
             for (uint256 i = 15; i < 30; ++i) {
                 bytes32 proposalHash = keccak256(abi.encodePacked(newProposals.proposals[i - 15]));
+                console.log(newProposals.proposals[i - 15], uint256(proposalHash));
                 if (i - 15 < players.length && proposalHash != emptyProposalHash) {
                     PropIntegrityPublicInputs[i] = uint256(proposalHash);
+                    PropIntegrityPublicInputs[i] != 0
+                        ? PropIntegrityPublicInputs[i] -
+                          0  // 65664728615517825666739217235771825265645093201248103031094612559727425486851
+                        : 0;
                 } else {
                     PropIntegrityPublicInputs[i] = 0;
                 }
@@ -448,13 +451,13 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
 
             PropIntegrityPublicInputs[30] = newProposals.permutationCommitment;
             PropIntegrityPublicInputs[31] = players.length;
-
+            for (uint256 i = 0; i < 32; ++i) {
+                console.log("PropIntegrityPublicInputs[i]", PropIntegrityPublicInputs[i]);
+            }
             // 2. Handle current turn's proposal reveals with single proof
             require(
-                ProposalsIntegrity15Groth16Verifier(instanceState.commonParams.proposalIntegrityVerifier).verifyProof(
-                    newProposals.a,
-                    newProposals.b,
-                    newProposals.c,
+                ProposalsIntegrity15PlonkVerifier(instanceState.commonParams.proposalIntegrityVerifier).verifyProof(
+                    newProposals.proof,
                     PropIntegrityPublicInputs
                 ),
                 "Invalid batch proposal reveal proof"

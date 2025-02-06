@@ -108,7 +108,7 @@ export default {
     },
     setupSettings: {
       contributionSettings: {
-        provingSystem: 'groth16', // or "plonk"
+        provingSystem: 'plonk', // or "plonk"
         contributions: 2,
       },
       onlyFiles: [],
