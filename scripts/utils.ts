@@ -1,3 +1,7 @@
+/**
+ * Utility functions and types for the Rankify game system
+ */
+
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import aes from 'crypto-js/aes';
 import { HttpNetworkHDAccountsConfig } from 'hardhat/types';
@@ -11,6 +15,7 @@ import {
   DAODistributor,
   ArguableVotingTournament,
   RankifyInstanceGameMastersFacet,
+  RankifyDiamondInstance,
 } from '../types';
 import { BigNumberish, BytesLike, TypedDataField, Wallet, BigNumber, constants, utils } from 'ethers';
 // @ts-ignore
@@ -23,6 +28,11 @@ import { buildPoseidon } from 'circomlibjs';
 import { sharedSigner } from './sharedKey';
 import { generateDeterministicPermutation, generateEndTurnIntegrity } from './proofs';
 
+/**
+ * Calculates the interface ID for a contract by XORing all function selectors
+ * @param contractInterface - The contract interface to calculate ID for
+ * @returns The calculated interface ID as a BigNumber
+ */
 export function getInterfaceID(contractInterface: any) {
   let interfaceID: BigNumber = constants.Zero;
   const functions: string[] = Object.keys(contractInterface.functions);
@@ -33,6 +43,14 @@ export function getInterfaceID(contractInterface: any) {
   return interfaceID;
 }
 
+/**
+ * Transfers ownership of a diamond contract to a new address
+ * @param hre - Hardhat Runtime Environment
+ * @param signer - The current owner's wallet
+ * @param newOwnerAddress - Address of the new owner
+ * @param diamondAddress - Address of the diamond contract
+ * @throws Error if transfer fails
+ */
 export async function transferOwnership(
   hre: HardhatRuntimeEnvironment,
   signer: Wallet | SignerWithAddress,
@@ -48,6 +66,13 @@ export async function transferOwnership(
   }
 }
 
+/**
+ * Safely retrieves an environment variable
+ * @param print - If true, masks the value with 'X' characters
+ * @param key - The environment variable key to retrieve
+ * @returns The environment variable value or masked value
+ * @throws Error if environment variable is not set
+ */
 export function getProcessEnv(print: boolean, key: string) {
   const ret = process.env[key];
   if (!ret) {
@@ -56,6 +81,7 @@ export function getProcessEnv(print: boolean, key: string) {
   return print ? 'X'.repeat(ret.length) : ret;
 }
 
+// Game constants
 export const RANKIFY_INSTANCE_CONTRACT_NAME = 'RANKIFY_INSTANCE_NAME';
 export const RANKIFY_INSTANCE_CONTRACT_VERSION = '0.0.1';
 export const RInstance_TIME_PER_TURN = 2500;
@@ -68,11 +94,23 @@ export const RInstance_JOIN_GAME_PRICE = utils.parseEther('0.001');
 export const RInstance_NUM_WINNERS = 3;
 export const RInstance_VOTE_CREDITS = 14;
 export const RInstance_SUBJECT = 'Best Music on youtube';
+
+/**
+ * Represents a signer's identity in the game
+ */
 export interface SignerIdentity {
+  /** Display name of the signer */
   name: string;
+  /** Unique identifier for the signer */
   id: string;
+  /** Ethereum wallet associated with the signer */
   wallet: Wallet;
 }
+
+/**
+ * Result of setting up addresses for testing/deployment
+ * Contains all player, admin and special role identities
+ */
 export interface AdrSetupResult {
   contractDeployer: SignerIdentity;
   player1: SignerIdentity;
@@ -105,6 +143,10 @@ export interface AdrSetupResult {
   gameOwner: SignerIdentity;
 }
 
+/**
+ * Result of setting up the game environment
+ * Contains all contract instances needed for the game
+ */
 export interface EnvSetupResult {
   rankifyToken: Rankify;
   arguableVotingTournamentDistribution: ArguableVotingTournament;
@@ -115,10 +157,22 @@ export interface EnvSetupResult {
   maoDistribution: MAODistribution;
   distributor: DAODistributor;
 }
+
+/**
+ * Creates a player name and ID from an index
+ * @param idx - The player index
+ * @returns Object containing generated name and ID
+ */
 export const addPlayerNameId = (idx: any) => {
   return { name: `player-${idx}`, id: `player-${idx}-id` };
 };
 
+/**
+ * Sets up all addresses needed for testing and deployment
+ * Creates wallets for contract deployer, players, game masters, and other roles
+ * @param hre - Hardhat Runtime Environment
+ * @returns A function that takes named accounts and ethers instance to complete setup
+ */
 export const setupAddresses =
   (hre: HardhatRuntimeEnvironment) =>
   async (
@@ -152,8 +206,11 @@ export const setupAddresses =
       _player17,
     ] = await ethers.getSigners();
 
-    const { deployer, owner } = await getNamedAccounts();
-
+    /**
+     * Creates a random wallet identity and funds it with ETH
+     * @param name - Name for the new identity
+     * @returns A SignerIdentity with a funded wallet
+     */
     const createRandomIdentityAndSeedEth = async (name: string) => {
       let newWallet = new _eth.Wallet(_eth.utils.solidityKeccak256(['string'], [name]));
       newWallet = newWallet.connect(_eth.provider);
@@ -319,6 +376,9 @@ export const setupAddresses =
 
 const baseFee = 1 * 10 ** 18;
 
+/**
+ * Game settings and configuration values
+ */
 export const RInstanceSettings = {
   RInstance_TIME_PER_TURN,
   RInstance_MAX_PLAYERS,
@@ -335,6 +395,11 @@ export const RInstanceSettings = {
   PRINCIPAL_COST: utils.parseEther('1'),
 };
 
+/**
+ * Sets up the complete playbook for testing including contracts and player accounts
+ * @param hre - Hardhat Runtime Environment
+ * @returns Object containing address setup and environment setup results
+ */
 export const setupPlaybook = async (hre: HardhatRuntimeEnvironment) => {
   const deployments = hre.deployments;
   await hre.run('deploy', {
@@ -432,49 +497,23 @@ export const setupPlaybook = async (hre: HardhatRuntimeEnvironment) => {
   await env.rankifyToken
     .connect(adr.gameOwner.wallet)
     .mint(adr.maliciousActor3.wallet.address, ethers.utils.parseEther('1000000'));
-  //   await env.rankifyToken
-  //     .connect(adr.gameCreator1.wallet)
-  //     .approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
-  //   await env.rankifyToken
-  //     .connect(adr.gameCreator2.wallet)
-  //     .approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
-  //   await env.rankifyToken
-  //     .connect(adr.gameCreator3.wallet)
-  //     .approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
-  //   await env.rankifyToken.connect(adr.player1.wallet).approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
-  //   await env.rankifyToken.connect(adr.player2.wallet).approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
-  //   await env.rankifyToken.connect(adr.player3.wallet).approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
-  //   await env.rankifyToken.connect(adr.player4.wallet).approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
-  //   await env.rankifyToken.connect(adr.player5.wallet).approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
-  //   await env.rankifyToken.connect(adr.player6.wallet).approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
-  //   await env.rankifyToken.connect(adr.player7.wallet).approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
-  //   await env.rankifyToken.connect(adr.player8.wallet).approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
-  //   await env.rankifyToken.connect(adr.player9.wallet).approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
-  //   await env.rankifyToken.connect(adr.player10.wallet).approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
-
-  //   await env.rankifyToken
-  //     .connect(adr.maliciousActor1.wallet)
-  //     .approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
-  //   await env.rankifyToken
-  //     .connect(adr.maliciousActor2.wallet)
-  //     .approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
-  //   await env.rankifyToken
-  //     .connect(adr.maliciousActor3.wallet)
-  //     .approve(env.rankifyInstance.address, ethers.constants.MaxUint256);
-
   return {
     adr,
     env,
   };
 };
 // export const setupTest = () => setupTest();
+/**
+ * Sets up the game environment with all required contract instances
+ * @param setup - Setup configuration including contract deployments and addresses
+ * @returns Initialized contract instances needed for the game
+ */
 export const setupEnvironment = async (setup: {
   hre: HardhatRuntimeEnvironment;
   distributor: Deployment;
   mao: Deployment;
   RankifyToken: Deployment;
   RankTokenBase: Deployment;
-  //   RankifyInstance: Deployment;
   mockERC20: MockERC20;
   mockERC721: MockERC721;
   mockERC1155: MockERC1155;
@@ -523,6 +562,11 @@ interface RegisterMessage {
 
 type signatureMessage = ReferrerMessage | RegisterMessage;
 
+/**
+ * Mines a specified number of blocks for testing purposes
+ * @param count - Number of blocks to mine
+ * @param hre - Hardhat Runtime Environment
+ */
 export async function mineBlocks(count: any, hre: HardhatRuntimeEnvironment) {
   const { ethers } = hre;
   for (let i = 0; i < count; i += 1) {
@@ -623,6 +667,14 @@ const publicVoteTypes = {
   ],
 };
 
+/**
+ * Signs a vote message using EIP-712 typed data
+ * @param message - The vote message to sign
+ * @param verifierAddress - Address of the contract that will verify the signature
+ * @param signer - The signer's identity
+ * @param hre - Hardhat Runtime Environment
+ * @returns The signature
+ */
 export const signVoteMessage = async (
   message: VoteMessage,
   verifierAddress: string,
@@ -644,6 +696,14 @@ export const signVoteMessage = async (
   return s;
 };
 
+/**
+ * Signs a public vote message using EIP-712 typed data
+ * @param message - The public vote message to sign
+ * @param verifierAddress - Address of the contract that will verify the signature
+ * @param signer - The signer's identity
+ * @param hre - Hardhat Runtime Environment
+ * @returns The signature
+ */
 export const signPublicVoteMessage = async (
   message: PublicVoteMessage,
   verifierAddress: string,
@@ -665,9 +725,11 @@ export const signPublicVoteMessage = async (
   return s;
 };
 
-// In real environment this should be game master specific secret
-const MOCK_SECRET = '123456';
-
+/**
+ * Generates a deterministic salt for a player's vote
+ * @param params - Parameters including gameId, turn, player address, and other configuration
+ * @returns The generated salt as a hex string
+ */
 export const getPlayerVoteSalt = async ({
   gameId,
   turn,
@@ -707,10 +769,12 @@ async function signVote(
   signer: Wallet,
   ballotHash: string,
   isGM: boolean,
+  name: string,
+  version: string,
 ): Promise<string> {
   const domain = {
-    name: RANKIFY_INSTANCE_CONTRACT_NAME,
-    version: RANKIFY_INSTANCE_CONTRACT_VERSION,
+    name,
+    version,
     chainId: await hre.getChainId(),
     verifyingContract: verifierAddress,
   };
@@ -758,15 +822,22 @@ export interface MockVote {
   gmSignature: string;
   voterSignature: string;
 }
+/**
+ * Creates and signs a vote for testing purposes
+ * @param params - Parameters including voter, game info, and vote configuration
+ * @returns A complete mock vote with signatures
+ */
 export const attestVote = async ({
   voter,
-  gm,
   gameId,
   turn,
+  gm,
   vote,
   verifierAddress,
   hre,
   gameSize,
+  name,
+  version,
 }: {
   voter: SignerIdentity;
   gameId: BigNumberish;
@@ -776,6 +847,8 @@ export const attestVote = async ({
   verifierAddress: string;
   hre: HardhatRuntimeEnvironment;
   gameSize: number;
+  name: string;
+  version: string;
 }): Promise<MockVote> => {
   const chainId = await hre.getChainId();
 
@@ -804,6 +877,8 @@ export const attestVote = async ({
     gm,
     ballotHash,
     true,
+    name,
+    version,
   );
   const voterSignature = await signVote(
     hre,
@@ -814,9 +889,20 @@ export const attestVote = async ({
     voter.wallet,
     ballotHash,
     false,
+    name,
+    version,
   );
   return { vote, ballotHash, ballot, ballotId, gmSignature, voterSignature };
 };
+
+/**
+ * Gets a list of players for testing
+ * @param adr - Address setup result containing all identities
+ * @param numPlayers - Number of players to return
+ * @param offset - Optional offset to start player selection from
+ * @returns Array of player identities
+ * @throws Error if requested players exceed available players
+ */
 export const getPlayers = (
   adr: AdrSetupResult,
   numPlayers: number,
@@ -849,12 +935,17 @@ function shuffle(array: any[]) {
   return array;
 }
 
+/**
+ * Generates mock votes for testing
+ * @param params - Parameters including game info and player configuration
+ * @returns Array of mock votes
+ */
 export const mockVotes = async ({
   hre,
   gm,
   gameId,
   turn,
-  verifierAddress,
+  verifier,
   players,
   distribution,
 }: {
@@ -862,15 +953,16 @@ export const mockVotes = async ({
   gameId: BigNumberish;
   turn: BigNumberish;
   gm: Wallet;
-  verifierAddress: string;
+  verifier: RankifyDiamondInstance;
   players: [SignerIdentity, SignerIdentity, ...SignerIdentity[]];
   distribution: 'ftw' | 'semiUniform' | 'equal' | 'zeros';
 }): Promise<MockVote[]> => {
   const chainId = await hre.getChainId();
+  const eip712 = await verifier.inspectEIP712Hashes();
   const { permutation } = await generateDeterministicPermutation({
     gameId,
     turn: Number(turn) - 1,
-    verifierAddress,
+    verifierAddress: verifier.address,
     chainId,
     gm,
     size: players.length,
@@ -936,9 +1028,11 @@ export const mockVotes = async ({
         gameId,
         turn,
         gm,
-        verifierAddress,
+        verifierAddress: verifier.address,
         vote: playerVote,
         gameSize: players.length,
+        name: eip712._NAME,
+        version: eip712._VERSION,
       }),
     );
   }
@@ -968,12 +1062,16 @@ async function signProposal(
   commitment: BigNumberish,
   signer: Wallet | SignerWithAddress,
   isGM: boolean,
+  eip712: {
+    name: string;
+    version: string;
+  },
 ): Promise<string> {
   const { chainId } = await hre.ethers.provider.getNetwork();
 
   const domain = {
-    name: RANKIFY_INSTANCE_CONTRACT_NAME,
-    version: RANKIFY_INSTANCE_CONTRACT_VERSION,
+    name: eip712.name,
+    version: eip712.version,
     chainId,
     verifyingContract: verifierAddress,
   };
@@ -1009,19 +1107,24 @@ BigInt.prototype.toJSON = function () {
   return this.toString();
 };
 
+/**
+ * Generates mock proposal secrets for testing
+ * @param params - Parameters including game info and proposer details
+ * @returns A complete proposal submission with signatures and commitments
+ */
 export const mockProposalSecrets = async ({
   gm,
   proposer,
   gameId,
   turn,
-  verifierAddress,
+  verifier,
   hre,
 }: {
   gm: Wallet;
   proposer: SignerIdentity;
   gameId: BigNumberish;
   turn: BigNumberish;
-  verifierAddress: string;
+  verifier: RankifyDiamondInstance;
   hre: HardhatRuntimeEnvironment;
 }): Promise<ProposalSubmission> => {
   const proposal = getDiscussionForTurn(Number(turn), proposer.id);
@@ -1040,7 +1143,7 @@ export const mockProposalSecrets = async ({
     signer: gm,
     gameId,
     turn,
-    contractAddress: verifierAddress,
+    contractAddress: verifier.address,
     chainId: await hre.getChainId(),
   });
 
@@ -1051,28 +1154,36 @@ export const mockProposalSecrets = async ({
   // Calculate commitment using poseidon
   const hash = poseidon([proposalValue, randomnessValue]);
   const poseidonCommitment = BigInt(poseidon.F.toObject(hash));
-
+  const eip712 = await verifier.inspectEIP712Hashes();
   // Get both GM and proposer signatures
   const gmSignature = await signProposal(
     hre,
-    verifierAddress,
+    verifier.address,
     proposer.wallet.address,
     gameId,
     encryptedProposal,
     poseidonCommitment,
     gm,
     true,
+    {
+      name: eip712._NAME,
+      version: eip712._VERSION,
+    },
   );
 
   const voterSignature = await signProposal(
     hre,
-    verifierAddress,
+    verifier.address,
     proposer.wallet.address,
     gameId,
     encryptedProposal,
     poseidonCommitment,
     proposer.wallet,
     false,
+    {
+      name: eip712._NAME,
+      version: eip712._VERSION,
+    },
   );
 
   const params: ProposalParams = {
@@ -1099,7 +1210,7 @@ export const mockProposals = async ({
   players,
   gameId,
   turn,
-  verifierAddress,
+  verifier,
   gm,
   idlers,
 }: {
@@ -1107,7 +1218,7 @@ export const mockProposals = async ({
   players: SignerIdentity[];
   gameId: BigNumberish;
   turn: BigNumberish;
-  verifierAddress: string;
+  verifier: RankifyDiamondInstance;
   gm: Wallet;
   idlers?: number[];
 }): Promise<ProposalSubmission[]> => {
@@ -1122,7 +1233,7 @@ export const mockProposals = async ({
         proposer: players[i],
         gameId,
         turn,
-        verifierAddress,
+        verifier,
       });
     } else {
       proposal = {
@@ -1145,12 +1256,17 @@ export const mockProposals = async ({
   return proposals;
 };
 
+/**
+ * Gets proposal integrity data for testing
+ * @param params - Parameters including game info and proposal data
+ * @returns Proposal integrity information including permutations and proofs
+ */
 export const getProposalsIntegrity = async ({
   hre,
   players,
   gameId,
   turn,
-  verifierAddress,
+  verifier,
   gm,
   idlers,
   proposalSubmissionData,
@@ -1159,7 +1275,7 @@ export const getProposalsIntegrity = async ({
   players: SignerIdentity[];
   gameId: BigNumberish;
   turn: BigNumberish;
-  verifierAddress: string;
+  verifier: RankifyDiamondInstance;
   gm: Wallet;
   idlers?: number[];
   proposalSubmissionData?: ProposalSubmission[];
@@ -1171,7 +1287,7 @@ export const getProposalsIntegrity = async ({
       players,
       gameId,
       turn,
-      verifierAddress,
+      verifier,
       gm,
       idlers,
     }));
@@ -1179,7 +1295,7 @@ export const getProposalsIntegrity = async ({
   const { commitment, nullifier, permutation, permutedProposals, a, b, c } = await generateEndTurnIntegrity({
     gameId,
     turn,
-    verifierAddress,
+    verifierAddress: verifier.address,
     chainId: await hre.getChainId(),
     gm,
     size: players.length,
@@ -1209,6 +1325,15 @@ const joinTypes = {
     { type: 'bytes32', name: 'hiddenSalt' },
   ],
 };
+/**
+ * Signs a message for joining a game
+ * @param hre - Hardhat Runtime Environment
+ * @param verifier - Address of the contract that will verify the signature
+ * @param participant - Address of the participant joining
+ * @param gameId - ID of the game to join
+ * @param signer - The signer's identity
+ * @returns Object containing signature and hidden salt
+ */
 export const signJoiningGame = async (
   hre: HardhatRuntimeEnvironment,
   verifier: string,

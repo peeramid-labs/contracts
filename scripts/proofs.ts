@@ -181,7 +181,7 @@ export const generateEndTurnIntegrity = async ({
   }
 
   const circuit = await hre.zkit.getCircuit('ProposalsIntegrity15');
-  const inputsKey = ethers.utils.solidityKeccak256(['string'], [JSON.stringify(inputs)]);
+  const inputsKey = ethers.utils.solidityKeccak256(['string'], [JSON.stringify(inputs) + 'groth16']);
 
   // Check runtime cache first
   if (!cachedProofs.has(inputsKey)) {

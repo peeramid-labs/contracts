@@ -83,7 +83,7 @@ const endTurn = async (gameId: BigNumberish, gameContract: RankifyDiamondInstanc
     players: getPlayers(adr, players.length),
     gameId,
     turn: Number(turn),
-    verifierAddress: gameContract.address,
+    verifier: gameContract,
     gm: adr.gameMaster1.wallet,
     idlers,
   });
@@ -130,7 +130,7 @@ const runToTheEnd = async (
       players,
       gameId,
       turn,
-      verifierAddress: gameContract.address,
+      verifier: gameContract,
       gm: gameMaster.wallet,
       proposalSubmissionData: await mockValidProposals({
         players,
@@ -180,7 +180,7 @@ const endWithIntegrity = async ({
     players,
     gameId,
     turn,
-    verifierAddress: gameContract.address,
+    verifier: gameContract,
     gm: gm.wallet,
     proposalSubmissionData: proposals,
     idlers,
@@ -232,12 +232,14 @@ const mockValidVotes = async (
   distribution?: 'ftw' | 'semiUniform' | 'equal',
 ) => {
   const turn = await gameContract.getTurn(gameId);
+  const eip712Name = (await rankifyInstance.inspectEIP712Hashes())._NAME;
+  const eip712Version = (await rankifyInstance.inspectEIP712Hashes())._VERSION;
   if (!turn.eq(1)) {
     votes = await mockVotes({
       hre: hre,
       gameId: gameId,
       turn: turn,
-      verifierAddress: gameContract.address,
+      verifier: gameContract,
       players: players,
       gm: gm.wallet,
       distribution: distribution ?? 'semiUniform',
@@ -309,7 +311,7 @@ const mockValidProposals = async ({
     players: players,
     gameId: gameId,
     turn: _turn,
-    verifierAddress: gameContract.address,
+    verifier: gameContract,
     gm: gameMaster.wallet,
     idlers: idlers,
   });
@@ -742,7 +744,7 @@ describe(scriptName, () => {
       players: getPlayers(adr, RInstanceSettings.RInstance_MAX_PLAYERS),
       gameId: 1,
       turn: 1,
-      verifierAddress: rankifyInstance.address,
+      verifier: rankifyInstance,
       gm: adr.gameMaster1.wallet,
     });
     await expect(
@@ -753,7 +755,7 @@ describe(scriptName, () => {
       hre: hre,
       gameId: 1,
       turn: 1,
-      verifierAddress: rankifyInstance.address,
+      verifier: rankifyInstance,
       players: getPlayers(adr, RInstanceSettings.RInstance_MAX_PLAYERS),
       gm: adr.gameMaster1.wallet,
       distribution: 'semiUniform',
@@ -797,7 +799,7 @@ describe(scriptName, () => {
       players: getPlayers(adr, RInstanceSettings.RInstance_MAX_PLAYERS),
       gameId: 1,
       turn: 1,
-      verifierAddress: rankifyInstance.address,
+      verifier: rankifyInstance,
       gm: adr.gameMaster1.wallet,
     });
     await expect(
@@ -1075,7 +1077,7 @@ describe(scriptName, () => {
           players: getPlayers(adr, RInstanceSettings.RInstance_MAX_PLAYERS),
           gameId: 1,
           turn: 1,
-          verifierAddress: rankifyInstance.address,
+          verifier: rankifyInstance,
           gm: adr.gameMaster1.wallet,
         });
 
@@ -1181,7 +1183,7 @@ describe(scriptName, () => {
             players: getPlayers(adr, RInstanceSettings.RInstance_MAX_PLAYERS),
             gameId: 1,
             turn: 1,
-            verifierAddress: rankifyInstance.address,
+            verifier: rankifyInstance,
             gm: adr.gameMaster1.wallet,
           });
           await expect(
@@ -1191,7 +1193,7 @@ describe(scriptName, () => {
             hre: hre,
             gameId: 1,
             turn: 1,
-            verifierAddress: rankifyInstance.address,
+            verifier: rankifyInstance,
             players: getPlayers(adr, RInstanceSettings.RInstance_MAX_PLAYERS),
             gm: adr.gameMaster1.wallet,
             distribution: 'semiUniform',
@@ -1205,7 +1207,7 @@ describe(scriptName, () => {
             players: getPlayers(adr, RInstanceSettings.RInstance_MAX_PLAYERS),
             gameId: 1,
             turn: 1,
-            verifierAddress: rankifyInstance.address,
+            verifier: rankifyInstance,
             gm: adr.gameMaster1.wallet,
           });
           await expect(
@@ -1355,7 +1357,7 @@ describe(scriptName, () => {
               players: getPlayers(adr, RInstanceSettings.RInstance_MIN_PLAYERS),
               gameId: 1,
               turn: 1,
-              verifierAddress: rankifyInstance.address,
+              verifier: rankifyInstance,
               gm: adr.gameMaster1.wallet,
             });
             await expect(
@@ -1365,7 +1367,7 @@ describe(scriptName, () => {
               hre: hre,
               gameId: 1,
               turn: 1,
-              verifierAddress: rankifyInstance.address,
+              verifier: rankifyInstance,
               players: getPlayers(adr, RInstanceSettings.RInstance_MIN_PLAYERS),
               gm: adr.gameMaster1.wallet,
               distribution: 'semiUniform',
@@ -1457,7 +1459,7 @@ describe(scriptName, () => {
                   players,
                   gameId: 1,
                   turn: turn,
-                  verifierAddress: rankifyInstance.address,
+                  verifier: rankifyInstance,
                   gm: adr.gameMaster1.wallet,
                   proposalSubmissionData: await mockValidProposals({
                     players,
@@ -1578,7 +1580,7 @@ describe(scriptName, () => {
                     players,
                     gameId: 1,
                     turn,
-                    verifierAddress: rankifyInstance.address,
+                    verifier: rankifyInstance,
                     gm: adr.gameMaster1.wallet,
                     proposalSubmissionData: await mockValidProposals({
                       players,
@@ -1687,7 +1689,7 @@ describe(scriptName, () => {
                     players: players,
                     gameId: 1,
                     turn,
-                    verifierAddress: rankifyInstance.address,
+                    verifier: rankifyInstance,
                     gm: adr.gameMaster1.wallet,
                     proposalSubmissionData: mockProposals,
                     // idlers: players.map((_, i) => i),
@@ -1733,7 +1735,7 @@ describe(scriptName, () => {
                     players: players,
                     gameId: 1,
                     turn: Number(turn) - 1,
-                    verifierAddress: rankifyInstance.address,
+                    verifier: rankifyInstance,
                     gm: adr.gameMaster1.wallet,
                     proposalSubmissionData: await mockValidProposals({
                       players,
@@ -1902,7 +1904,7 @@ describe(scriptName, () => {
             hre: hre,
             gameId: 1,
             turn: currentTurn,
-            verifierAddress: rankifyInstance.address,
+            verifier: rankifyInstance,
             players: getPlayers(adr, RInstanceSettings.RInstance_MAX_PLAYERS),
             gm: adr.gameMaster1.wallet,
             distribution: 'ftw',
@@ -1912,7 +1914,7 @@ describe(scriptName, () => {
             players: getPlayers(adr, RInstanceSettings.RInstance_MAX_PLAYERS),
             gameId: 1,
             turn: currentTurn,
-            verifierAddress: rankifyInstance.address,
+            verifier: rankifyInstance,
             gm: adr.gameMaster1.wallet,
           });
 
@@ -1940,7 +1942,7 @@ describe(scriptName, () => {
             players: getPlayers(adr, RInstanceSettings.RInstance_MAX_PLAYERS),
             gameId: 1,
             turn: await rankifyInstance.getTurn(1),
-            verifierAddress: rankifyInstance.address,
+            verifier: rankifyInstance,
             gm: adr.gameMaster1.wallet,
             proposalSubmissionData: proposals,
           });
