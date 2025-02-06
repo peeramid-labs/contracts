@@ -9,7 +9,6 @@ concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 permissions: {}
 env:
-  FORK_RPC_URL: ${{ secrets.FORK_RPC_URL }}
 jobs:
   release:
     permissions:

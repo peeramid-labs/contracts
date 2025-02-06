@@ -1,7 +1,7 @@
 import { buildPoseidon } from 'circomlibjs';
 import { BigNumberish, Wallet, ethers, utils } from 'ethers';
 import { ProposalSubmission, SignerIdentity } from './utils';
-import { PrivateProposalsIntegrity15Groth16, ProofProposalsIntegrity15Groth16 } from 'zk';
+import { PrivateProposalsIntegrity15Groth16, ProofProposalsIntegrity15Groth16 } from '@zkit';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import * as fs from 'fs';
 import * as path from 'path';

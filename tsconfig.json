@@ -7,14 +7,9 @@
     "strict": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "typeRoots": ["./node_modules/@types", "./types"],
     "baseUrl": ".",
     "paths": {
-      "@openzeppelin/*": ["node_modules/@openzeppelin/*"],
-      "@peeramid-labs/*": ["node_modules/@peeramid-labs/*"],
-      "@zkit": ["./generated-types/zkit"],
-      "src/*": ["src/*"],
-      "*": ["node_modules/*", "types/*"]
+      "@zkit": ["./types/zk"]
     }
   },
   "include": [
