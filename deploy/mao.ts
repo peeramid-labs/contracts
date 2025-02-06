@@ -60,7 +60,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const registerAddress = await codeIndexContract.get(rankTokenCodeId);
   if (registerAddress === ethers.constants.AddressZero) {
     log('Registering RankToken in CodeIndex...');
-    (await codeIndexContract.register(rankTokenDeployment.address)).wait(1);
+    await (await codeIndexContract.register(rankTokenDeployment.address)).wait(1);
   } else {
     log('RankToken already registered in CodeIndex');
   }

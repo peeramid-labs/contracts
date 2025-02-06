@@ -343,7 +343,7 @@ task('createGame', 'Create new game')
 
       console.log('Creating game with params:', params);
       const tx = await gameInstance.createGame(params);
-      const receipt = await tx.wait();
+      const receipt = await tx.wait(1);
 
       const gameId = await gameInstance
         .connect(gameCreatorSigner)

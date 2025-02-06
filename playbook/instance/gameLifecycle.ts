@@ -4,6 +4,8 @@ import inquirer from 'inquirer';
 import { InstanceBase, GameState } from './InstanceBase';
 import { setupTest } from '../utils';
 import { SignerIdentity } from '../utils';
+import { MAOInstances, parseInstantiated } from '../../scripts/parseInstantiated';
+import { BigNumber } from 'ethers';
 
 type GameAction = 'openRegistration' | 'fillParty' | 'startGame' | 'nextMove' | 'lastMove' | 'overtime' | 'endGame';
 
@@ -212,19 +214,17 @@ task('gameLifecycle', 'Interactive guide through the game lifecycle').setAction(
     console.log('Distribution added, Distributors Id:', distribution.distributorsId);
   }
 
-  const subject = await hre.run('createSubject');
-  console.log('Subject created with instances:', subject.instances);
-
-  const instanceBase = new InstanceBase(
-    setupEnv.env,
-    setupEnv.adr,
-    (await ethers.getContractAt(
-      'RankifyDiamondInstance',
-      subject.instancesParsed.ACIDInstance,
-    )) as RankifyDiamondInstance,
-    (await ethers.getContractAt('RankToken', subject.instancesParsed.rankToken)) as RankToken,
-    hre,
-  );
+  // Get all subjects
+  const eventsFilter = await distributorContract.filters.Instantiated();
+  const subjects = await distributorContract.queryFilter(eventsFilter).then(evts => {
+    return evts.map(evt => {
+      return {
+        instances: evt.args.instances,
+        newInstanceId: evt.args.newInstanceId,
+        instancesParsed: parseInstantiated(evt.args.instances),
+      };
+    });
+  });
 
   let exitProgram = false;
   while (!exitProgram) {
@@ -232,49 +232,111 @@ task('gameLifecycle', 'Interactive guide through the game lifecycle').setAction(
       type: 'list',
       name: 'action',
       message: 'What would you like to do?',
-      choices: ['Create new game', 'Select existing game', 'Exit'],
+      choices: ['Create new subject', 'Select existing subject', 'Exit'],
     });
 
+    let instanceBase;
+    let selectedSubject;
     switch (action) {
-      case 'Create new game': {
-        const gameId = await instanceBase.createGame(
-          instanceBase.adr.gameCreator1,
-          instanceBase.adr.gameMaster1.wallet.address,
-          1,
-          false,
-        );
-        console.log('Game created with ID:', gameId);
-        const { manage } = await inquirer.prompt({
-          type: 'confirm',
-          name: 'manage',
-          message: 'Would you like to manage this game now?',
-        });
-        if (manage) {
-          await handleGameState(instanceBase, Number(gameId));
-        }
+      case 'Create new subject': {
+        const subject = (await hre.run('createSubject')) as {
+          instances: string[];
+          newInstanceId: BigNumber;
+          instancesParsed: MAOInstances;
+        };
+        console.log('Subject created with instances:', subject.instances);
+        subjects.push(subject);
         break;
       }
-      case 'Select existing game': {
-        const games = await instanceBase.getActiveGames();
-        if (games.length === 0) {
-          console.log('No active games found');
+      case 'Select existing subject': {
+        if (subjects.length === 0) {
+          console.log('No subjects found. Please create a new subject first.');
           continue;
         }
-        const { gameId } = await inquirer.prompt({
+        const { subjectId } = await inquirer.prompt({
           type: 'list',
-          name: 'gameId',
-          message: 'Select a game to manage:',
-          choices: games.map(id => ({
-            name: `Game ${id}`,
-            value: id,
+          name: 'subjectId',
+          message: 'Select a subject:',
+          choices: subjects.map(subject => ({
+            name: `${subject.newInstanceId} (${subject.instancesParsed.ACIDInstance})`,
+            value: subject.newInstanceId,
           })),
         });
-        await handleGameState(instanceBase, gameId);
+        selectedSubject = subjects.find(subject => subject.newInstanceId === subjectId);
         break;
       }
       case 'Exit':
         exitProgram = true;
-        break;
+        continue;
+    }
+
+    if (selectedSubject) {
+      instanceBase = new InstanceBase(
+        setupEnv.env,
+        setupEnv.adr,
+        (await ethers.getContractAt(
+          'RankifyDiamondInstance',
+          selectedSubject.instancesParsed.ACIDInstance,
+        )) as RankifyDiamondInstance,
+        (await ethers.getContractAt('RankToken', selectedSubject.instancesParsed.rankToken)) as RankToken,
+        hre,
+      );
+
+      let continueWithSubject = true;
+      while (continueWithSubject) {
+        const { subjectAction } = await inquirer.prompt({
+          type: 'list',
+          name: 'subjectAction',
+          message: `Managing ${selectedSubject.newInstanceId.toString()} - What would you like to do?`,
+          choices: ['Create new game', 'Select existing game', 'Back to subject selection', 'Exit'],
+        });
+
+        switch (subjectAction) {
+          case 'Create new game': {
+            const gameId = await instanceBase.createGame(
+              instanceBase.adr.gameCreator1,
+              instanceBase.adr.gameMaster1.wallet.address,
+              1,
+              false,
+            );
+            console.log('Game created with ID:', gameId);
+            const { manage } = await inquirer.prompt({
+              type: 'confirm',
+              name: 'manage',
+              message: 'Would you like to manage this game now?',
+            });
+            if (manage) {
+              await handleGameState(instanceBase, Number(gameId));
+            }
+            break;
+          }
+          case 'Select existing game': {
+            const games = await instanceBase.getActiveGames();
+            if (games.length === 0) {
+              console.log('No active games found');
+              continue;
+            }
+            const { gameId } = await inquirer.prompt({
+              type: 'list',
+              name: 'gameId',
+              message: 'Select a game to manage:',
+              choices: games.map(id => ({
+                name: `Game ${id}`,
+                value: id,
+              })),
+            });
+            await handleGameState(instanceBase, Number(gameId));
+            break;
+          }
+          case 'Back to subject selection':
+            continueWithSubject = false;
+            break;
+          case 'Exit':
+            continueWithSubject = false;
+            exitProgram = true;
+            break;
+        }
+      }
     }
   }
 });

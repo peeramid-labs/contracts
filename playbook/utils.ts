@@ -17,12 +17,13 @@ import { Deployment } from 'hardhat-deploy/types';
 import { HardhatEthersHelpers } from '@nomiclabs/hardhat-ethers/types';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { getDiscussionForTurn } from './instance/discussionTopics';
+import { json } from 'stream/consumers';
 export const RANKIFY_INSTANCE_CONTRACT_NAME = 'RANKIFY_INSTANCE_NAME';
 export const RANKIFY_INSTANCE_CONTRACT_VERSION = '0.0.1';
-export const RInstance_TIME_PER_TURN = 2500;
+export const RInstance_TIME_PER_TURN = 60 * 60 * 24;
 export const RInstance_MAX_PLAYERS = 6;
 export const RInstance_MIN_PLAYERS = 5;
-export const RInstance_MAX_TURNS = 3;
+export const RInstance_MAX_TURNS = 5;
 export const RInstance_TIME_TO_JOIN = '200';
 export const RInstance_GAME_PRICE = ethers.utils.parseEther('0.001');
 export const RInstance_JOIN_GAME_PRICE = ethers.utils.parseEther('0.001');
@@ -112,7 +113,7 @@ export const setupAddresses = async (
     _player17,
   ] = await ethers.getSigners();
 
-  const { deployer, owner } = await getNamedAccounts();
+  const { deployer, owner, gameMaster: _gameMaster1 } = await getNamedAccounts();
 
   const createRandomIdentityAndSeedEth = async (name: string) => {
     let newWallet = await _eth.Wallet.createRandom();
@@ -130,16 +131,26 @@ export const setupAddresses = async (
     return newIdentity;
   };
 
-  const gameCreator1 = await createRandomIdentityAndSeedEth('gameCreator1');
+  //   const gameCreator1 = await createRandomIdentityAndSeedEth('gameCreator1');
   const gameCreator2 = await createRandomIdentityAndSeedEth('gameCreator2');
   const gameCreator3 = await createRandomIdentityAndSeedEth('gameCreator3');
   const maliciousActor1 = await createRandomIdentityAndSeedEth('maliciousActor');
-  const gameMaster1 = await createRandomIdentityAndSeedEth('GM1');
+  const gameMaster1: SignerIdentity = {
+    wallet: await hre.ethers.getSigner(_gameMaster1),
+    name: 'gameMaster1',
+    id: 'gameMaster1-id',
+  };
   const gameMaster2 = await createRandomIdentityAndSeedEth('GM2');
   const gameMaster3 = await createRandomIdentityAndSeedEth('GM3');
   const maliciousActor2 = await createRandomIdentityAndSeedEth('MaliciousActor2');
   const maliciousActor3 = await createRandomIdentityAndSeedEth('MaliciousActor3');
   const player18 = await createRandomIdentityAndSeedEth('player18');
+
+  const gameCreator1: SignerIdentity = {
+    wallet: await hre.ethers.getSigner(deployer),
+    name: 'gameCreator1',
+    id: 'gameCreator1-id',
+  };
 
   const contractDeployer: SignerIdentity = {
     wallet: await hre.ethers.getSigner(deployer),
@@ -818,7 +829,7 @@ export const mockProposalSecrets = async ({
 }): Promise<ProposalSubmission> => {
   const _gmW = gm.wallet as Wallet;
   const proposal = getDiscussionForTurn(Number(turn), proposer.id);
-  const encryptedProposal = aes.encrypt(proposal, _gmW.privateKey).toString();
+  const encryptedProposal = JSON.stringify(proposal); /// aes.encrypt(JSON.stringify(proposal), _gmW.publicKey).toString();
   const commitmentHash: string = utils.solidityKeccak256(['string'], [proposal]);
 
   const params: ProposalParams = {
@@ -832,7 +843,7 @@ export const mockProposalSecrets = async ({
 
   return {
     params,
-    proposal,
+    proposal: JSON.stringify(proposal),
     proposerSignerId: proposer,
   };
 };
