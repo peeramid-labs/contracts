@@ -4,7 +4,7 @@
 import { buildPoseidon } from 'circomlibjs';
 import { zkit } from 'hardhat'; // hardhat-zkit plugin
 import { expect } from 'chai'; // chai-zkit extension
-import { ProposalsIntegrity15 } from 'zk';
+import { ProposalsIntegrity15 } from '@zkit';
 import { createInputs } from '../scripts/proofs';
 import { ethers } from 'hardhat';
 
