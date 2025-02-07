@@ -5,6 +5,7 @@ import { InstanceBase, GameState } from './InstanceBase';
 import { MAOInstances, parseInstantiated } from '../../scripts/parseInstantiated';
 import { BigNumber } from 'ethers';
 import { setupMockedEnvironment, SignerIdentity } from '../../scripts/setupMockEnvironment';
+import { log } from '../../scripts/utils';
 
 type GameAction = 'openRegistration' | 'fillParty' | 'startGame' | 'nextMove' | 'lastMove' | 'overtime' | 'endGame';
 
@@ -128,7 +129,7 @@ async function executeSingleAction(
         gameId,
         shiftTime: true,
         gameMaster: instanceBase.adr.gameMaster1,
-        startGame: true,
+        startGame: false,
       });
       console.log('Party filled successfully');
       break;
@@ -224,7 +225,7 @@ task('gameLifecycle', 'Interactive guide through the game lifecycle').setAction(
       type: 'list',
       name: 'action',
       message: 'What would you like to do?',
-      choices: ['Create new subject', 'Select existing subject', 'Exit'],
+      choices: ['Create new subject', 'Select existing subject', 'Change logs verbosity', 'Exit'],
     });
 
     let instanceBase;
@@ -255,6 +256,28 @@ task('gameLifecycle', 'Interactive guide through the game lifecycle').setAction(
           })),
         });
         selectedSubject = subjects.find(subject => subject.newInstanceId === subjectId);
+        break;
+      }
+      case 'Change logs verbosity': {
+        const { verbosity } = await inquirer.prompt({
+          type: 'list',
+          name: 'verbosity',
+          message: 'Select a verbosity level:',
+          choices: ['none', 'low', 'medium', 'high'],
+        });
+        if (verbosity === 'none') {
+          process.env['VERBOSE'] = '';
+        } else {
+          process.env['VERBOSE'] = 'true';
+        }
+        const mapping = {
+          none: '0',
+          low: '1',
+          medium: '2',
+          high: '3',
+        };
+        process.env['VERBOSE_LEVEL'] = mapping[verbosity as keyof typeof mapping];
+        log(`Logs verbosity set to ${verbosity}`);
         break;
       }
       case 'Exit':

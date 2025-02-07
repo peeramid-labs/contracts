@@ -1342,7 +1342,8 @@ class EnvironmentSimulator {
     log(`Starting game ${gameId}`);
     const currentT = await time.latest();
     const isRegistrationOpen = await this.rankifyInstance.isRegistrationOpen(gameId);
-    if (isRegistrationOpen) {
+    const state = await this.rankifyInstance.getGameState(gameId);
+    if (isRegistrationOpen && !state.hasStarted) {
       await time.setNextBlockTimestamp(currentT + Number(constantParams.RInstance_TIME_TO_JOIN) + 1);
       await this.mineBlocks(constantParams.RInstance_TIME_TO_JOIN + 1);
       await this.rankifyInstance
@@ -1360,7 +1361,7 @@ class EnvironmentSimulator {
         )
         .then(tx => tx.wait(1));
     } else {
-      log('Registration should be open, skipping start game');
+      log('Game already started, skipping start game');
     }
   }
 
