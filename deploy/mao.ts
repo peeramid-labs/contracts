@@ -6,11 +6,7 @@ import { ERC7744 } from '@peeramid-labs/eds/types';
 import ERC7744Abi from '@peeramid-labs/eds/abi/src/ERC7744.sol/ERC7744.json';
 import { MintSettingsStruct } from '../types/src/tokens/DistributableGovernanceERC20.sol/DistributableGovernanceERC20';
 import { ArguableVotingTournament } from '../types/src/distributions/ArguableVotingTournament';
-import {
-  RANKIFY_INSTANCE_CONTRACT_NAME,
-  RANKIFY_INSTANCE_CONTRACT_VERSION,
-  RInstance_MIN_PLAYERS,
-} from '../scripts/utils';
+import { constantParams } from '../scripts/EnvironmentSimulator';
 import { poseidonContract } from 'circomlibjs';
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
@@ -24,8 +20,8 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   )) as ERC7744;
 
   let _trustedForwarder = ethers.constants.AddressZero;
-  let _distributionName = process.env.MAO_INSTANCE_NAME ?? RANKIFY_INSTANCE_CONTRACT_NAME;
-  const versionString = process.env.MAO_INSTANCE_VERSION ?? RANKIFY_INSTANCE_CONTRACT_VERSION;
+  let _distributionName = process.env.MAO_INSTANCE_NAME ?? constantParams.RANKIFY_INSTANCE_CONTRACT_NAME;
+  const versionString = process.env.MAO_INSTANCE_VERSION ?? constantParams.RANKIFY_INSTANCE_CONTRACT_VERSION;
   let _distributionVersion: LibSemver.VersionStruct = {
     major: versionString.split('.')[0],
     minor: versionString.split('.')[1],
@@ -61,7 +57,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const registerAddress = await codeIndexContract.get(rankTokenCodeId);
   if (registerAddress === ethers.constants.AddressZero) {
     log('Registering RankToken in CodeIndex...');
-    (await codeIndexContract.register(rankTokenDeployment.address)).wait(1);
+    await (await codeIndexContract.register(rankTokenDeployment.address)).wait(1);
   } else {
     log('RankToken already registered in CodeIndex');
   }
@@ -205,7 +201,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       govTokenDeploymentCodeId,
       _distributionName, // These could be other, currently duplicates with dependency, good as long as not used
       _distributionVersion,
-      RInstance_MIN_PLAYERS,
+      constantParams.RInstance_MIN_PLAYERS,
     ],
   });
 

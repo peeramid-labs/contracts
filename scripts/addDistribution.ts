@@ -28,11 +28,9 @@ export const addDistribution =
     if (!_name) _name = await hre.run('defaultDistributionId');
     if (!_name) throw new Error('Distribution name not found');
     if (typeof _name !== 'string') throw new Error('Distribution name must be a string');
-    receipt = await distributorContract.addNamedDistribution(
-      _name,
-      distrId,
-      initializer ?? hre.ethers.constants.AddressZero,
-    );
+    receipt = await distributorContract
+      .addNamedDistribution(_name, distrId, initializer ?? hre.ethers.constants.AddressZero)
+      .then(tx => tx.wait(1));
 
     const distributorsId = await distributorContract.getDistributions();
     if (distributorsId.length !== distributionsLengthBefore + 1)

@@ -1,13 +1,12 @@
 import { buildPoseidon } from 'circomlibjs';
-import { BigNumberish, Wallet, ethers, utils } from 'ethers';
-import { ProposalSubmission, SignerIdentity } from './utils';
+import { BigNumberish, ethers, utils, Wallet } from 'ethers';
 import { PrivateProposalsIntegrity15Groth16, ProofProposalsIntegrity15Groth16 } from '@zkit';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import * as fs from 'fs';
 import * as path from 'path';
-
-// Runtime cache
-const cachedProofs = new Map<string, ProofProposalsIntegrity15Groth16>();
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { ProposalSubmission } from './EnvironmentSimulator';
+import { log } from './utils';
 
 // Persistent cache helpers
 const CACHE_DIR = '.zkproofs-cache';
@@ -57,7 +56,7 @@ export const createInputs = async ({
   turn: BigNumberish;
   verifierAddress: string;
   chainId: BigNumberish;
-  gm: Wallet;
+  gm: SignerWithAddress | Wallet;
 }): Promise<PrivateProposalsIntegrity15Groth16> => {
   const poseidon = await buildPoseidon();
   const maxSize = 15;
@@ -119,13 +118,13 @@ const getSeed = async ({
   turn: BigNumberish;
   verifierAddress: string;
   chainId: BigNumberish;
-  gm: SignerIdentity | Wallet;
+  gm: SignerWithAddress | Wallet;
 }): Promise<bigint> => {
   const message = utils.solidityKeccak256(
     ['uint256', 'uint256', 'address', 'uint256'],
     [gameId, turn, verifierAddress, chainId],
   );
-  const signature = await ('_signTypedData' in gm ? gm : gm.wallet).signMessage(message);
+  const signature = await gm.signMessage(message);
   const seed = utils.keccak256(signature);
 
   return BigInt(seed);
@@ -145,7 +144,7 @@ export const generateEndTurnIntegrity = async ({
   turn: BigNumberish;
   verifierAddress: string;
   chainId: BigNumberish;
-  gm: Wallet;
+  gm: SignerWithAddress | Wallet;
   size?: number;
   proposals: ProposalSubmission[];
   hre: HardhatRuntimeEnvironment;
@@ -171,6 +170,7 @@ export const generateEndTurnIntegrity = async ({
     chainId: await hre.getChainId(),
     gm,
   });
+  log(inputs, 2);
 
   // Apply permutation to proposals array
   const permutedProposals = [...proposals];
@@ -183,22 +183,17 @@ export const generateEndTurnIntegrity = async ({
   const circuit = await hre.zkit.getCircuit('ProposalsIntegrity15');
   const inputsKey = ethers.utils.solidityKeccak256(['string'], [JSON.stringify(inputs) + 'groth16']);
 
-  // Check runtime cache first
-  if (!cachedProofs.has(inputsKey)) {
-    // Check persistent cache
-    const persistentProof = loadFromCache(inputsKey);
-    if (persistentProof) {
-      cachedProofs.set(inputsKey, persistentProof);
-    } else {
-      // Generate new proof
-      const proof = await circuit.generateProof(inputs);
-      cachedProofs.set(inputsKey, proof);
-      // Save to persistent cache
-      saveToCache(inputsKey, proof);
-    }
+  let cached = loadFromCache(inputsKey);
+  if (cached) {
+    log(`Loaded proof from cache for inputsKey ${inputsKey}`, 2);
+  } else {
+    log(`Generating proof for inputsKey ${inputsKey}`, 2);
+    const proof = await circuit.generateProof(inputs);
+    saveToCache(inputsKey, proof);
+    cached = proof;
   }
 
-  const proof = cachedProofs.get(inputsKey);
+  const proof = cached;
   if (!proof) {
     throw new Error('Proof not found');
   }
@@ -228,7 +223,7 @@ export const generateDeterministicPermutation = async ({
   turn: BigNumberish;
   verifierAddress: string;
   chainId: BigNumberish;
-  gm: Wallet;
+  gm: SignerWithAddress | Wallet;
   size?: number;
 }): Promise<{
   permutation: number[];

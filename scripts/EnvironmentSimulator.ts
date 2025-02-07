@@ -1,0 +1,1426 @@
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import aes from 'crypto-js/aes';
+import {
+  Rankify,
+  MockERC1155,
+  MockERC20,
+  MockERC721,
+  RankToken,
+  MAODistribution,
+  DAODistributor,
+  ArguableVotingTournament,
+  RankifyInstanceGameMastersFacet,
+  RankifyDiamondInstance,
+} from '../types';
+import cryptoJs from 'crypto-js';
+import { time } from '@nomicfoundation/hardhat-network-helpers';
+import { BigNumberish, BytesLike, TypedDataField, BigNumber, constants, utils, Wallet, ethers } from 'ethers';
+// @ts-ignore
+import { assert } from 'console';
+import { HardhatRuntimeEnvironment } from 'hardhat/types';
+import { getDiscussionForTurn } from './discussionTopics';
+import { buildPoseidon } from 'circomlibjs';
+import { sharedSigner } from './sharedKey';
+import { generateDeterministicPermutation, generateEndTurnIntegrity } from './proofs';
+import { AdrSetupResult } from './setupMockEnvironment';
+import { SignerIdentity } from './setupMockEnvironment';
+import { IRankifyInstance } from '../types/src/facets/RankifyInstanceMainFacet';
+import { log } from './utils';
+declare global {
+  interface BigInt {
+    toJSON(): string;
+  }
+}
+
+BigInt.prototype.toJSON = function () {
+  return this.toString();
+};
+
+/**
+ * Represents a signer's identity in the game
+ */
+
+/**
+ * Result of setting up addresses for testing/deployment
+ * Contains all player, admin and special role identities
+ */
+
+export interface MockVote {
+  vote: BigNumberish[];
+  ballotHash: string;
+  ballot: {
+    vote: BigNumberish[];
+    salt: string;
+  };
+  ballotId: string;
+  gmSignature: string;
+  voterSignature: string;
+}
+
+/**
+ * Result of setting up the game environment
+ * Contains all contract instances needed for the game
+ */
+export interface EnvSetupResult {
+  rankifyToken: Rankify;
+  arguableVotingTournamentDistribution: ArguableVotingTournament;
+  rankTokenBase: RankToken;
+  mockERC20: MockERC20;
+  mockERC1155: MockERC1155;
+  mockERC721: MockERC721;
+  maoDistribution: MAODistribution;
+  distributor: DAODistributor;
+}
+
+interface ReferrerMessage {
+  referrerAddress: string;
+}
+interface RegisterMessage {
+  name: BytesLike;
+  id: BytesLike;
+  domainName: BytesLike;
+  deadline: BigNumber;
+  nonce: BigNumber;
+}
+
+interface ProposalParams {
+  gameId: BigNumberish;
+  encryptedProposal: string;
+  commitment: BigNumberish;
+  proposer: string;
+  gmSignature: BytesLike;
+  voterSignature: BytesLike;
+}
+
+export interface ProposalSubmission {
+  params: ProposalParams;
+  proposal: string;
+  proposerSignerId?: SignerIdentity;
+  proposalValue: bigint;
+  randomnessValue: bigint;
+}
+
+export interface ProposalsIntegrity {
+  newProposals: RankifyInstanceGameMastersFacet.BatchProposalRevealStruct;
+  permutation: BigNumberish[];
+  proposalsNotPermuted: string[];
+  nullifier: bigint;
+}
+
+interface VoteMessage {
+  vote1: BigNumberish;
+  vote2: BigNumberish;
+  vote3: BigNumberish;
+  gameId: BigNumberish;
+  turn: BigNumberish;
+  salt: BytesLike;
+}
+interface PublicVoteMessage {
+  vote1: BytesLike;
+  vote2: BytesLike;
+  vote3: BytesLike;
+  gameId: BigNumberish;
+  turn: BigNumberish;
+}
+const VoteTypes = {
+  signVote: [
+    {
+      type: 'uint256',
+      name: 'vote1',
+    },
+    {
+      type: 'uint256',
+      name: 'vote2',
+    },
+    {
+      type: 'uint256',
+      name: 'vote3',
+    },
+    {
+      type: 'uint256',
+      name: 'gameId',
+    },
+    {
+      type: 'uint256',
+      name: 'turn',
+    },
+    {
+      type: 'bytes32',
+      name: 'salt',
+    },
+  ],
+};
+
+const publicVoteTypes = {
+  publicSignVote: [
+    {
+      type: 'uint256',
+      name: 'gameId',
+    },
+    {
+      type: 'uint256',
+      name: 'turn',
+    },
+    {
+      type: 'uint256',
+      name: 'vote1',
+    },
+    {
+      type: 'uint256',
+      name: 'vote2',
+    },
+    {
+      type: 'uint256',
+      name: 'vote3',
+    },
+  ],
+};
+
+export const constantParams = {
+  RANKIFY_INSTANCE_CONTRACT_NAME: 'RANKIFY_INSTANCE_NAME',
+  RANKIFY_INSTANCE_CONTRACT_VERSION: '0.0.1',
+  RInstance_TIME_PER_TURN: 2500,
+  RInstance_MAX_PLAYERS: 6,
+  RInstance_MIN_PLAYERS: 5,
+  RInstance_MAX_TURNS: 3,
+  RInstance_TIME_TO_JOIN: '200',
+  RInstance_GAME_PRICE: utils.parseEther('0.001'),
+  RInstance_JOIN_GAME_PRICE: utils.parseEther('0.001'),
+  RInstance_NUM_WINNERS: 3,
+  RInstance_VOTE_CREDITS: 14,
+  RInstance_SUBJECT: 'Best Music on youtube',
+  PRINCIPAL_TIME_CONSTANT: 3600,
+  RInstance_MIN_GAME_TIME: 360,
+  PRINCIPAL_COST: utils.parseEther('1'),
+};
+class EnvironmentSimulator {
+  hre: HardhatRuntimeEnvironment;
+  env: EnvSetupResult;
+  maxSize: number;
+  adr: AdrSetupResult;
+  votersAddresses: string[] = [];
+  rankifyInstance: RankifyDiamondInstance;
+  rankToken: RankToken;
+  publicKeys: Record<string, string> = {};
+  constructor(
+    hre: HardhatRuntimeEnvironment,
+    env: EnvSetupResult,
+    adr: AdrSetupResult,
+    rankifyInstance: RankifyDiamondInstance,
+    rankToken: RankToken,
+  ) {
+    log('Initializing EnvironmentSimulator');
+    this.maxSize = 15;
+    this.hre = hre;
+    this.env = env;
+    this.adr = adr;
+    this.rankifyInstance = rankifyInstance;
+    this.rankToken = rankToken;
+    this.mockProposalSecrets = this.mockProposalSecrets.bind(this);
+    this.mockProposals = this.mockProposals.bind(this);
+    this.mockVotes = this.mockVotes.bind(this);
+    this.attestVote = this.attestVote.bind(this);
+    this.getPlayers = this.getPlayers.bind(this);
+    this.getCreateGameParams = this.getCreateGameParams.bind(this);
+    this.getPlayerVoteSalt = this.getPlayerVoteSalt.bind(this);
+    log('EnvironmentSimulator initialized');
+  }
+
+  baseFee = 1 * 10 ** 18;
+
+  /**
+   * Game settings and configuration values
+   */
+  RInstanceSettings = () => ({
+    RInstance_TIME_PER_TURN: constantParams.RInstance_TIME_PER_TURN,
+    RInstance_MAX_PLAYERS: constantParams.RInstance_MAX_PLAYERS,
+    RInstance_MIN_PLAYERS: constantParams.RInstance_MIN_PLAYERS,
+    RInstance_MAX_TURNS: constantParams.RInstance_MAX_TURNS,
+    RInstance_TIME_TO_JOIN: constantParams.RInstance_TIME_TO_JOIN,
+    RInstance_GAME_PRICE: constantParams.RInstance_GAME_PRICE,
+    RInstance_JOIN_GAME_PRICE: constantParams.RInstance_JOIN_GAME_PRICE,
+    RInstance_NUM_WINNERS: constantParams.RInstance_NUM_WINNERS,
+    RInstance_VOTE_CREDITS: constantParams.RInstance_VOTE_CREDITS,
+    RInstance_SUBJECT: constantParams.RInstance_SUBJECT,
+    PRINCIPAL_TIME_CONSTANT: constantParams.PRINCIPAL_TIME_CONSTANT,
+    RInstance_MIN_GAME_TIME: constantParams.RInstance_MIN_GAME_TIME,
+    PRINCIPAL_COST: constantParams.PRINCIPAL_COST,
+  });
+
+  getCreateGameParams = (gameId: BigNumberish, gameMaster?: Wallet): IRankifyInstance.NewGameParamsInputStruct => ({
+    gameMaster: gameMaster?.address ?? this.adr.gameMaster1.address,
+    gameRank: gameId,
+    maxPlayerCnt: constantParams.RInstance_MAX_PLAYERS,
+    minPlayerCnt: constantParams.RInstance_MIN_PLAYERS,
+    timePerTurn: constantParams.RInstance_TIME_PER_TURN,
+    timeToJoin: constantParams.RInstance_TIME_TO_JOIN,
+    nTurns: constantParams.RInstance_MAX_TURNS,
+    voteCredits: constantParams.RInstance_VOTE_CREDITS,
+    minGameTime: constantParams.RInstance_MIN_GAME_TIME,
+  });
+
+  /**
+   * Mines a specified number of blocks for testing purposes
+  /**
+   * Mines a specified number of blocks for testing purposes
+   * @param count - Number of blocks to mine
+   * @param hre - Hardhat Runtime Environment
+   */
+  mineBlocks = async (count: any) => {
+    log(`Mining ${count} blocks`);
+    const { ethers } = this.hre;
+    for (let i = 0; i < count; i += 1) {
+      await ethers.provider.send('evm_mine', []);
+    }
+    log(`Finished mining ${count} blocks`);
+  };
+
+  /**
+   * Signs a vote message using EIP-712 typed data
+   * @param message - The vote message to sign
+   * @param verifierAddress - Address of the contract that will verify the signature
+   * @param signer - The signer's identity
+   * @param hre - Hardhat Runtime Environment
+   * @returns The signature
+   */
+  signVoteMessage = async (
+    message: VoteMessage,
+    verifierAddress: string,
+    signer: SignerIdentity,
+    hre: HardhatRuntimeEnvironment,
+    eip712: {
+      name: string;
+      version: string;
+    },
+  ) => {
+    log(`Signing vote message for game ${message.gameId}, turn ${message.turn}`);
+    const { ethers } = hre;
+    let { chainId } = await ethers.provider.getNetwork();
+
+    const domain = {
+      name: eip712.name,
+      version: eip712.version,
+      chainId,
+      verifyingContract: verifierAddress,
+    };
+    const s = await signer.wallet._signTypedData(domain, VoteTypes, {
+      ...message,
+    });
+    log(`Vote signed for game ${message.gameId}, turn ${message.turn}`);
+    return s;
+  };
+
+  /**
+   * Signs a public vote message using EIP-712 typed data
+   * @param message - The public vote message to sign
+   * @param verifierAddress - Address of the contract that will verify the signature
+   * @param signer - The signer's identity
+   * @param hre - Hardhat Runtime Environment
+   * @returns The signature
+   */
+  signPublicVoteMessage = async ({
+    message,
+    verifierAddress,
+    signer,
+    hre,
+    eip712,
+  }: {
+    message: PublicVoteMessage;
+    verifierAddress: string;
+    signer: SignerIdentity;
+    hre: HardhatRuntimeEnvironment;
+    eip712: {
+      name: string;
+      version: string;
+    };
+  }) => {
+    log(`Signing public vote message for game ${message.gameId}, turn ${message.turn}`);
+    const { ethers } = hre;
+    let { chainId } = await ethers.provider.getNetwork();
+
+    const domain = {
+      name: eip712.name,
+      version: eip712.version,
+      chainId,
+      verifyingContract: verifierAddress,
+    };
+    const s = await signer.wallet._signTypedData(domain, publicVoteTypes, {
+      ...message,
+    });
+    log(`Public vote signed for game ${message.gameId}, turn ${message.turn}`);
+    return s;
+  };
+
+  /**
+   * Generates a deterministic salt for a player's vote
+   * @param params - Parameters including gameId, turn, player address, and other configuration
+   * @returns The generated salt as a hex string
+   */
+  getPlayerVoteSalt = async ({
+    gameId,
+    turn,
+    player,
+    verifierAddress,
+    chainId,
+    gm,
+    size,
+  }: {
+    gameId: BigNumberish;
+    turn: BigNumberish;
+    player: string;
+    verifierAddress: string;
+    chainId: BigNumberish;
+    gm: Wallet;
+    size: number;
+  }) => {
+    log(`Generating vote salt for player ${player} in game ${gameId}, turn ${turn}`);
+    const result = await generateDeterministicPermutation({
+      gameId,
+      turn: Number(turn) - 1,
+      verifierAddress,
+      chainId,
+      gm,
+      size,
+    }).then(perm => {
+      return utils.solidityKeccak256(['address', 'uint256'], [player, perm.secret]);
+    });
+    log(`Generated vote salt for player ${player}`);
+    return result;
+  };
+
+  // Add new function to sign votes
+  signVote = async (params: {
+    verifierAddress: string;
+    voter: string;
+    gameId: BigNumberish;
+    sealedBallotId: string;
+    signer: Wallet | SignerWithAddress;
+    ballotHash: string;
+    isGM: boolean;
+    name: string;
+    version: string;
+  }): Promise<string> => {
+    const { voter, gameId, isGM, verifierAddress, sealedBallotId, signer, ballotHash, name, version } = params;
+    log(`Signing ${isGM ? 'GM' : 'voter'} vote for player ${voter} in game ${gameId}`);
+    const domain = {
+      name,
+      version,
+      chainId: await this.hre.getChainId(),
+      verifyingContract: verifierAddress,
+    };
+
+    const types: Record<string, TypedDataField[]> = isGM
+      ? {
+          SubmitVote: [
+            { name: 'gameId', type: 'uint256' },
+            { name: 'voter', type: 'address' },
+            { name: 'sealedBallotId', type: 'string' },
+            { name: 'ballotHash', type: 'bytes32' },
+          ],
+        }
+      : {
+          AuthorizeVoteSubmission: [
+            { name: 'gameId', type: 'uint256' },
+            { name: 'sealedBallotId', type: 'string' },
+            { name: 'ballotHash', type: 'bytes32' },
+          ],
+        };
+
+    const value = isGM
+      ? {
+          gameId: BigNumber.from(gameId),
+          voter: voter,
+          sealedBallotId: sealedBallotId,
+          ballotHash: ballotHash,
+        }
+      : {
+          gameId: BigNumber.from(gameId),
+          sealedBallotId: sealedBallotId,
+          ballotHash: ballotHash,
+        };
+
+    const signature = await signer._signTypedData(domain, types, value);
+    log(`Vote signed for player ${voter}`);
+    return signature;
+  };
+
+  /**
+   * Creates and signs a vote for testing purposes
+   * @param params - Parameters including voter, game info, and vote configuration
+   * @returns A complete mock vote with signatures
+   */
+  attestVote = async ({
+    voter,
+    gameId,
+    turn,
+    gm,
+    vote,
+    verifierAddress,
+    gameSize,
+    name,
+    version,
+  }: {
+    voter: SignerIdentity;
+    gameId: BigNumberish;
+    turn: BigNumberish;
+    gm: Wallet;
+    vote: BigNumberish[];
+    verifierAddress: string;
+    gameSize: number;
+    name: string;
+    version: string;
+  }): Promise<MockVote> => {
+    log(`Attesting vote for player ${voter.wallet.address} in game ${gameId}, turn ${turn}`);
+    const chainId = await this.hre.getChainId();
+
+    const playerSalt = await this.getPlayerVoteSalt({
+      gameId,
+      turn,
+      player: voter.wallet.address,
+      verifierAddress,
+      chainId,
+      gm,
+      size: gameSize,
+    });
+
+    const ballot = {
+      vote: vote,
+      salt: playerSalt,
+    };
+    const ballotHash: string = utils.solidityKeccak256(['uint256[]', 'bytes32'], [vote, playerSalt]);
+    // JSON.parse(aes.decrypt(playerVotedEvents[0].args.votesHidden, gameMasterPK).toString(cryptoJs.enc.Utf8));
+
+    //ToDo: use private key to encrypt,lol
+    const ballotId = aes.encrypt(JSON.stringify(ballot.vote), gm.publicKey).toString();
+    const gmSignature = await this.signVote({
+      verifierAddress,
+      voter: voter.wallet.address,
+      gameId,
+      sealedBallotId: ballotId,
+      signer: gm,
+      ballotHash,
+      isGM: true,
+      name,
+      version,
+    });
+    const voterSignature = await this.signVote({
+      verifierAddress,
+      voter: voter.wallet.address,
+      gameId,
+      sealedBallotId: ballotId,
+      signer: voter.wallet,
+      ballotHash,
+      isGM: false,
+      name,
+      version,
+    });
+    const result = { vote, ballotHash, ballot, ballotId, gmSignature, voterSignature };
+    log(`Vote attested for player ${voter.wallet.address}`);
+    return result;
+  };
+
+  /**
+   * Gets a list of players for testing
+   * @param adr - Address setup result containing all identities
+   * @param numPlayers - Number of players to return
+   * @param offset - Optional offset to start player selection from
+   * @returns Array of player identities
+   * @throws Error if requested players exceed available players
+   */
+  getPlayers = (
+    adr: AdrSetupResult,
+    numPlayers: number,
+    offset?: number,
+  ): [SignerIdentity, SignerIdentity, ...SignerIdentity[]] => {
+    const _offset = offset ?? 0;
+    let players: SignerIdentity[] = [];
+    for (let i = 0; i < numPlayers; i++) {
+      assert(i + _offset < adr.players.length, 'Such player does not exist in adr generation');
+      players.push(adr.players[i + _offset]);
+    }
+    return players as any as [SignerIdentity, SignerIdentity, ...SignerIdentity[]];
+  };
+
+  shuffle = (array: any[]) => {
+    let currentIndex = array.length,
+      randomIndex;
+
+    // While there remain elements to shuffle.
+    while (currentIndex > 0) {
+      // Pick a remaining element.
+      randomIndex = Math.floor(Math.random() * currentIndex);
+      currentIndex--;
+
+      // And swap it with the current element.
+      [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+    }
+
+    return array;
+  };
+
+  /**
+   * Generates mock votes for testing
+   * @param params - Parameters including game info and player configuration
+   * @returns Array of mock votes
+   */
+  mockVotes = async ({
+    gm,
+    gameId,
+    turn,
+    verifier,
+    players,
+    distribution,
+  }: {
+    gameId: BigNumberish;
+    turn: BigNumberish;
+    gm: Wallet;
+    verifier: RankifyDiamondInstance;
+    players: SignerIdentity[];
+    distribution: 'ftw' | 'semiUniform' | 'equal' | 'zeros';
+  }): Promise<MockVote[]> => {
+    const chainId = await this.hre.getChainId();
+    const eip712 = await verifier.inspectEIP712Hashes();
+    const { permutation } = await generateDeterministicPermutation({
+      gameId,
+      turn: Number(turn) - 1,
+      verifierAddress: verifier.address,
+      chainId,
+      gm,
+      size: players.length,
+    });
+    const votes: MockVote[] = [];
+    for (let k = 0; k < players.length; k++) {
+      let creditsLeft = constantParams.RInstance_VOTE_CREDITS;
+      let playerVote: BigNumberish[] = [];
+      if (distribution == 'zeros') {
+        playerVote = players.map(() => 0);
+      }
+      if (distribution == 'ftw') {
+        //   this is on smart contract -> votesSorted[proposer][permutation[candidate]] = votes[proposer][candidate];
+        //   We need to prepare votes to be permuted so that sorting produces winner at minimal index k (skipping voting for himself)
+        const votesToPermute = players.map((proposer, idx) => {
+          if (k !== idx) {
+            const voteWeight = Math.floor(Math.sqrt(creditsLeft));
+            creditsLeft -= voteWeight * voteWeight;
+            return voteWeight;
+          } else {
+            return 0;
+          }
+        });
+        // now apply permutation to votesToPermute so that
+        // on smart contract -> votesSorted[proposer][permutation[candidate]] = votesPermuted[proposer][candidate];
+        // form [3,2,1,0,0] (skipping K==player)
+        playerVote = votesToPermute.map((vote, idx) => {
+          return votesToPermute[permutation[idx]];
+        });
+      } else if (distribution == 'semiUniform') {
+        const votesToDistribute = players.map(() => {
+          const voteWeight = Math.floor(Math.sqrt(creditsLeft));
+          creditsLeft -= voteWeight * voteWeight;
+          return voteWeight;
+        });
+        let votesDistributed = [];
+        do {
+          votesDistributed = this.shuffle(votesToDistribute);
+        } while (votesDistributed[k] !== 0);
+        playerVote = votesDistributed.map((vote, idx) => {
+          return votesDistributed[permutation[idx]];
+        });
+      } else if (distribution == 'equal') {
+        // Determine if player is in the first or second half
+        const lowSide = k < players.length / 2;
+        const middleIndex = Math.floor(players.length / 2);
+        const isOddLength = players.length % 2 !== 0;
+
+        // Initialize votes array
+        let _votes: number[] = new Array(players.length).fill(0);
+
+        // Skip voting if player is in middle position for odd length arrays
+        if (!isOddLength || k !== middleIndex) {
+          if (lowSide) {
+            // Players in first half vote for second half
+            for (let i = players.length - 1; i > 0; i--) {
+              if (i !== k) {
+                // Don't vote for self
+                const voteWeight = Math.floor(Math.sqrt(creditsLeft));
+                if (voteWeight > 0) {
+                  _votes[i] = voteWeight;
+                  creditsLeft -= voteWeight * voteWeight;
+                } else {
+                  break;
+                }
+              }
+            }
+          } else {
+            // Players in second half vote for first half (including middle)
+            for (let i = 0; i < players.length; i++) {
+              if (i !== k) {
+                // Don't vote for self
+                const voteWeight = Math.floor(Math.sqrt(creditsLeft));
+                if (voteWeight > 0) {
+                  _votes[i] = voteWeight;
+                  creditsLeft -= voteWeight * voteWeight;
+                } else {
+                  break;
+                }
+              }
+            }
+          }
+        }
+
+        // Apply permutation to votes
+        playerVote = _votes.map((vote, idx) => {
+          return _votes[permutation[idx]];
+        });
+      }
+
+      votes.push(
+        await this.attestVote({
+          voter: players[k],
+          gameId,
+          turn,
+          gm,
+          verifierAddress: verifier.address,
+          vote: playerVote,
+          gameSize: players.length,
+          name: eip712._NAME,
+          version: eip712._VERSION,
+        }),
+      );
+    }
+    return votes;
+  };
+
+  proposalTypes = {
+    SubmitProposal: [
+      { type: 'uint256', name: 'gameId' },
+      { type: 'address', name: 'proposer' },
+      { type: 'string', name: 'encryptedProposal' },
+      { type: 'uint256', name: 'commitment' },
+    ],
+    AuthorizeProposalSubmission: [
+      { type: 'uint256', name: 'gameId' },
+      { type: 'string', name: 'encryptedProposal' },
+      { type: 'uint256', name: 'commitment' },
+    ],
+  };
+
+  signProposal = async (
+    verifierAddress: string,
+    proposer: string,
+    gameId: BigNumberish,
+    encryptedProposal: string,
+    commitment: BigNumberish,
+    signer: Wallet | SignerWithAddress,
+    isGM: boolean,
+    eip712: {
+      name: string;
+      version: string;
+    },
+  ): Promise<string> => {
+    const { chainId } = await this.hre.ethers.provider.getNetwork();
+
+    const domain = {
+      name: eip712.name,
+      version: eip712.version,
+      chainId,
+      verifyingContract: verifierAddress,
+    };
+
+    // Match the exact types from the Solidity contract
+    const type = isGM ? 'SubmitProposal' : 'AuthorizeProposalSubmission';
+    const value = isGM
+      ? {
+          gameId,
+          proposer,
+          encryptedProposal,
+          commitment,
+        }
+      : {
+          gameId,
+          encryptedProposal,
+          commitment,
+        };
+
+    // Generate typed data hash matching Solidity's keccak256(abi.encode(...))
+    const typedDataHash = await signer._signTypedData(domain, { [type]: this.proposalTypes[type] }, value);
+
+    return typedDataHash;
+  };
+
+  /**
+   * Generates mock proposal secrets for testing
+   * @param params - Parameters including game info and proposer details
+   * @returns A complete proposal submission with signatures and commitments
+   */
+  mockProposalSecrets = async ({
+    gm,
+    proposer,
+    gameId,
+    turn,
+    verifier,
+    proposal = JSON.stringify(getDiscussionForTurn(Number(turn), proposer.id)),
+  }: {
+    gm: Wallet;
+    proposer: SignerIdentity;
+    gameId: BigNumberish;
+    turn: BigNumberish;
+    verifier: RankifyDiamondInstance;
+    proposal?: string;
+  }): Promise<ProposalSubmission> => {
+    log(`Creating proposal secrets for player ${proposer.wallet.address} in game ${gameId}, turn ${turn}`);
+    const poseidon = await buildPoseidon();
+
+    const pubKeyProposer = utils.recoverPublicKey(
+      utils.hashMessage(proposal),
+      await proposer.wallet.signMessage(proposal),
+    );
+    assert(utils.computeAddress(pubKeyProposer) === proposer.wallet.address, 'Proposer public key does not match');
+
+    const sharedKey = sharedSigner({
+      publicKey: pubKeyProposer,
+      signer: gm,
+      gameId,
+      turn,
+      contractAddress: verifier.address,
+      chainId: await this.hre.getChainId(),
+    });
+    const signingKey = new ethers.utils.SigningKey(sharedKey);
+    this.publicKeys[proposer.wallet.address] = pubKeyProposer;
+    const encryptedProposal = aes.encrypt(proposal, signingKey.privateKey).toString();
+    // Convert proposal to numeric value using keccak256
+    const proposalValue = BigInt(utils.solidityKeccak256(['string'], [proposal]));
+    const randomnessValue = BigInt(utils.solidityKeccak256(['string'], [sharedKey]));
+
+    // Calculate commitment using poseidon
+    const hash = poseidon([proposalValue, randomnessValue]);
+    const poseidonCommitment = BigInt(poseidon.F.toObject(hash));
+    const eip712 = await verifier.inspectEIP712Hashes();
+    // Get both GM and proposer signatures
+    const gmSignature = await this.signProposal(
+      verifier.address,
+      proposer.wallet.address,
+      gameId,
+      encryptedProposal,
+      poseidonCommitment,
+      gm,
+      true,
+      {
+        name: eip712._NAME,
+        version: eip712._VERSION,
+      },
+    );
+
+    const voterSignature = await this.signProposal(
+      verifier.address,
+      proposer.wallet.address,
+      gameId,
+      encryptedProposal,
+      poseidonCommitment,
+      proposer.wallet,
+      false,
+      {
+        name: eip712._NAME,
+        version: eip712._VERSION,
+      },
+    );
+
+    const params: ProposalParams = {
+      gameId,
+      encryptedProposal,
+      commitment: poseidonCommitment,
+      proposer: proposer.wallet.address,
+      gmSignature,
+      voterSignature,
+    };
+
+    log(`Generated proposal secrets with commitment ${poseidonCommitment}`);
+    return {
+      params,
+      proposal,
+      proposerSignerId: proposer,
+      proposalValue,
+      randomnessValue,
+    };
+  };
+
+  /**
+   * Gets proposal integrity data for testing
+   * @param params - Parameters including game info and proposal data
+   * @returns Proposal integrity information including permutations and proofs
+   */
+  async getProposalsIntegrity({
+    players,
+    gameId,
+    turn,
+    gm,
+    idlers,
+    proposalSubmissionData,
+  }: {
+    players: SignerIdentity[];
+    gameId: BigNumberish;
+    turn: BigNumberish;
+    gm: Wallet;
+    idlers?: number[];
+    proposalSubmissionData?: ProposalSubmission[];
+  }): Promise<ProposalsIntegrity> {
+    log(
+      `Generating proposals integrity for game ${gameId}, turn ${turn} with ${players.length} players. Proposal data was ${
+        proposalSubmissionData ? 'in' : 'not in'
+      } args`,
+    );
+    const proposals =
+      proposalSubmissionData ||
+      (await this.mockProposals({
+        players,
+        gameId,
+        turn: Number(turn),
+        gameMaster: gm,
+        idlers,
+      }));
+
+    const { commitment, nullifier, permutation, permutedProposals, a, b, c } = await generateEndTurnIntegrity({
+      gameId,
+      turn,
+      verifierAddress: this.rankifyInstance.address,
+      chainId: await this.hre.getChainId(),
+      gm,
+      size: players.length,
+      proposals,
+      hre: this.hre,
+    });
+
+    log(`Generated proposals integrity with commitment ${commitment}`);
+    return {
+      newProposals: {
+        a,
+        b,
+        c,
+        proposals: permutedProposals,
+        permutationCommitment: commitment,
+      },
+      permutation,
+      proposalsNotPermuted: proposals.map(proposal => proposal.proposal),
+      nullifier,
+    };
+  }
+
+  joinTypes = {
+    AttestJoiningGame: [
+      { type: 'address', name: 'instance' },
+      { type: 'address', name: 'participant' },
+      { type: 'uint256', name: 'gameId' },
+      { type: 'bytes32', name: 'hiddenSalt' },
+    ],
+  };
+  /**
+   * Signs a message for joining a game
+   * @param hre - Hardhat Runtime Environment
+   * @param verifier - Address of the contract that will verify the signature
+   * @param participant - Address of the participant joining
+   * @param gameId - ID of the game to join
+   * @param signer - The signer's identity
+   * @returns Object containing signature and hidden salt
+   */
+  signJoiningGame = async (gameId: BigNumberish, participant: string, signer: Wallet) => {
+    const { ethers } = this.hre;
+    const eip712 = await this.rankifyInstance.inspectEIP712Hashes();
+    let { chainId } = await ethers.provider.getNetwork();
+    const domain = {
+      name: eip712._NAME,
+      version: eip712._VERSION,
+      chainId,
+      verifyingContract: this.rankifyInstance.address,
+    };
+    const hiddenSalt = ethers.utils.hexZeroPad('0x123131231311', 32); // Pad to 32 bytes
+    const signature = await signer._signTypedData(domain, this.joinTypes, {
+      instance: this.rankifyInstance.address,
+      participant,
+      gameId,
+      hiddenSalt: ethers.utils.keccak256(hiddenSalt), // Hash the padded value
+    });
+    return { signature, hiddenSalt };
+  };
+
+  public async createGame(
+    minGameTime: BigNumberish,
+    signer: Wallet | SignerWithAddress,
+    gameMaster: string,
+    gameRank: BigNumberish,
+    openNow?: boolean,
+  ) {
+    log(`Creating game with rank ${gameRank} and minGameTime ${minGameTime}`);
+    await this.env.rankifyToken
+      .connect(signer)
+      .approve(this.rankifyInstance.address, this.hre.ethers.constants.MaxUint256)
+      .then(r => r.wait(1));
+    const expectedGameId = (await this.rankifyInstance.getContractState().then(state => state.numGames)).add(1);
+    const params: IRankifyInstance.NewGameParamsInputStruct = {
+      gameMaster: gameMaster,
+      gameRank: gameRank,
+      maxPlayerCnt: constantParams.RInstance_MAX_PLAYERS,
+      minPlayerCnt: constantParams.RInstance_MIN_PLAYERS,
+      timePerTurn: constantParams.RInstance_TIME_PER_TURN,
+      timeToJoin: constantParams.RInstance_TIME_TO_JOIN,
+      nTurns: constantParams.RInstance_MAX_TURNS,
+      voteCredits: constantParams.RInstance_VOTE_CREDITS,
+      minGameTime: minGameTime,
+    };
+    await this.rankifyInstance
+      .connect(signer)
+      .createGame(params)
+      .then(r => r.wait(1));
+    const gameId = await this.rankifyInstance.getContractState().then(state => state.numGames);
+    assert(gameId.eq(expectedGameId), 'Game ID mismatch');
+    if (openNow)
+      await this.rankifyInstance
+        .connect(signer)
+        .openRegistration(gameId)
+        .then(r => r.wait(1));
+    log(`Game created with ID ${gameId}`);
+    return gameId;
+  }
+
+  async endTurn({
+    gameId,
+    idlers,
+    votes,
+    proposals,
+  }: {
+    gameId: BigNumberish;
+    idlers?: number[];
+    votes?: MockVote[];
+    proposals?: ProposalSubmission[];
+  }) {
+    log(`Ending turn for game ${gameId}`);
+    const turn = await this.rankifyInstance.getTurn(gameId);
+    const players = await this.rankifyInstance.getPlayers(gameId);
+    log(`Current turn: ${turn}, Players count: ${players.length}`);
+
+    const { newProposals, permutation, nullifier } = await this.getProposalsIntegrity({
+      players: this.getPlayers(this.adr, players.length),
+      gameId,
+      turn: Number(turn),
+      gm: this.adr.gameMaster1,
+      idlers,
+      proposalSubmissionData: proposals,
+    });
+
+    await this.rankifyInstance
+      .connect(this.adr.gameMaster1)
+      .endTurn(
+        gameId,
+        (
+          votes ??
+          (await this.mockValidVotes(
+            this.getPlayers(this.adr, players.length),
+            gameId,
+            this.adr.gameMaster1,
+            turn.eq(1) ? false : true,
+            'ftw',
+          ))
+        ).map(vote => {
+          return vote.vote;
+        }),
+        newProposals,
+        permutation,
+        nullifier,
+      )
+      .then(r => r.wait(1));
+  }
+
+  public async runToTheEnd(gameId: BigNumberish, distribution: 'ftw' | 'semiUniform' | 'equal' = 'ftw') {
+    log(`Running game ${gameId} to the end with distribution ${distribution}`);
+    let lastVotes: MockVote[] = [];
+    let isGameOver = await this.rankifyInstance.isGameOver(gameId);
+
+    while (!isGameOver) {
+      await this.makeTurn(gameId, distribution, true);
+
+      // const shuffleSalt = await getTestShuffleSalt(gameId, turn, gameMaster);
+
+      isGameOver = await this.rankifyInstance.isGameOver(gameId);
+    }
+    const winner = await this.rankifyInstance['gameWinner(uint256)'](gameId);
+    if (distribution == 'ftw') {
+      const players = await this.rankifyInstance.getPlayers(gameId);
+      assert(winner == players[0], 'winner is not the first player');
+    }
+    log(`Game ${gameId} ended. Winner: ${winner}`);
+    return {
+      winner,
+      lastVotes,
+    };
+  }
+
+  endWithIntegrity = async ({
+    gameId,
+    players,
+    proposals,
+    votes,
+    gm,
+    idlers,
+  }: {
+    gameId: BigNumberish;
+    players: [SignerIdentity, SignerIdentity, ...SignerIdentity[]];
+    proposals?: ProposalSubmission[];
+    votes: BigNumberish[][];
+    gm: Wallet;
+    idlers?: number[];
+  }) => {
+    const turn = await this.rankifyInstance.getTurn(gameId);
+    const { newProposals, permutation, nullifier } = await this.getProposalsIntegrity({
+      players,
+      gameId,
+      turn,
+      gm: gm,
+      proposalSubmissionData: proposals,
+      idlers,
+    });
+    return this.rankifyInstance.connect(gm).endTurn(gameId, votes, newProposals, permutation, nullifier);
+  };
+
+  async mockProposals({
+    players,
+    gameMaster,
+    gameId,
+    submitNow,
+    idlers,
+    turn,
+  }: {
+    players: SignerIdentity[];
+    gameMaster: Wallet;
+    gameId: BigNumberish;
+    submitNow?: boolean;
+    idlers?: number[];
+    turn?: number;
+  }): Promise<ProposalSubmission[]> {
+    const _turn = turn ?? (await this.rankifyInstance.getTurn(gameId)).toNumber();
+    log(`Mocking proposals for game ${gameId}, turn ${_turn}`);
+
+    const proposals: ProposalSubmission[] = [];
+
+    for (let i = 0; i < this.maxSize; i++) {
+      let proposal: ProposalSubmission;
+      if (i < players.length && !idlers?.includes(i)) {
+        proposal = await this.mockProposalSecrets({
+          gm: gameMaster,
+          proposer: players[i],
+          gameId,
+          turn: _turn,
+          verifier: this.rankifyInstance,
+        });
+      } else {
+        proposal = {
+          params: {
+            gameId,
+            encryptedProposal: '0x',
+            commitment: 0,
+            proposer: constants.AddressZero,
+            gmSignature: '0x',
+            voterSignature: '0x',
+          },
+          proposal: '',
+          proposalValue: 0n,
+          randomnessValue: 0n,
+        };
+      }
+      proposals.push(proposal);
+      log(proposal, 2);
+    }
+
+    if (submitNow) {
+      log(`Submitting ${players.length - (idlers?.length ?? 0)} proposals`);
+      for (let i = 0; i < players.length; i++) {
+        if (!idlers?.includes(i)) {
+          const proposedFilter = this.rankifyInstance.filters.ProposalSubmitted(
+            gameId,
+            await this.rankifyInstance.getTurn(gameId),
+          );
+          const proposed = await this.rankifyInstance.queryFilter(proposedFilter);
+          const alreadyExistingProposal = proposed.find(evt => evt.args.proposer === players[i].wallet.address);
+          if (!alreadyExistingProposal) {
+            log(`Submitting proposal for player ${players[i].wallet.address}`);
+            await this.rankifyInstance.connect(gameMaster).submitProposal(proposals[i].params);
+          } else {
+            log(`Player ${players[i].wallet.address} already proposed! Replacing mock with real one`);
+            proposals[i].params.encryptedProposal = alreadyExistingProposal.args.encryptedProposal;
+            proposals[i].params.commitment = alreadyExistingProposal.args.commitment;
+            proposals[i].params.proposer = alreadyExistingProposal.args.proposer;
+            proposals[i].params.gameId = alreadyExistingProposal.args.gameId;
+            proposals[i].params.gmSignature = alreadyExistingProposal.args.gmSignature;
+            proposals[i].params.voterSignature = alreadyExistingProposal.args.voterSignature;
+
+            try {
+              const sharedKey = sharedSigner({
+                publicKey: this.publicKeys[players[i].wallet.address],
+                signer: gameMaster,
+                gameId,
+                turn: await this.rankifyInstance.getTurn(gameId),
+                contractAddress: this.rankifyInstance.address,
+                chainId: await this.hre.getChainId(),
+              });
+              const signingKey = new ethers.utils.SigningKey(sharedKey);
+              const temp = aes.decrypt(alreadyExistingProposal.args.encryptedProposal, signingKey.privateKey);
+              let decryptedProposal = temp.toString(cryptoJs.enc.Utf8);
+              log(`decryptedProposal`);
+              log(decryptedProposal, 2);
+              const decrypted = JSON.parse(decryptedProposal) as { title: string; body: string };
+              const turn = await this.rankifyInstance.getTurn(gameId);
+              const proposalParams = await this.mockProposalSecrets({
+                gm: gameMaster,
+                proposer: players[i],
+                gameId,
+                turn,
+                verifier: this.rankifyInstance,
+                proposal: JSON.stringify(decrypted),
+              });
+              proposals[i].proposal = proposalParams.proposal;
+              proposals[i].proposalValue = proposalParams.proposalValue;
+              proposals[i].randomnessValue = proposalParams.randomnessValue;
+            } catch (e) {
+              console.error('MockProposals: Failed to decrypt already existing proposal.', e);
+            }
+          }
+        }
+      }
+    }
+    return proposals;
+  }
+
+  async runToLastTurn(
+    gameId: BigNumberish,
+    gm: Wallet,
+    distribution?: 'ftw' | 'semiUniform' | 'equal',
+  ): Promise<{ lastVotes: MockVote[]; lastProposals: ProposalSubmission[] }> {
+    let lastVotes: MockVote[] = [];
+    let lastProposals: ProposalSubmission[] = [];
+    while (!(await this.rankifyInstance.isLastTurn(gameId))) {
+      const lastVotesAndProposals = await this.makeTurn(gameId, distribution ?? 'equal');
+      lastVotes = lastVotesAndProposals.lastVotes;
+      lastProposals = lastVotesAndProposals.lastProposals;
+    }
+    const isLastTurn = await this.rankifyInstance.isLastTurn(gameId);
+    assert(isLastTurn, 'should be last turn');
+    return {
+      lastVotes,
+      lastProposals,
+    };
+  }
+
+  async makeTurn(
+    gameId: BigNumberish,
+    distribution: 'ftw' | 'semiUniform' | 'equal' = 'ftw',
+    increaseFinalTime?: boolean,
+  ): Promise<{ lastVotes: MockVote[]; lastProposals: ProposalSubmission[] }> {
+    let lastVotes: MockVote[] = [];
+    let lastProposals: ProposalSubmission[] = [];
+    const gameEnded = await this.rankifyInstance.isGameOver(gameId);
+
+    if (!gameEnded) {
+      log(`Making move for game: ${gameId}`);
+      const turn = await this.rankifyInstance.getTurn(gameId);
+      log(`Current turn: ${turn}`);
+
+      const gamePlayerAddresses = await this.rankifyInstance.getPlayers(gameId);
+      const playersPossible = this.getPlayers(this.adr, 15);
+      const players = [...new Map(playersPossible.map(p => [p.wallet.address, p])).values()].filter(player =>
+        gamePlayerAddresses.includes(player.wallet.address),
+      );
+      // Submit votes if not first turn
+      if (turn.toNumber() !== 1) {
+        log(`Submitting votes for turn: ${turn}`);
+        lastVotes = await this.mockValidVotes(players, gameId, this.adr.gameMaster1, true, distribution);
+        log(`Votes submitted: ${lastVotes.length}`);
+      }
+
+      // Submit proposals
+      log('Submitting proposals...');
+      lastProposals = await this.mockProposals({
+        players,
+        gameMaster: this.adr.gameMaster1,
+        gameId,
+        submitNow: true,
+      });
+      log(`Proposals submitted: ${lastProposals.length}`);
+
+      // Submit proposals
+      log('Submitting proposals...');
+      lastProposals = await this.mockProposals({
+        players,
+        gameMaster: this.adr.gameMaster1,
+        gameId,
+        submitNow: true,
+      });
+      log(`Proposals submitted: ${lastProposals.length}`);
+      if (distribution == 'equal' && players.length % 2 !== 0) {
+        log('Increasing time for equal distribution and odd number of players');
+        await time.increase(constantParams.RInstance_TIME_PER_TURN + 1);
+      }
+      if (increaseFinalTime) {
+        let isLastTurn = await this.rankifyInstance.isLastTurn(gameId);
+        if (isLastTurn) {
+          const timeToEnd = await this.rankifyInstance.getGameState(gameId).then(state => state.minGameTime);
+          await time.increase(timeToEnd.toNumber() + 1);
+        }
+      }
+      await this.endTurn({ gameId, votes: lastVotes, proposals: lastProposals });
+    }
+    return { lastVotes, lastProposals };
+  }
+
+  async mockValidVotes(
+    players: SignerIdentity[],
+    gameId: BigNumberish,
+    gm: Wallet,
+    submitNow?: boolean,
+    distribution?: 'ftw' | 'semiUniform' | 'equal',
+  ) {
+    let votes: MockVote[] = [];
+    const turn = await this.rankifyInstance.getTurn(gameId);
+    log(`Mocking votes for game ${gameId}, turn ${turn.toString()} with distribution ${distribution}`);
+    if (!turn.eq(1)) {
+      votes = await this.mockVotes({
+        gameId: gameId,
+        turn: turn,
+        verifier: this.rankifyInstance,
+        players: players,
+        gm: gm,
+        distribution: distribution ?? 'semiUniform',
+      });
+      if (submitNow) {
+        this.votersAddresses = players.map(player => player.wallet.address);
+        for (let i = 0; i < players.length; i++) {
+          const voted = await this.rankifyInstance.getPlayerVotedArray(gameId);
+          if (!voted[i]) {
+            log(`submitting vote for player ${players[i].wallet.address}`);
+            log(votes[i].vote, 2);
+            if (votes[i].vote.some(v => v != 0)) {
+              await this.rankifyInstance
+                .connect(gm)
+                .submitVote(
+                  gameId,
+                  votes[i].ballotId,
+                  players[i].wallet.address,
+                  votes[i].gmSignature,
+                  votes[i].voterSignature,
+                  votes[i].ballotHash,
+                );
+            } else {
+              log(`zero vote for player ${players[i].wallet.address}`);
+            }
+          } else {
+            log(`player ${players[i].wallet.address} already voted! Substituting mock with real one`);
+            const playerVotedEvents = await this.rankifyInstance.queryFilter(
+              this.rankifyInstance.filters.VoteSubmitted(gameId, turn, players[i].wallet.address),
+            );
+            assert(playerVotedEvents.length > 0, 'Player should have voted');
+            votes[i].ballotHash = playerVotedEvents[0].args.ballotHash;
+            votes[i].gmSignature = playerVotedEvents[0].args.gmSignature;
+            votes[i].voterSignature = playerVotedEvents[0].args.voterSignature;
+            votes[i].ballotId = playerVotedEvents[0].args.sealedBallotId;
+            try {
+              votes[i].vote = JSON.parse(
+                aes.decrypt(playerVotedEvents[0].args.sealedBallotId, gm.privateKey).toString(cryptoJs.enc.Utf8),
+              );
+              log(`Decrypted vote:`, 2);
+              log(votes[i].vote, 2);
+            } catch (e) {
+              console.error('Failed to decrypt vote');
+            }
+          }
+        }
+      }
+      log(`Mocked ${votes.length} votes`);
+      return votes;
+    } else {
+      return [];
+    }
+  }
+
+  async startGame(gameId: BigNumberish) {
+    log(`Starting game ${gameId}`);
+    const currentT = await time.latest();
+    const isRegistrationOpen = await this.rankifyInstance.isRegistrationOpen(gameId);
+    if (isRegistrationOpen) {
+      await time.setNextBlockTimestamp(currentT + Number(constantParams.RInstance_TIME_TO_JOIN) + 1);
+      await this.mineBlocks(constantParams.RInstance_TIME_TO_JOIN + 1);
+      await this.rankifyInstance
+        .connect(this.adr.gameMaster1)
+        .startGame(
+          gameId,
+          await generateDeterministicPermutation({
+            gameId: gameId,
+            turn: 0,
+            verifierAddress: this.rankifyInstance.address,
+            chainId: await this.hre.getChainId(),
+            gm: this.adr.gameMaster1,
+            size: await this.rankifyInstance.getPlayers(gameId).then(players => players.length),
+          }).then(perm => perm.commitment),
+        )
+        .then(tx => tx.wait(1));
+    } else {
+      log('Registration should be open, skipping start game');
+    }
+  }
+
+  async fillParty({
+    players,
+    gameId,
+    shiftTime,
+    gameMaster,
+    startGame,
+  }: {
+    players: SignerIdentity[];
+    gameId: BigNumberish;
+    shiftTime: boolean;
+    gameMaster: Wallet;
+    startGame?: boolean;
+  }) {
+    log(`Filling party for game ${gameId} with ${players.length} players`);
+    const promises = [];
+
+    for (let i = 0; i < players.length; i++) {
+      const playerInGame = await this.rankifyInstance.getPlayersGame(players[i].wallet.address);
+      if (playerInGame.toNumber() !== 0) {
+        if (playerInGame.toNumber() !== Number(gameId)) {
+          console.error('Player already in another game');
+          throw new Error('Player already in another game');
+        }
+      } else {
+        if (!this.rankToken.address) throw new Error('Rank token undefined or unemployed');
+        await this.rankToken
+          .connect(players[i].wallet)
+          .setApprovalForAll(this.rankifyInstance.address, true)
+          .then(tx => tx.wait(1));
+        const { signature, hiddenSalt } = await this.signJoiningGame(gameId, players[i].wallet.address, gameMaster);
+        promises.push(await this.rankifyInstance.connect(players[i].wallet).joinGame(gameId, signature, hiddenSalt));
+      }
+    }
+    if (shiftTime) {
+      const currentT = await time.latest();
+      await time.setNextBlockTimestamp(currentT + Number(constantParams.RInstance_TIME_TO_JOIN) + 1);
+      await this.mineBlocks(1);
+    }
+    if (startGame && gameMaster) {
+      log('Starting game after filling party');
+      await this.rankifyInstance
+        .connect(gameMaster)
+        .startGame(
+          gameId,
+          await generateDeterministicPermutation({
+            gameId: gameId,
+            turn: 0,
+            verifierAddress: this.rankifyInstance.address,
+            chainId: await this.hre.getChainId(),
+            gm: gameMaster,
+            size: await this.rankifyInstance.getPlayers(gameId).then(players => players.length),
+          }).then(perm => perm.commitment),
+        )
+        .then(tx => tx.wait(1));
+    }
+    return Promise.all(promises.map(p => p.wait(1)));
+  }
+}
+
+export default EnvironmentSimulator;

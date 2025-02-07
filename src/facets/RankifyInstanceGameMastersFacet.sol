@@ -65,7 +65,9 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
         uint256 indexed turn,
         address indexed proposer,
         uint256 commitment,
-        string proposalEncryptedByGM
+        string encryptedProposal,
+        bytes gmSignature,
+        bytes voterSignature
     );
 
     /**
@@ -87,7 +89,15 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
         bytes voterSignature;
     }
 
-    event VoteSubmitted(uint256 indexed gameId, uint256 indexed turn, address indexed player, string votesHidden);
+    event VoteSubmitted(
+        uint256 indexed gameId,
+        uint256 indexed turn,
+        address indexed player,
+        string sealedBallotId,
+        bytes gmSignature,
+        bytes voterSignature,
+        bytes32 ballotHash
+    );
 
     /**
      * @dev Represents a batch of proposal reveals for a game.
@@ -187,7 +197,7 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
         game.numVotesThisTurn += 1;
         game.playerVoted[voter] = true;
         gameId.tryPlayerMove(voter);
-        emit VoteSubmitted(gameId, gameId.getTurn(), voter, sealedBallotId);
+        emit VoteSubmitted(gameId, gameId.getTurn(), voter, sealedBallotId, gmSignature, voterSignature, ballotHash);
     }
 
     /**
@@ -241,12 +251,19 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
         require(game.proposalCommitment[params.proposer] == 0, "Already proposed!");
         uint256 turn = params.gameId.getTurn();
         game.proposalCommitment[params.proposer] = params.commitment;
-
         params.gameId.enforceHasStarted();
 
-        game.numCommitments += 1;
         params.gameId.tryPlayerMove(params.proposer);
-        emit ProposalSubmitted(params.gameId, turn, params.proposer, params.commitment, params.encryptedProposal);
+        game.numCommitments += 1;
+        emit ProposalSubmitted(
+            params.gameId,
+            turn,
+            params.proposer,
+            params.commitment,
+            params.encryptedProposal,
+            params.gmSignature,
+            params.voterSignature
+        );
     }
 
     /**
@@ -448,7 +465,6 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
 
             PropIntegrityPublicInputs[30] = newProposals.permutationCommitment;
             PropIntegrityPublicInputs[31] = players.length;
-
             // 2. Handle current turn's proposal reveals with single proof
             require(
                 ProposalsIntegrity15Groth16Verifier(instanceState.commonParams.proposalIntegrityVerifier).verifyProof(

@@ -157,6 +157,9 @@ export default {
     DAO: {
       default: '0x520E00225C4a43B6c55474Db44a4a44199b4c3eE',
     },
+    player1: {
+      default: '0xFE87428cC8C72A3a79eD1cC7e2B5892c088d0af0',
+    },
   },
   mocha: {
     timeout: 400000,
@@ -164,12 +167,14 @@ export default {
   defaultNetwork: 'hardhat',
   networks: {
     hardhat: {
+      name: 'hardhat',
       accounts: {
         mnemonic: 'casual vacant letter raw trend tool vacant opera buzz jaguar bridge myself',
       }, // ONLY LOCAL
       tags: ['ERC7744'],
     },
     localhost: {
+      name: 'localhost',
       url: 'http://127.0.0.1:8545',
       accounts: {
         mnemonic: 'casual vacant letter raw trend tool vacant opera buzz jaguar bridge myself',
@@ -177,6 +182,7 @@ export default {
       tags: ['ERC7744'],
     },
     anvil: {
+      name: 'anvil',
       url: process.env.ANVIL_RPC_URL ?? '',
       accounts: {
         mnemonic: process.env.ANVIL_MNEMONIC ?? 'x',
