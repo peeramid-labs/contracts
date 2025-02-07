@@ -9,7 +9,7 @@ import { setupTest } from './utils';
 import { getCodeIdFromArtifact } from '../scripts/getCodeId';
 import addDistribution from '../scripts/addDistribution';
 import { generateDistributorData } from '../scripts/libraries/generateDistributorData';
-import { AdrSetupResult } from 'scripts/setupMockEnvironment';
+import { AdrSetupResult } from '../scripts/setupMockEnvironment';
 
 describe('MAODistribution', async function () {
   let contract: MAODistribution;

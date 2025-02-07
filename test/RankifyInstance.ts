@@ -18,8 +18,8 @@ import { MAODistribution } from '../types/src/distributions/MAODistribution';
 import { generateDistributorData } from '../scripts/libraries/generateDistributorData';
 import { generateDeterministicPermutation } from '../scripts/proofs';
 import { HardhatEthersHelpers } from 'hardhat/types';
-import { EnvSetupResult } from 'scripts/setupMockEnvironment';
-import { AdrSetupResult } from 'scripts/setupMockEnvironment';
+import { EnvSetupResult } from '../scripts/setupMockEnvironment';
+import { AdrSetupResult } from '../scripts/setupMockEnvironment';
 import { setupTest } from './utils';
 import { constantParams } from '../scripts/EnvironmentSimulator';
 const {

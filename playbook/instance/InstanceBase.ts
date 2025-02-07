@@ -2,7 +2,7 @@ import { RankifyDiamondInstance, RankToken } from '../../types';
 import { BigNumber, BigNumberish, Wallet } from 'ethers';
 
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
-import { AdrSetupResult, SignerIdentity } from 'scripts/setupMockEnvironment';
+import { AdrSetupResult, SignerIdentity } from '../../scripts/setupMockEnvironment';
 import { MockVote, ProposalsIntegrity, ProposalSubmission } from '../../scripts/EnvironmentSimulator';
 import EnvironmentSimulator from '../../scripts/EnvironmentSimulator';
 import { EnvSetupResult } from '../../scripts/EnvironmentSimulator';
