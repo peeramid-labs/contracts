@@ -910,7 +910,7 @@ class EnvironmentSimulator {
       { type: 'address', name: 'instance' },
       { type: 'address', name: 'participant' },
       { type: 'uint256', name: 'gameId' },
-      { type: 'bytes32', name: 'hiddenSalt' },
+      { type: 'bytes32', name: 'metadata' },
     ],
   };
   /**
@@ -932,14 +932,14 @@ class EnvironmentSimulator {
       chainId,
       verifyingContract: this.rankifyInstance.address,
     };
-    const hiddenSalt = ethers.utils.hexZeroPad('0x123131231311', 32); // Pad to 32 bytes
+    const metadata = ethers.utils.hexZeroPad('0x123131231311', 32); // Pad to 32 bytes
     const signature = await signer._signTypedData(domain, this.joinTypes, {
       instance: this.rankifyInstance.address,
       participant,
       gameId,
-      hiddenSalt: ethers.utils.keccak256(hiddenSalt), // Hash the padded value
+      metadata: ethers.utils.keccak256(metadata), // Hash the padded value
     });
-    return { signature, hiddenSalt };
+    return { signature, metadata };
   };
 
   public async createGame(
@@ -1394,8 +1394,8 @@ class EnvironmentSimulator {
           .connect(players[i].wallet)
           .setApprovalForAll(this.rankifyInstance.address, true)
           .then(tx => tx.wait(1));
-        const { signature, hiddenSalt } = await this.signJoiningGame(gameId, players[i].wallet.address, gameMaster);
-        promises.push(await this.rankifyInstance.connect(players[i].wallet).joinGame(gameId, signature, hiddenSalt));
+        const { signature, metadata } = await this.signJoiningGame(gameId, players[i].wallet.address, gameMaster);
+        promises.push(await this.rankifyInstance.connect(players[i].wallet).joinGame(gameId, signature, metadata));
       }
     }
     if (shiftTime) {
