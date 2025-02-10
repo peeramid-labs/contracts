@@ -934,7 +934,7 @@ class EnvironmentSimulator {
       verifyingContract: this.rankifyInstance.address,
     };
     const gmCommitment = ethers.utils.formatBytes32String('0x123131231311'); // Pad to 32 bytes
-    const deadline = BigInt(Math.floor(Date.now() / 1000) + 1000);
+    const deadline = BigInt(Math.floor(Date.now() / 1000) + 100000);
     const signature = await signer._signTypedData(domain, this.joinTypes, {
       instance: this.rankifyInstance.address,
       participant,
