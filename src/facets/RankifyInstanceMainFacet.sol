@@ -154,6 +154,7 @@ contract RankifyInstanceMainFacet is
      * @param gameId The ID of the game.
      * @param gameMasterSignature The ECDSA signature of the game master.
      * @param gmCommitment The gmCommitment to the player signed by the game master.
+     * @param deadline The deadline for the player to sign the gmCommitment.
      * @notice This function:
      *         - Calls the `joinGame` function with `msg.sender`.
      *         - Calls the `fund` function with `bytes32(gameId)`.
@@ -163,18 +164,21 @@ contract RankifyInstanceMainFacet is
     function joinGame(
         uint256 gameId,
         bytes memory gameMasterSignature,
-        bytes32 gmCommitment
+        bytes32 gmCommitment,
+        uint256 deadline
     ) public payable nonReentrant {
+        require(block.timestamp < deadline, "Signature deadline has passed");
         bytes32 digest = _hashTypedDataV4(
             keccak256(
                 abi.encode(
                     keccak256(
-                        "AttestJoiningGame(address instance,address participant,uint256 gameId,bytes32 gmCommitment)"
+                        "AttestJoiningGame(address instance,address participant,uint256 gameId,bytes32 gmCommitment,uint256 deadline)"
                     ),
                     address(this),
                     msg.sender,
                     gameId,
-                    gmCommitment
+                    gmCommitment,
+                    deadline
                 )
             )
         );

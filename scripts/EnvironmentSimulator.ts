@@ -911,6 +911,7 @@ class EnvironmentSimulator {
       { type: 'address', name: 'participant' },
       { type: 'uint256', name: 'gameId' },
       { type: 'bytes32', name: 'gmCommitment' },
+      { type: 'uint256', name: 'deadline' },
     ],
   };
   /**
@@ -933,13 +934,15 @@ class EnvironmentSimulator {
       verifyingContract: this.rankifyInstance.address,
     };
     const gmCommitment = ethers.utils.formatBytes32String('0x123131231311'); // Pad to 32 bytes
+    const deadline = BigInt(Math.floor(Date.now() / 1000) + 1000);
     const signature = await signer._signTypedData(domain, this.joinTypes, {
       instance: this.rankifyInstance.address,
       participant,
       gameId,
       gmCommitment, // Hash the padded value
+      deadline,
     });
-    return { signature, gmCommitment };
+    return { signature, gmCommitment, deadline };
   };
 
   public async createGame(
@@ -1394,8 +1397,14 @@ class EnvironmentSimulator {
           .connect(players[i].wallet)
           .setApprovalForAll(this.rankifyInstance.address, true)
           .then(tx => tx.wait(1));
-        const { signature, gmCommitment } = await this.signJoiningGame(gameId, players[i].wallet.address, gameMaster);
-        promises.push(await this.rankifyInstance.connect(players[i].wallet).joinGame(gameId, signature, gmCommitment));
+        const { signature, gmCommitment, deadline } = await this.signJoiningGame(
+          gameId,
+          players[i].wallet.address,
+          gameMaster,
+        );
+        promises.push(
+          await this.rankifyInstance.connect(players[i].wallet).joinGame(gameId, signature, gmCommitment, deadline),
+        );
       }
     }
     if (shiftTime) {
