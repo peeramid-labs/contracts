@@ -153,7 +153,7 @@ contract RankifyInstanceMainFacet is
      * @dev Allows a player to join a game with the provided game ID. `gameId` is the ID of the game.
      * @param gameId The ID of the game.
      * @param gameMasterSignature The ECDSA signature of the game master.
-     * @param metadata The metadata of the player signed by the game master.
+     * @param gmCommitment The gmCommitment to the player signed by the game master.
      * @notice This function:
      *         - Calls the `joinGame` function with `msg.sender`.
      *         - Calls the `fund` function with `bytes32(gameId)`.
@@ -163,24 +163,24 @@ contract RankifyInstanceMainFacet is
     function joinGame(
         uint256 gameId,
         bytes memory gameMasterSignature,
-        bytes memory metadata
+        bytes32 gmCommitment
     ) public payable nonReentrant {
         bytes32 digest = _hashTypedDataV4(
             keccak256(
                 abi.encode(
                     keccak256(
-                        "AttestJoiningGame(address instance,address participant,uint256 gameId,bytes32 metadata)"
+                        "AttestJoiningGame(address instance,address participant,uint256 gameId,bytes32 gmCommitment)"
                     ),
                     address(this),
                     msg.sender,
                     gameId,
-                    keccak256(metadata)
+                    gmCommitment
                 )
             )
         );
         gameId.joinGame(msg.sender, gameMasterSignature, digest);
         LibCoinVending.fund(bytes32(gameId));
-        emit PlayerJoined(gameId, msg.sender, metadata);
+        emit PlayerJoined(gameId, msg.sender, gmCommitment);
     }
 
     /**
