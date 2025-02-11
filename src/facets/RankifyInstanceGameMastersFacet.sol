@@ -67,7 +67,7 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
         uint256 commitment,
         string encryptedProposal,
         bytes gmSignature,
-        bytes voterSignature
+        bytes proposerSignature
     );
 
     /**
@@ -86,7 +86,7 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
         uint256 commitment;
         address proposer;
         bytes gmSignature;
-        bytes voterSignature;
+        bytes proposerSignature;
     }
 
     event VoteSubmitted(
@@ -242,7 +242,7 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
             )
         );
         require(
-            SignatureChecker.isValidSignatureNow(params.proposer, voterDigest, params.voterSignature),
+            SignatureChecker.isValidSignatureNow(params.proposer, voterDigest, params.proposerSignature),
             "invalid proposer signature"
         );
         LibRankify.GameState storage game = params.gameId.getGameState();
@@ -262,7 +262,7 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
             params.commitment,
             params.encryptedProposal,
             params.gmSignature,
-            params.voterSignature
+            params.proposerSignature
         );
     }
 
