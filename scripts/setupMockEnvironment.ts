@@ -253,7 +253,7 @@ const setupAddresses = async (hre: HardhatRuntimeEnvironment): Promise<AdrSetupR
     id: 'player17-id',
   };
 
-  const gm1 = ethers.Wallet.fromMnemonic(m, `m/44'/60'/0'/0/100`).connect(hre.ethers.provider);
+  const gm1 = ethers.Wallet.fromMnemonic(m, `m/44'/60'/0'/0/9`).connect(hre.ethers.provider);
   await _player1.sendTransaction({
     to: gm1.address,
     value: ethers.utils.parseEther('10'),
