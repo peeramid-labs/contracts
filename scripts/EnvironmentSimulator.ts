@@ -89,7 +89,7 @@ interface ProposalParams {
   commitment: BigNumberish;
   proposer: string;
   gmSignature: BytesLike;
-  voterSignature: BytesLike;
+  proposerSignature: BytesLike;
 }
 
 export interface ProposalSubmission {
@@ -811,7 +811,7 @@ class EnvironmentSimulator {
       },
     );
 
-    const voterSignature = await this.signProposal(
+    const proposerSignature = await this.signProposal(
       verifier.address,
       proposer.wallet.address,
       gameId,
@@ -831,7 +831,7 @@ class EnvironmentSimulator {
       commitment: poseidonCommitment,
       proposer: proposer.wallet.address,
       gmSignature,
-      voterSignature,
+      proposerSignature,
     };
 
     log(`Generated proposal secrets with commitment ${poseidonCommitment}`);
@@ -907,11 +907,11 @@ class EnvironmentSimulator {
 
   joinTypes = {
     AttestJoiningGame: [
-      { type: 'address', name: 'instance' },
       { type: 'address', name: 'participant' },
       { type: 'uint256', name: 'gameId' },
       { type: 'bytes32', name: 'gmCommitment' },
       { type: 'uint256', name: 'deadline' },
+      { type: 'bytes32', name: 'participantPubKeyHash' },
     ],
   };
   /**
@@ -923,7 +923,15 @@ class EnvironmentSimulator {
    * @param signer - The signer's identity
    * @returns Object containing signature and hidden salt
    */
-  signJoiningGame = async (gameId: BigNumberish, participant: string, signer: Wallet) => {
+  signJoiningGame = async ({
+    gameId,
+    participant,
+    signer,
+  }: {
+    gameId: BigNumberish;
+    participant: Wallet | SignerWithAddress;
+    signer: Wallet;
+  }) => {
     const { ethers } = this.hre;
     const eip712 = await this.rankifyInstance.inspectEIP712Hashes();
     let { chainId } = await ethers.provider.getNetwork();
@@ -935,14 +943,19 @@ class EnvironmentSimulator {
     };
     const gmCommitment = ethers.utils.formatBytes32String('0x123131231311'); // Pad to 32 bytes
     const deadline = BigInt(Math.floor(Date.now() / 1000) + 100000);
+    const participantPubKey = utils.recoverPublicKey(
+      utils.hashMessage(participant.address),
+      await participant.signMessage(participant.address),
+    );
+
     const signature = await signer._signTypedData(domain, this.joinTypes, {
-      instance: this.rankifyInstance.address,
-      participant,
+      participant: participant.address,
       gameId,
       gmCommitment, // Hash the padded value
       deadline,
+      participantPubKeyHash: utils.solidityKeccak256(['string'], [participantPubKey]),
     });
-    return { signature, gmCommitment, deadline };
+    return { signature, gmCommitment, deadline, participant, participantPubKey: participantPubKey };
   };
 
   public async createGame(
@@ -1121,7 +1134,7 @@ class EnvironmentSimulator {
             commitment: 0,
             proposer: constants.AddressZero,
             gmSignature: '0x',
-            voterSignature: '0x',
+            proposerSignature: '0x',
           },
           proposal: '',
           proposalValue: 0n,
@@ -1152,7 +1165,7 @@ class EnvironmentSimulator {
             proposals[i].params.proposer = alreadyExistingProposal.args.proposer;
             proposals[i].params.gameId = alreadyExistingProposal.args.gameId;
             proposals[i].params.gmSignature = alreadyExistingProposal.args.gmSignature;
-            proposals[i].params.voterSignature = alreadyExistingProposal.args.voterSignature;
+            proposals[i].params.proposerSignature = alreadyExistingProposal.args.proposerSignature;
 
             try {
               const sharedKey = sharedSigner({
@@ -1393,17 +1406,23 @@ class EnvironmentSimulator {
         }
       } else {
         if (!this.rankToken.address) throw new Error('Rank token undefined or unemployed');
+        const pubKey = utils.recoverPublicKey(
+          utils.hashMessage(players[i].wallet.address),
+          await players[i].wallet.signMessage(players[i].wallet.address),
+        );
         await this.rankToken
           .connect(players[i].wallet)
           .setApprovalForAll(this.rankifyInstance.address, true)
           .then(tx => tx.wait(1));
-        const { signature, gmCommitment, deadline } = await this.signJoiningGame(
+        const { signature, gmCommitment, deadline } = await this.signJoiningGame({
           gameId,
-          players[i].wallet.address,
-          gameMaster,
-        );
+          participant: players[i].wallet,
+          signer: gameMaster,
+        });
         promises.push(
-          await this.rankifyInstance.connect(players[i].wallet).joinGame(gameId, signature, gmCommitment, deadline),
+          await this.rankifyInstance
+            .connect(players[i].wallet)
+            .joinGame(gameId, signature, gmCommitment, deadline, pubKey),
         );
       }
     }

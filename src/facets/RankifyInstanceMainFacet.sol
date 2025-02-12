@@ -165,26 +165,27 @@ contract RankifyInstanceMainFacet is
         uint256 gameId,
         bytes memory gameMasterSignature,
         bytes32 gmCommitment,
-        uint256 deadline
+        uint256 deadline,
+        string memory voterPubKey
     ) public payable nonReentrant {
         require(block.timestamp < deadline, "Signature deadline has passed");
         bytes32 digest = _hashTypedDataV4(
             keccak256(
                 abi.encode(
                     keccak256(
-                        "AttestJoiningGame(address instance,address participant,uint256 gameId,bytes32 gmCommitment,uint256 deadline)"
+                        "AttestJoiningGame(address participant,uint256 gameId,bytes32 gmCommitment,uint256 deadline,bytes32 participantPubKeyHash)"
                     ),
-                    address(this),
                     msg.sender,
                     gameId,
                     gmCommitment,
-                    deadline
+                    deadline,
+                    keccak256(abi.encodePacked(voterPubKey))
                 )
             )
         );
         gameId.joinGame(msg.sender, gameMasterSignature, digest);
         LibCoinVending.fund(bytes32(gameId));
-        emit PlayerJoined(gameId, msg.sender, gmCommitment);
+        emit PlayerJoined(gameId, msg.sender, gmCommitment, voterPubKey);
     }
 
     /**

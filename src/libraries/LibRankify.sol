@@ -169,6 +169,7 @@ library LibRankify {
         uint128 minGameTime;
         uint128 timePerTurn;
         uint128 timeToJoin;
+        // ToDo: It must list gameKey for Game master and game master signature, committing to serve the game
     }
 
     function getGamePrice(uint128 minGameTime, CommonParams memory commonParams) internal pure returns (uint256) {

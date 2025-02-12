@@ -228,23 +228,24 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
                 IErrors.invalidECDSARecoverSigner(proposalDigest, "Invalid GM signature")
             );
         }
-
-        bytes32 voterDigest = _hashTypedDataV4(
-            keccak256(
-                abi.encode(
-                    keccak256(
-                        "AuthorizeProposalSubmission(uint256 gameId,string encryptedProposal,uint256 commitment)"
-                    ),
-                    params.gameId,
-                    keccak256(bytes(params.encryptedProposal)),
-                    params.commitment
+        if (msg.sender != params.proposer) {
+            bytes32 voterDigest = _hashTypedDataV4(
+                keccak256(
+                    abi.encode(
+                        keccak256(
+                            "AuthorizeProposalSubmission(uint256 gameId,string encryptedProposal,uint256 commitment)"
+                        ),
+                        params.gameId,
+                        keccak256(bytes(params.encryptedProposal)),
+                        params.commitment
+                    )
                 )
-            )
-        );
-        require(
-            SignatureChecker.isValidSignatureNow(params.proposer, voterDigest, params.proposerSignature),
-            "invalid proposer signature"
-        );
+            );
+            require(
+                SignatureChecker.isValidSignatureNow(params.proposer, voterDigest, params.proposerSignature),
+                "invalid proposer signature"
+            );
+        }
         LibRankify.GameState storage game = params.gameId.getGameState();
         require(LibTBG.getPlayersGame(params.proposer) == params.gameId, "not a player");
         require(bytes(params.encryptedProposal).length != 0, "Cannot propose empty");
