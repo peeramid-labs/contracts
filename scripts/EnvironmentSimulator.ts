@@ -1238,7 +1238,11 @@ class EnvironmentSimulator {
     let lastProposals: ProposalSubmission[] = [];
     log(`Game ${gameId.toString()} distribution: ${distribution}`);
     while (!(await this.rankifyInstance.isLastTurn(gameId))) {
-      const lastVotesAndProposals = await this.makeTurn({gameId, distribution: distribution ?? 'equal', increaseFinalTime: false});
+      const lastVotesAndProposals = await this.makeTurn({
+        gameId,
+        distribution: distribution ?? 'equal',
+        increaseFinalTime: false,
+      });
       lastVotes = lastVotesAndProposals.lastVotes;
       lastProposals = lastVotesAndProposals.lastProposals;
     }
@@ -1262,7 +1266,7 @@ class EnvironmentSimulator {
     let lastVotes: MockVote[] = [];
     let lastProposals: ProposalSubmission[] = [];
     const gameEnded = await this.rankifyInstance.isGameOver(gameId);
-    
+
     log(`Game ${gameId} distribution: ${distribution} increaseFinalTime: ${increaseFinalTime} gameEnded: ${gameEnded}`);
     if (!gameEnded) {
       log(`Making move for game: ${gameId}`);
@@ -1294,7 +1298,7 @@ class EnvironmentSimulator {
         log('Increasing time for equal distribution and odd number of players');
         await time.increase(constantParams.RInstance_TIME_PER_TURN + 1);
       }
-      
+
       if (increaseFinalTime) {
         log('Increasing time for final turn');
         let isLastTurn = await this.rankifyInstance.isLastTurn(gameId);
@@ -1505,6 +1509,8 @@ class EnvironmentSimulator {
     playerPubKey: string;
     gameMaster: Wallet;
   }) => {
+    log(`Encrypting vote ${vote}...`);
+    log({ playerPubKey, gameMaster, gameId, turn, instanceAddress }, 2);
     const sharedKey = await sharedGameKeySigner({
       publicKey: playerPubKey,
       gameMaster,
@@ -1543,6 +1549,8 @@ class EnvironmentSimulator {
     playerPubKey: string;
     signer: Wallet;
   }) => {
+    log(`Encrypting proposal ${proposal}...`);
+    log({ playerPubKey, signer, gameId, turn, instanceAddress }, 2);
     const sharedKey = await sharedGameKeySigner({
       publicKey: playerPubKey,
       gameMaster: signer,
@@ -1570,6 +1578,10 @@ class EnvironmentSimulator {
   private decryptProposal = async ({
     proposal,
     playerPubKey,
+    gameId,
+    instanceAddress,
+    signer,
+    turn,
   }: {
     proposal: string;
     playerPubKey: string;
@@ -1578,6 +1590,8 @@ class EnvironmentSimulator {
     signer: Wallet;
     turn: BigNumberish;
   }): Promise<string> => {
+    log(`Decrypting proposal ${proposal}...`);
+    log({ playerPubKey, signer, gameId, turn, instanceAddress }, 2);
     const sharedKey = await sharedGameKeySigner({
       publicKey: playerPubKey,
       gameMaster: signer,
@@ -1618,6 +1632,8 @@ class EnvironmentSimulator {
     signer: Wallet;
     turn: BigNumberish;
   }): Promise<BigNumberish[]> => {
+    log(`Decrypting vote ${vote}...`);
+    log({ playerPubKey, signer, gameId, turn, instanceAddress }, 2);
     const sharedKey = await sharedGameKeySigner({
       publicKey: playerPubKey,
       gameMaster: signer,

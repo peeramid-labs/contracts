@@ -1,5 +1,6 @@
 import { BigNumberish, ethers, Wallet } from 'ethers';
 import { keccak256 } from 'ethers/lib/utils';
+import { log } from './utils';
 
 // Derives a private key from the signer's private key, gameId, turn, and contract address
 export const privateKeyDerivationFunction = ({
@@ -39,9 +40,10 @@ export const sharedSigner = ({
   contractAddress: string;
   chainId: string;
 }) => {
+  log(`Signing key: ${signer.privateKey}`, 2);
   const signingKey = new ethers.utils.SigningKey(signer.privateKey);
   const sharedKey = keccak256(signingKey.computeSharedSecret(publicKey));
-
+  log(`Shared key: ${sharedKey}`, 2);
   const derivedPrivateKey = privateKeyDerivationFunction({
     privateKey: sharedKey,
     gameId,
@@ -110,5 +112,8 @@ export const gameKey = async ({
   gameMaster: Wallet;
 }): Promise<string> => {
   const message = ethers.utils.solidityPack(['uint256', 'address', 'string'], [gameId, contractAddress, 'gameKey']);
-  return gameMaster.signMessage(message).then(sig => keccak256(sig));
+  log(`Signing message: ${message}`);
+  const gameKey = gameMaster.signMessage(message).then(sig => keccak256(sig));
+  log(`Game key: ${gameKey}`, 2);
+  return gameKey;
 };
