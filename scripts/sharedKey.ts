@@ -58,14 +58,10 @@ export const sharedSigner = ({
   log(`Signing key: ${signer.privateKey}, public key: ${publicKey}`, 2);
   const signingKey = new ethers.utils.SigningKey(signer.privateKey);
   log(`signingKey.computeSharedSecret(publicKey): ${signingKey.computeSharedSecret(publicKey)}`, 2);
-  const sharedKey = keccak256(signingKey.computeSharedSecret(publicKey));
   const privKeyHex = signer.privateKey.startsWith('0x') ? signer.privateKey.slice(2) : signer.privateKey;
   const pubKeyHex = publicKey.startsWith('0x') ? publicKey.slice(2) : publicKey;
-  const sharedKey2 = getSharedSecret(privKeyHex, pubKeyHex);
+  const sharedKey = keccak256(getSharedSecret(privKeyHex, pubKeyHex, true));
   log(`Shared key: ${sharedKey}`, 2);
-  log(`Shared key2 from @noble/secp256k1: ${ethers.utils.hexlify(sharedKey2)}`, 2);
-  log(`Shared key2 from @noble/secp256k1: ${sharedKey2.toString()}`, 2);
-  log(sharedKey2, 2);
   const derivedPrivateKey = privateKeyDerivationFunction({
     privateKey: sharedKey,
     gameId,
