@@ -55,7 +55,7 @@ export const sharedSigner = ({
   contractAddress: string;
   chainId: string;
 }) => {
-  log(`Signing key: ${signer.privateKey}`, 2);
+  log(`Signing key: ${signer.privateKey}, public key: ${publicKey}`, 2);
   const signingKey = new ethers.utils.SigningKey(signer.privateKey);
   const sharedKey = keccak256(signingKey.computeSharedSecret(publicKey));
   log(`Shared key: ${sharedKey}`, 2);
