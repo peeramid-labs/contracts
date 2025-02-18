@@ -51,3 +51,64 @@ export const sharedSigner = ({
   });
   return derivedPrivateKey;
 };
+
+/**
+ * Returns a shared signer for a game
+ * @param publicKey - Public key of the player
+ * @param gameMaster - Game master
+ * @param gameId - ID of the game
+ * @param turn - Turn number
+ * @param contractAddress - Address of the contract
+ * @param chainId - Chain ID
+ * @returns Shared signer
+ */
+export const sharedGameKeySigner = async ({
+  publicKey,
+  gameMaster,
+  gameId,
+  turn,
+  contractAddress,
+  chainId,
+}: {
+  publicKey: string;
+  gameMaster: Wallet;
+  gameId: BigNumberish;
+  turn: BigNumberish;
+  contractAddress: string;
+  chainId: string;
+}) => {
+  return sharedSigner({
+    publicKey,
+    signer: new ethers.Wallet(
+      await gameKey({
+        gameId,
+        contractAddress,
+        gameMaster,
+      }),
+    ),
+    gameId,
+    turn,
+    contractAddress,
+    chainId,
+  });
+};
+
+/**
+ * Returns the game key for a game
+ * @param gameId - ID of the game
+ * @param contractAddress - Address of the contract
+ * @param gameMaster - Game master
+ * @returns Game key
+ */
+export const gameKey = async ({
+  gameId,
+  contractAddress,
+  gameMaster,
+}: {
+  gameId: BigNumberish;
+  contractAddress: string;
+  gameMaster: Wallet;
+}): Promise<string> => {
+  const message = ethers.utils.solidityPack(['uint256', 'address', 'string'], [gameId, contractAddress, 'gameKey']);
+  return gameMaster.signMessage(message).then(sig => keccak256(sig));
+};

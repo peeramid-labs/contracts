@@ -20,7 +20,7 @@ import { assert } from 'console';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { getDiscussionForTurn } from './discussionTopics';
 import { buildPoseidon } from 'circomlibjs';
-import { sharedSigner } from './sharedKey';
+import { sharedGameKeySigner } from './sharedKey';
 import { generateDeterministicPermutation, generateEndTurnIntegrity } from './proofs';
 import { AdrSetupResult } from './setupMockEnvironment';
 import { SignerIdentity } from './setupMockEnvironment';
@@ -488,15 +488,25 @@ class EnvironmentSimulator {
       salt: playerSalt,
     };
     const ballotHash: string = utils.solidityKeccak256(['uint256[]', 'bytes32'], [vote, playerSalt]);
-    // JSON.parse(aes.decrypt(playerVotedEvents[0].args.votesHidden, gameMasterPK).toString(cryptoJs.enc.Utf8));
+    const playerPubKey = utils.recoverPublicKey(
+      utils.hashMessage('mock_message'),
+      await voter.wallet.signMessage('mock_message'),
+    );
 
-    //ToDo: use private key to encrypt,lol
-    const ballotId = aes.encrypt(JSON.stringify(ballot.vote), gm.publicKey).toString();
+    const { encryptedVote } = await this.encryptVote({
+      vote: JSON.stringify(ballot.vote.map(v => v.toString())),
+      turn,
+      instanceAddress: verifierAddress,
+      gameId,
+      playerPubKey,
+      gameMaster: gm,
+    });
+
     const gmSignature = await this.signVote({
       verifierAddress,
       voter: voter.wallet.address,
       gameId,
-      sealedBallotId: ballotId,
+      sealedBallotId: encryptedVote,
       signer: gm,
       ballotHash,
       isGM: true,
@@ -507,14 +517,14 @@ class EnvironmentSimulator {
       verifierAddress,
       voter: voter.wallet.address,
       gameId,
-      sealedBallotId: ballotId,
+      sealedBallotId: encryptedVote,
       signer: voter.wallet,
       ballotHash,
       isGM: false,
       name,
       version,
     });
-    const result = { vote, ballotHash, ballot, ballotId, gmSignature, voterSignature };
+    const result = { vote, ballotHash, ballot, ballotId: encryptedVote, gmSignature, voterSignature };
     log(`Vote attested for player ${voter.wallet.address}`);
     return result;
   };
@@ -748,6 +758,25 @@ class EnvironmentSimulator {
     return typedDataHash;
   };
 
+  private calculateAndCachePubKey = async (player: SignerIdentity['wallet']) => {
+    const playerPubKey = utils.recoverPublicKey(
+      utils.hashMessage('mock_message'),
+      await player.signMessage('mock_message'),
+    );
+    this.publicKeys[player.address] = playerPubKey;
+    return playerPubKey;
+  };
+
+  private getCachedPubKey = (address: string, player?: SignerIdentity['wallet']) => {
+    if (!this.publicKeys[address]) {
+      if (!player) {
+        throw new Error(`Public key for address ${address} not found`);
+      }
+      return this.calculateAndCachePubKey(player);
+    }
+    return this.publicKeys[address];
+  };
+
   /**
    * Generates mock proposal secrets for testing
    * @param params - Parameters including game info and proposer details
@@ -771,23 +800,21 @@ class EnvironmentSimulator {
     log(`Creating proposal secrets for player ${proposer.wallet.address} in game ${gameId}, turn ${turn}`);
     const poseidon = await buildPoseidon();
 
-    const pubKeyProposer = utils.recoverPublicKey(
+    const playerPubKey = utils.recoverPublicKey(
       utils.hashMessage(proposal),
       await proposer.wallet.signMessage(proposal),
     );
-    assert(utils.computeAddress(pubKeyProposer) === proposer.wallet.address, 'Proposer public key does not match');
+    assert(utils.computeAddress(playerPubKey) === proposer.wallet.address, 'Proposer public key does not match');
 
-    const sharedKey = sharedSigner({
-      publicKey: pubKeyProposer,
-      signer: gm,
-      gameId,
+    this.publicKeys[proposer.wallet.address] = playerPubKey;
+    const { encryptedProposal, sharedKey } = await this.encryptProposal({
+      proposal,
       turn,
-      contractAddress: verifier.address,
-      chainId: await this.hre.getChainId(),
+      instanceAddress: verifier.address,
+      gameId,
+      playerPubKey,
+      signer: gm,
     });
-    const signingKey = new ethers.utils.SigningKey(sharedKey);
-    this.publicKeys[proposer.wallet.address] = pubKeyProposer;
-    const encryptedProposal = aes.encrypt(proposal, signingKey.privateKey).toString();
     // Convert proposal to numeric value using keccak256
     const proposalValue = BigInt(utils.solidityKeccak256(['string'], [proposal]));
     const randomnessValue = BigInt(utils.solidityKeccak256(['string'], [sharedKey]));
@@ -1168,17 +1195,14 @@ class EnvironmentSimulator {
             proposals[i].params.proposerSignature = alreadyExistingProposal.args.proposerSignature;
 
             try {
-              const sharedKey = sharedSigner({
-                publicKey: this.publicKeys[players[i].wallet.address],
-                signer: gameMaster,
+              const decryptedProposal = await this.decryptProposal({
+                proposal: alreadyExistingProposal.args.encryptedProposal,
+                playerPubKey: await this.getCachedPubKey(players[i].wallet.address),
                 gameId,
+                instanceAddress: this.rankifyInstance.address,
+                signer: gameMaster,
                 turn: await this.rankifyInstance.getTurn(gameId),
-                contractAddress: this.rankifyInstance.address,
-                chainId: await this.hre.getChainId(),
               });
-              const signingKey = new ethers.utils.SigningKey(sharedKey);
-              const temp = aes.decrypt(alreadyExistingProposal.args.encryptedProposal, signingKey.privateKey);
-              let decryptedProposal = temp.toString(cryptoJs.enc.Utf8);
               log(`decryptedProposal`);
               log(decryptedProposal, 2);
               const decrypted = JSON.parse(decryptedProposal) as { title: string; body: string };
@@ -1259,16 +1283,6 @@ class EnvironmentSimulator {
         submitNow: true,
       });
       log(`Proposals submitted: ${lastProposals.length}`);
-
-      // Submit proposals
-      log('Submitting proposals...');
-      lastProposals = await this.mockProposals({
-        players,
-        gameMaster: this.adr.gameMaster1,
-        gameId,
-        submitNow: true,
-      });
-      log(`Proposals submitted: ${lastProposals.length}`);
       if (distribution == 'equal' && players.length % 2 !== 0) {
         log('Increasing time for equal distribution and odd number of players');
         await time.increase(constantParams.RInstance_TIME_PER_TURN + 1);
@@ -1336,9 +1350,14 @@ class EnvironmentSimulator {
             votes[i].voterSignature = playerVotedEvents[0].args.voterSignature;
             votes[i].ballotId = playerVotedEvents[0].args.sealedBallotId;
             try {
-              votes[i].vote = JSON.parse(
-                aes.decrypt(playerVotedEvents[0].args.sealedBallotId, gm.privateKey).toString(cryptoJs.enc.Utf8),
-              );
+              votes[i].vote = await this.decryptVote({
+                vote: playerVotedEvents[0].args.sealedBallotId,
+                playerPubKey: await this.getCachedPubKey(players[i].wallet.address),
+                gameId,
+                instanceAddress: this.rankifyInstance.address,
+                signer: gm,
+                turn,
+              });
               log(`Decrypted vote:`, 2);
               log(votes[i].vote, 2);
             } catch (e) {
@@ -1450,6 +1469,169 @@ class EnvironmentSimulator {
     }
     return Promise.all(promises.map(p => p.wait(1)));
   }
+
+  /**
+   * Encrypts a vote
+   * @param vote - Vote to encrypt
+   * @param turn - Turn number
+   * @param instanceAddress - Address of the game instance
+   * @param gameId - ID of the game
+   * @param playerPubKey - Public key of the player
+   * @param gameMaster - Game master
+   * @returns Encrypted vote and shared key
+   */
+  private encryptVote = async ({
+    vote,
+    turn,
+    instanceAddress,
+    gameId,
+    playerPubKey,
+    gameMaster,
+  }: {
+    vote: string;
+    turn: BigNumberish;
+    instanceAddress: string;
+    gameId: BigNumberish;
+    playerPubKey: string;
+    gameMaster: Wallet;
+  }) => {
+    const sharedKey = await sharedGameKeySigner({
+      publicKey: playerPubKey,
+      gameMaster,
+      gameId,
+      turn,
+      contractAddress: instanceAddress,
+      chainId: await this.hre.getChainId(),
+    });
+    log(`encrypting vote with shared key (hashed value: ${ethers.utils.keccak256(sharedKey)})`);
+    const encryptedVote = aes.encrypt(vote, sharedKey).toString();
+    log(`encrypted vote: ${encryptedVote}`, 2);
+    return { encryptedVote, sharedKey };
+  };
+
+  /**
+   * Encrypts a proposal
+   * @param proposal - Proposal to encrypt
+   * @param turn - Turn number
+   * @param instanceAddress - Address of the game instance
+   * @param gameId - ID of the game
+   * @param proposerPubKey - Public key of the proposer
+   * @returns Encrypted proposal and shared key
+   */
+  private encryptProposal = async ({
+    proposal,
+    turn,
+    instanceAddress,
+    gameId,
+    playerPubKey,
+    signer,
+  }: {
+    proposal: string;
+    turn: BigNumberish;
+    instanceAddress: string;
+    gameId: BigNumberish;
+    playerPubKey: string;
+    signer: Wallet;
+  }) => {
+    const sharedKey = await sharedGameKeySigner({
+      publicKey: playerPubKey,
+      gameMaster: signer,
+      gameId,
+      turn,
+      contractAddress: instanceAddress,
+      chainId: await this.hre.getChainId(),
+    });
+    log(`Encrypting proposal ${proposal} with shared key (hashed value: ${ethers.utils.keccak256(sharedKey)})`);
+    const encryptedProposal = aes.encrypt(proposal, sharedKey).toString();
+    log(`Encrypted proposal ${encryptedProposal}`);
+    return { encryptedProposal, sharedKey };
+  };
+
+  /**
+   * Decrypts a proposal
+   * @param proposal - Proposal to decrypt
+   * @param playerPubKey - Public key of the player
+   * @param gameId - ID of the game
+   * @param instanceAddress - Address of the game instance
+   * @param signer - Signer
+   * @param turn - Turn number
+   * @returns Decrypted proposal
+   */
+  private decryptProposal = async ({
+    proposal,
+    playerPubKey,
+  }: {
+    proposal: string;
+    playerPubKey: string;
+    gameId: BigNumberish;
+    instanceAddress: string;
+    signer: Wallet;
+    turn: BigNumberish;
+  }): Promise<string> => {
+    const sharedKey = await sharedGameKeySigner({
+      publicKey: playerPubKey,
+      gameMaster: signer,
+      gameId,
+      turn,
+      contractAddress: instanceAddress,
+      chainId: await this.hre.getChainId(),
+    });
+    const decrypted = aes.decrypt(proposal, sharedKey).toString(cryptoJs.enc.Utf8);
+    if (!decrypted) {
+      throw new Error('Failed to decrypt proposal');
+    }
+    return decrypted;
+  };
+
+  /**
+   * Decrypts a vote
+   * @param vote - Vote to decrypt
+   * @param playerPubKey - Public key of the player
+   * @param gameId - ID of the game
+   * @param instanceAddress - Address of the game instance
+   * @param signer - Signer
+   * @param turn - Turn number
+   * @returns Decrypted vote
+   */
+  private decryptVote = async ({
+    vote,
+    playerPubKey,
+    gameId,
+    instanceAddress,
+    signer,
+    turn,
+  }: {
+    vote: string;
+    playerPubKey: string;
+    gameId: BigNumberish;
+    instanceAddress: string;
+    signer: Wallet;
+    turn: BigNumberish;
+  }): Promise<BigNumberish[]> => {
+    const sharedKey = await sharedGameKeySigner({
+      publicKey: playerPubKey,
+      gameMaster: signer,
+      gameId,
+      turn,
+      contractAddress: instanceAddress,
+      chainId: await this.hre.getChainId(),
+    });
+
+    const decrypted = aes.decrypt(vote, sharedKey).toString(cryptoJs.enc.Utf8);
+    if (!decrypted) {
+      throw new Error('Failed to decrypt vote');
+    }
+
+    try {
+      const parsed = JSON.parse(decrypted) as string[];
+      log(`Decrypted vote:`, 2);
+      log(parsed, 2);
+      return parsed.map(v => BigInt(v));
+      // eslint-disable-next-line
+    } catch (e: any) {
+      throw new Error('Unexpected token');
+    }
+  };
 }
 
 export default EnvironmentSimulator;
