@@ -161,11 +161,16 @@ export class InstanceBase extends EnvironmentSimulator {
     return activeGames;
   }
 
-  async makeTurn(
-    gameId: BigNumberish,
-    distribution: 'ftw' | 'semiUniform' | 'equal' = 'ftw',
-  ): Promise<{ lastVotes: MockVote[]; lastProposals: ProposalSubmission[] }> {
-    const { lastVotes, lastProposals } = await super.makeTurn(gameId, distribution);
+  async makeTurn({
+    gameId,
+    distribution = 'ftw',
+    increaseFinalTime = false,
+  }: {
+    gameId: BigNumberish;
+    distribution: 'ftw' | 'semiUniform' | 'equal';
+    increaseFinalTime: boolean;
+  }): Promise<{ lastVotes: MockVote[]; lastProposals: ProposalSubmission[] }> {
+    const { lastVotes, lastProposals } = await super.makeTurn({ gameId, distribution, increaseFinalTime });
 
     const isLastTurn = await this.rankifyInstance.isLastTurn(gameId);
     const isOvertime = await this.rankifyInstance.isOvertime(gameId);
@@ -191,7 +196,7 @@ export class InstanceBase extends EnvironmentSimulator {
     const gameEnded = await this.rankifyInstance.isGameOver(gameId);
     if (!gameEnded) {
       console.log('Running to the end for game:', gameId.toString());
-      await this.runToTheEnd(gameId, 'equal');
+      await this.runToTheEnd(gameId, 'ftw');
       console.log('Game ended');
       const GameOverF = this.rankifyInstance.filters.GameOver(gameId);
       console.log('Getting game over event for game:', gameId.toString());

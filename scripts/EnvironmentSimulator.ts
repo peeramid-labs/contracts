@@ -1073,12 +1073,13 @@ class EnvironmentSimulator {
   }
 
   public async runToTheEnd(gameId: BigNumberish, distribution: 'ftw' | 'semiUniform' | 'equal' = 'ftw') {
-    log(`Running game ${gameId} to the end with distribution ${distribution}`);
+    log(`Running game ${gameId.toString()} to the end with distribution ${distribution}`);
     let lastVotes: MockVote[] = [];
     let isGameOver = await this.rankifyInstance.isGameOver(gameId);
 
     while (!isGameOver) {
-      await this.makeTurn(gameId, distribution, true);
+      log(`Game ${gameId.toString()} turn: ${await this.rankifyInstance.getTurn(gameId)}`);
+      await this.makeTurn({ gameId, distribution, increaseFinalTime: true });
 
       // const shuffleSalt = await getTestShuffleSalt(gameId, turn, gameMaster);
 
@@ -1235,8 +1236,9 @@ class EnvironmentSimulator {
   ): Promise<{ lastVotes: MockVote[]; lastProposals: ProposalSubmission[] }> {
     let lastVotes: MockVote[] = [];
     let lastProposals: ProposalSubmission[] = [];
+    log(`Game ${gameId.toString()} distribution: ${distribution}`);
     while (!(await this.rankifyInstance.isLastTurn(gameId))) {
-      const lastVotesAndProposals = await this.makeTurn(gameId, distribution ?? 'equal');
+      const lastVotesAndProposals = await this.makeTurn({gameId, distribution: distribution ?? 'equal', increaseFinalTime: false});
       lastVotes = lastVotesAndProposals.lastVotes;
       lastProposals = lastVotesAndProposals.lastProposals;
     }
@@ -1248,15 +1250,20 @@ class EnvironmentSimulator {
     };
   }
 
-  async makeTurn(
-    gameId: BigNumberish,
-    distribution: 'ftw' | 'semiUniform' | 'equal' = 'ftw',
-    increaseFinalTime?: boolean,
-  ): Promise<{ lastVotes: MockVote[]; lastProposals: ProposalSubmission[] }> {
+  async makeTurn({
+    gameId,
+    distribution = 'ftw',
+    increaseFinalTime = false,
+  }: {
+    gameId: BigNumberish;
+    distribution?: 'ftw' | 'semiUniform' | 'equal';
+    increaseFinalTime?: boolean;
+  }): Promise<{ lastVotes: MockVote[]; lastProposals: ProposalSubmission[] }> {
     let lastVotes: MockVote[] = [];
     let lastProposals: ProposalSubmission[] = [];
     const gameEnded = await this.rankifyInstance.isGameOver(gameId);
-
+    
+    log(`Game ${gameId} distribution: ${distribution} increaseFinalTime: ${increaseFinalTime} gameEnded: ${gameEnded}`);
     if (!gameEnded) {
       log(`Making move for game: ${gameId}`);
       const turn = await this.rankifyInstance.getTurn(gameId);
@@ -1287,9 +1294,12 @@ class EnvironmentSimulator {
         log('Increasing time for equal distribution and odd number of players');
         await time.increase(constantParams.RInstance_TIME_PER_TURN + 1);
       }
+      
       if (increaseFinalTime) {
+        log('Increasing time for final turn');
         let isLastTurn = await this.rankifyInstance.isLastTurn(gameId);
         if (isLastTurn) {
+          log('Increasing time for final turn (is last turn)');
           const timeToEnd = await this.rankifyInstance.getGameState(gameId).then(state => state.minGameTime);
           await time.increase(timeToEnd.toNumber() + 1);
         }

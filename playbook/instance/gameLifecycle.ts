@@ -138,7 +138,11 @@ async function executeSingleAction(
       console.log('Game started successfully');
       break;
     case 'nextMove':
-      await instanceBase.makeTurn(gameId);
+      await instanceBase.makeTurn({
+        gameId,
+        distribution: 'equal',
+        increaseFinalTime: false,
+      });
       console.log('Next move completed');
       break;
     case 'lastMove':
