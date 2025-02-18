@@ -1112,7 +1112,10 @@ class EnvironmentSimulator {
     gm: Wallet;
     idlers?: number[];
   }) => {
-    const turn = await this.rankifyInstance.getTurn(gameId);
+    let turn = await this.rankifyInstance.getTurn(gameId);
+    if (turn.eq(0) && process.env.NODE_ENV == 'TEST') {
+      turn = ethers.BigNumber.from(2); // Just for testing
+    }
     const { newProposals, permutation, nullifier } = await this.getProposalsIntegrity({
       players,
       gameId,
@@ -1321,8 +1324,15 @@ class EnvironmentSimulator {
     distribution?: 'ftw' | 'semiUniform' | 'equal',
   ) {
     let votes: MockVote[] = [];
-    const turn = await this.rankifyInstance.getTurn(gameId);
-    log(`Mocking votes for game ${gameId}, turn ${turn.toString()} with distribution ${distribution}`);
+    let turn = await this.rankifyInstance.getTurn(gameId);
+    if (process.env.NODE_ENV == 'TEST' && turn.eq(0)) {
+      turn = ethers.BigNumber.from(2); // Just for testing
+    }
+
+    log(
+      `Mocking votes for game ${gameId}, turn ${turn.toString()} with distribution ${distribution}, submitNow: ${submitNow}`,
+    );
+    log(`node env: ${process.env.NODE_ENV}`);
     if (!turn.eq(1)) {
       votes = await this.mockVotes({
         gameId: gameId,

@@ -7,6 +7,7 @@ import * as path from 'path';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ProposalSubmission } from './EnvironmentSimulator';
 import { log } from './utils';
+import { gameKey, privateKeyDerivationFunction } from './sharedKey';
 
 // Persistent cache helpers
 const CACHE_DIR = '.zkproofs-cache';
@@ -56,7 +57,7 @@ export const createInputs = async ({
   turn: BigNumberish;
   verifierAddress: string;
   chainId: BigNumberish;
-  gm: SignerWithAddress | Wallet;
+  gm: Wallet;
 }): Promise<PrivateProposalsIntegrity15Groth16> => {
   const poseidon = await buildPoseidon();
   const maxSize = 15;
@@ -107,28 +108,6 @@ export const createInputs = async ({
   };
 };
 
-const getSeed = async ({
-  gameId,
-  turn,
-  verifierAddress,
-  chainId,
-  gm,
-}: {
-  gameId: BigNumberish;
-  turn: BigNumberish;
-  verifierAddress: string;
-  chainId: BigNumberish;
-  gm: SignerWithAddress | Wallet;
-}): Promise<bigint> => {
-  const message = utils.solidityKeccak256(
-    ['uint256', 'uint256', 'address', 'uint256'],
-    [gameId, turn, verifierAddress, chainId],
-  );
-  const signature = await gm.signMessage(message);
-  const seed = utils.keccak256(signature);
-
-  return BigInt(seed);
-};
 
 export const generateEndTurnIntegrity = async ({
   gameId,
@@ -144,7 +123,7 @@ export const generateEndTurnIntegrity = async ({
   turn: BigNumberish;
   verifierAddress: string;
   chainId: BigNumberish;
-  gm: SignerWithAddress | Wallet;
+  gm: Wallet;
   size?: number;
   proposals: ProposalSubmission[];
   hre: HardhatRuntimeEnvironment;
@@ -210,6 +189,81 @@ export const generateEndTurnIntegrity = async ({
   };
 };
 
+export const getTurnSalt = async ({
+  gameId,
+  turn,
+  verifierAddress,
+  chainId,
+  gm,
+}: {
+  gameId: BigNumberish;
+  turn: BigNumberish;
+  verifierAddress: string;
+  chainId: BigNumberish;
+  gm: Wallet;
+}): Promise<BigNumberish> => {
+  const _gameKey = await gameKey({ gameId, contractAddress: verifierAddress, gameMaster: gm });
+
+  const seed = privateKeyDerivationFunction({
+    privateKey: _gameKey,
+    turn,
+    gameId,
+    contractAddress: verifierAddress,
+    chainId: chainId.toString(),
+    scope: 'turnSalt',
+  });
+  return ethers.BigNumber.from(seed);
+};
+
+/**
+ * Generates a deterministic permutation for a specific game turn
+ * @param gameId - ID of the game
+ * @param turn - Turn number
+ * @param size - Size of the permutation
+ * @param verifierAddress - Address of the verifier
+ * @returns The generated permutation, secret, and commitment
+ */
+export const getPermutation = async ({
+  gameId,
+  turn,
+  size,
+  verifierAddress,
+  chainId,
+  gm,
+}: {
+  gameId: BigNumberish;
+  turn: BigNumberish;
+  size: number;
+  verifierAddress: string;
+  chainId: BigNumberish;
+  gm: Wallet;
+}) => {
+  const maxSize = 15;
+  const turnSalt = await getTurnSalt({ gameId, turn, verifierAddress, chainId, gm });
+  // Create deterministic seed from game parameters and GM's signature
+
+  // Use the seed to generate permutation
+  const permutation: number[] = Array.from({ length: maxSize }, (_, i) => i);
+
+  // Fisher-Yates shuffle with deterministic randomness
+  for (let i = size - 1; i >= 0; i--) {
+    // Generate deterministic random number for this position
+    const randHash = utils.solidityKeccak256(['uint256', 'uint256'], [turnSalt, i]);
+    const rand = BigInt(randHash);
+    const j = Number(rand % BigInt(i + 1));
+
+    // Swap elements
+    [permutation[i], permutation[j]] = [permutation[j], permutation[i]];
+  }
+
+  // Ensure inactive slots map to themselves
+  for (let i = size; i < maxSize; i++) {
+    permutation[i] = i;
+  }
+
+  return { permutation, turnSalt };
+};
+
 // Generate deterministic permutation based on game parameters and GM's secret
 export const generateDeterministicPermutation = async ({
   gameId,
@@ -223,37 +277,16 @@ export const generateDeterministicPermutation = async ({
   turn: BigNumberish;
   verifierAddress: string;
   chainId: BigNumberish;
-  gm: SignerWithAddress | Wallet;
+  gm: Wallet;
   size?: number;
 }): Promise<{
   permutation: number[];
   secret: bigint;
   commitment: bigint;
 }> => {
-  const maxSize = 15;
   // Create deterministic seed from game parameters and GM's signature
 
-  // Use the seed to generate permutation
-  const permutation: number[] = Array.from({ length: maxSize }, (_, i) => i);
-
-  // This is kept secret to generate witness
-  const secret = await getSeed({ gameId, turn, verifierAddress, chainId, gm });
-
-  // Fisher-Yates shuffle with deterministic randomness
-  for (let i = size - 1; i >= 0; i--) {
-    // Generate deterministic random number for this position
-    const randHash = utils.keccak256(utils.toUtf8Bytes(secret + i.toString()));
-    const rand = BigInt(randHash);
-    const j = Number(rand % BigInt(i + 1));
-
-    // Swap elements
-    [permutation[i], permutation[j]] = [permutation[j], permutation[i]];
-  }
-
-  // Ensure inactive slots map to themselves
-  for (let i = size; i < maxSize; i++) {
-    permutation[i] = i;
-  }
+  const { permutation, turnSalt: secret } = await getPermutation({ gameId, turn, verifierAddress, chainId, gm, size });
 
   // Generate commitment
   const poseidon = await buildPoseidon();
@@ -271,11 +304,11 @@ export const generateDeterministicPermutation = async ({
     ),
   );
 
-  const commitment = BigInt(poseidon.F.toObject(poseidon([PoseidonThird, secret])));
+  const commitment = BigInt(poseidon.F.toObject(poseidon([PoseidonThird, secret.toString()])));
 
   return {
     permutation,
-    secret,
+    secret: BigInt(secret.toString()),
     commitment,
   };
 };

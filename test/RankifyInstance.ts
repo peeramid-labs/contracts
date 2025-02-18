@@ -492,8 +492,8 @@ describe(scriptName, () => {
       rankifyInstance.connect(adr.gameMaster1).startGame(
         0,
         await generateDeterministicPermutation({
-          gameId: 0,
-          turn: 0,
+          gameId: 1,
+          turn: 1,
           verifierAddress: rankifyInstance.address,
           chainId: await hre.getChainId(),
           gm: adr.gameMaster1,

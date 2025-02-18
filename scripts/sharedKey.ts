@@ -9,19 +9,34 @@ export const privateKeyDerivationFunction = ({
   gameId,
   turn,
   contractAddress,
+  scope = 'default',
 }: {
-  chainId: string;
+  chainId: BigNumberish;
   privateKey: string;
   gameId: BigNumberish;
   turn: BigNumberish;
   contractAddress: string;
+  scope?: 'default' | 'turnSalt';
 }) => {
+  log(`Deriving private key for scope: ${scope.toString()}`, 2);
+  log(
+    {
+      chainId: chainId,
+      privateKey,
+      gameId,
+      turn,
+      contractAddress,
+      scope: ethers.utils.solidityPack(['string'], ['scope']),
+    },
+    2,
+  );
   const derivedPrivateKey = keccak256(
     ethers.utils.defaultAbiCoder.encode(
-      ['bytes32', 'uint256', 'uint256', 'address', 'string'],
-      [privateKey, gameId, turn, contractAddress, chainId],
+      ['bytes32', 'uint256', 'uint256', 'address', 'uint256', 'bytes32'],
+      [privateKey, gameId, turn, contractAddress, chainId, ethers.utils.solidityKeccak256(['string'], [scope])],
     ),
   );
+  log(`Derived private key: ${derivedPrivateKey}`, 2);
   return derivedPrivateKey;
 };
 
@@ -113,7 +128,7 @@ export const gameKey = async ({
 }): Promise<string> => {
   const message = ethers.utils.solidityPack(['uint256', 'address', 'string'], [gameId, contractAddress, 'gameKey']);
   log(`Signing message: ${message}`);
-  const gameKey = gameMaster.signMessage(message).then(sig => keccak256(sig));
+  const gameKey = await gameMaster.signMessage(message).then(sig => keccak256(sig));
   log(`Game key: ${gameKey}`, 2);
   return gameKey;
 };
