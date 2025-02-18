@@ -57,6 +57,7 @@ export const sharedSigner = ({
 }) => {
   log(`Signing key: ${signer.privateKey}, public key: ${publicKey}`, 2);
   const signingKey = new ethers.utils.SigningKey(signer.privateKey);
+  log(`signingKey.computeSharedSecret(publicKey): ${signingKey.computeSharedSecret(publicKey)}`, 2);
   const sharedKey = keccak256(signingKey.computeSharedSecret(publicKey));
   log(`Shared key: ${sharedKey}`, 2);
   const derivedPrivateKey = privateKeyDerivationFunction({
