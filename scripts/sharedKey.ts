@@ -18,7 +18,7 @@ export const privateKeyDerivationFunction = ({
   contractAddress: string;
   scope?: 'default' | 'turnSalt';
 }) => {
-  log(`Deriving private key for scope: ${scope.toString()}`, 2);
+  log(`Deriving private key for scope: ${scope}`, 2);
   log(
     {
       chainId: chainId,
@@ -26,12 +26,12 @@ export const privateKeyDerivationFunction = ({
       gameId,
       turn,
       contractAddress,
-      scope: ethers.utils.solidityPack(['string'], ['scope']),
+      scope: ethers.utils.solidityPack(['string'], [scope]),
     },
     2,
   );
   const derivedPrivateKey = keccak256(
-    ethers.utils.defaultAbiCoder.encode(
+    ethers.utils.solidityPack(
       ['bytes32', 'uint256', 'uint256', 'address', 'uint256', 'bytes32'],
       [privateKey, gameId, turn, contractAddress, chainId, ethers.utils.solidityKeccak256(['string'], [scope])],
     ),
