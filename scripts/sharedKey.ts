@@ -1,7 +1,7 @@
 import { BigNumberish, ethers, Wallet } from 'ethers';
 import { keccak256 } from 'ethers/lib/utils';
 import { log } from './utils';
-
+import { getSharedSecret } from '@noble/secp256k1';
 // Derives a private key from the signer's private key, gameId, turn, and contract address
 export const privateKeyDerivationFunction = ({
   chainId,
@@ -59,7 +59,10 @@ export const sharedSigner = ({
   const signingKey = new ethers.utils.SigningKey(signer.privateKey);
   log(`signingKey.computeSharedSecret(publicKey): ${signingKey.computeSharedSecret(publicKey)}`, 2);
   const sharedKey = keccak256(signingKey.computeSharedSecret(publicKey));
+  const sharedKey2 = getSharedSecret(signingKey.privateKey, publicKey);
   log(`Shared key: ${sharedKey}`, 2);
+  log(`Shared key2 from @noble/secp256k1: ${ethers.utils.hexlify(sharedKey2)}`, 2);
+  log(`Shared key2 from @noble/secp256k1: ${sharedKey2}`, 2);
   const derivedPrivateKey = privateKeyDerivationFunction({
     privateKey: sharedKey,
     gameId,
