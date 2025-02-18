@@ -73,6 +73,7 @@
   "dependencies": {
     "@ethersproject/abi": "^5.7.0",
     "@ethersproject/providers": "^5.7.2",
+    "@noble/secp256k1": "^2.2.3",
     "@openzeppelin/contracts": "^5.0.0",
     "@openzeppelin/contracts-upgradeable": "^5.0.0",
     "@solarity/hardhat-zkit": "^0.5.10",
