@@ -1209,7 +1209,7 @@ class EnvironmentSimulator {
               });
               log(`decryptedProposal`);
               log(decryptedProposal, 2);
-              const decrypted = JSON.parse(decryptedProposal) as { title: string; body: string };
+              const decrypted = decryptedProposal.startsWith('ipfs://') ? this.decryptProposal : JSON.parse(decryptedProposal) as { title: string; body: string };
               const turn = await this.rankifyInstance.getTurn(gameId);
               const proposalParams = await this.mockProposalSecrets({
                 gm: gameMaster,
@@ -1217,7 +1217,7 @@ class EnvironmentSimulator {
                 gameId,
                 turn,
                 verifier: this.rankifyInstance,
-                proposal: JSON.stringify(decrypted),
+                proposal: decryptedProposal.startsWith('ipfs://') ? decryptedProposal : JSON.stringify(decrypted),
               });
               proposals[i].proposal = proposalParams.proposal;
               proposals[i].proposalValue = proposalParams.proposalValue;
