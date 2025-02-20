@@ -18,7 +18,7 @@ export const privateKeyDerivationFunction = ({
   contractAddress: string;
   scope?: 'default' | 'turnSalt';
 }) => {
-  log(`Deriving private key for scope: ${scope}`, 2);
+  log(`Deriving private key for scope: ${scope}`, 3);
   log(
     {
       chainId: chainId,
@@ -28,7 +28,7 @@ export const privateKeyDerivationFunction = ({
       contractAddress,
       scope: ethers.utils.solidityPack(['string'], [scope]),
     },
-    2,
+    3,
   );
   const derivedPrivateKey = keccak256(
     ethers.utils.solidityPack(
@@ -36,7 +36,7 @@ export const privateKeyDerivationFunction = ({
       [privateKey, gameId, turn, contractAddress, chainId, ethers.utils.solidityKeccak256(['string'], [scope])],
     ),
   );
-  log(`Derived private key: ${derivedPrivateKey}`, 2);
+  log(`Derived private key: ${derivedPrivateKey}`, 3);
   return derivedPrivateKey;
 };
 
@@ -55,13 +55,13 @@ export const sharedSigner = ({
   contractAddress: string;
   chainId: string;
 }) => {
-  log(`Signing key: ${signer.privateKey}, public key: ${publicKey}`, 2);
+  log(`Signing key: ${signer.privateKey}, public key: ${publicKey}`, 3);
   const signingKey = new ethers.utils.SigningKey(signer.privateKey);
-  log(`signingKey.computeSharedSecret(publicKey): ${signingKey.computeSharedSecret(publicKey)}`, 2);
+  log(`signingKey.computeSharedSecret(publicKey): ${signingKey.computeSharedSecret(publicKey)}`, 3);
   const privKeyHex = signer.privateKey.startsWith('0x') ? signer.privateKey.slice(2) : signer.privateKey;
   const pubKeyHex = publicKey.startsWith('0x') ? publicKey.slice(2) : publicKey;
   const sharedKey = keccak256(getSharedSecret(privKeyHex, pubKeyHex, true));
-  log(`Shared key: ${sharedKey}`, 2);
+  log(`Shared key: ${sharedKey}`, 3);
   const derivedPrivateKey = privateKeyDerivationFunction({
     privateKey: sharedKey,
     gameId,
@@ -130,8 +130,8 @@ export const gameKey = async ({
   gameMaster: Wallet;
 }): Promise<string> => {
   const message = ethers.utils.solidityPack(['uint256', 'address', 'string'], [gameId, contractAddress, 'gameKey']);
-  log(`Signing message: ${message}`);
+  log(`Signing message: ${message}`, 3);
   const gameKey = await gameMaster.signMessage(message).then(sig => keccak256(sig));
-  log(`Game key: ${gameKey}`, 2);
+  log(`Game key: ${gameKey}`, 3);
   return gameKey;
 };

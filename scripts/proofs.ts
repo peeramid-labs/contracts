@@ -149,7 +149,7 @@ export const generateEndTurnIntegrity = async ({
     chainId: await hre.getChainId(),
     gm,
   });
-  log(inputs, 2);
+  log(inputs, 3);
 
   // Apply permutation to proposals array
   const permutedProposals = [...proposals];
@@ -164,9 +164,9 @@ export const generateEndTurnIntegrity = async ({
 
   let cached = loadFromCache(inputsKey);
   if (cached) {
-    log(`Loaded proof from cache for inputsKey ${inputsKey}`, 2);
+    log(`Loaded proof from cache for inputsKey ${inputsKey}`, 3);
   } else {
-    log(`Generating proof for inputsKey ${inputsKey}`, 2);
+    log(`Generating proof for inputsKey ${inputsKey}`, 3);
     const proof = await circuit.generateProof(inputs);
     saveToCache(inputsKey, proof);
     cached = proof;

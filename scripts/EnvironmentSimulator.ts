@@ -267,12 +267,12 @@ class EnvironmentSimulator {
    * @param hre - Hardhat Runtime Environment
    */
   mineBlocks = async (count: any) => {
-    log(`Mining ${count} blocks`);
+    log(`Mining ${count} blocks`, 2);
     const { ethers } = this.hre;
     for (let i = 0; i < count; i += 1) {
       await ethers.provider.send('evm_mine', []);
     }
-    log(`Finished mining ${count} blocks`);
+    log(`Finished mining ${count} blocks`, 2);
   };
 
   /**
@@ -293,7 +293,7 @@ class EnvironmentSimulator {
       version: string;
     },
   ) => {
-    log(`Signing vote message for game ${message.gameId}, turn ${message.turn}`);
+    log(`Signing vote message for game ${message.gameId}, turn ${message.turn}`, 2);
     const { ethers } = hre;
     let { chainId } = await ethers.provider.getNetwork();
 
@@ -306,7 +306,7 @@ class EnvironmentSimulator {
     const s = await signer.wallet._signTypedData(domain, VoteTypes, {
       ...message,
     });
-    log(`Vote signed for game ${message.gameId}, turn ${message.turn}`);
+    log(`Vote signed for game ${message.gameId}, turn ${message.turn}`, 2);
     return s;
   };
 
@@ -334,7 +334,7 @@ class EnvironmentSimulator {
       version: string;
     };
   }) => {
-    log(`Signing public vote message for game ${message.gameId}, turn ${message.turn}`);
+    log(`Signing public vote message for game ${message.gameId}, turn ${message.turn}`, 2);
     const { ethers } = hre;
     let { chainId } = await ethers.provider.getNetwork();
 
@@ -347,7 +347,7 @@ class EnvironmentSimulator {
     const s = await signer.wallet._signTypedData(domain, publicVoteTypes, {
       ...message,
     });
-    log(`Public vote signed for game ${message.gameId}, turn ${message.turn}`);
+    log(`Public vote signed for game ${message.gameId}, turn ${message.turn}`, 2);
     return s;
   };
 
@@ -373,7 +373,7 @@ class EnvironmentSimulator {
     gm: Wallet;
     size: number;
   }) => {
-    log(`Generating vote salt for player ${player} in game ${gameId}, turn ${turn}`);
+    log(`Generating vote salt for player ${player} in game ${gameId}, turn ${turn}`, 3);
     const result = await generateDeterministicPermutation({
       gameId,
       turn: Number(turn) - 1,
@@ -384,7 +384,7 @@ class EnvironmentSimulator {
     }).then(perm => {
       return utils.solidityKeccak256(['address', 'uint256'], [player, perm.secret]);
     });
-    log(`Generated vote salt for player ${player}`);
+    log(`Generated vote salt for player ${player}`, 3);
     return result;
   };
 
@@ -401,7 +401,7 @@ class EnvironmentSimulator {
     version: string;
   }): Promise<string> => {
     const { voter, gameId, isGM, verifierAddress, sealedBallotId, signer, ballotHash, name, version } = params;
-    log(`Signing ${isGM ? 'GM' : 'voter'} vote for player ${voter} in game ${gameId}`);
+    log(`Signing ${isGM ? 'GM' : 'voter'} vote for player ${voter} in game ${gameId}`, 2);
     const domain = {
       name,
       version,
@@ -440,7 +440,7 @@ class EnvironmentSimulator {
         };
 
     const signature = await signer._signTypedData(domain, types, value);
-    log(`Vote signed for player ${voter}`);
+    log(`Vote signed for player ${voter}`, 2);
     return signature;
   };
 
@@ -470,7 +470,7 @@ class EnvironmentSimulator {
     name: string;
     version: string;
   }): Promise<MockVote> => {
-    log(`Attesting vote for player ${voter.wallet.address} in game ${gameId}, turn ${turn}`);
+    log(`Attesting vote for player ${voter.wallet.address} in game ${gameId}, turn ${turn}`, 2);
     const chainId = await this.hre.getChainId();
 
     const playerSalt = await this.getPlayerVoteSalt({
@@ -525,7 +525,7 @@ class EnvironmentSimulator {
       version,
     });
     const result = { vote, ballotHash, ballot, ballotId: encryptedVote, gmSignature, voterSignature };
-    log(`Vote attested for player ${voter.wallet.address}`);
+    log(`Vote attested for player ${voter.wallet.address}`, 2);
     return result;
   };
 
@@ -798,7 +798,7 @@ class EnvironmentSimulator {
     verifier: RankifyDiamondInstance;
     proposal?: string;
   }): Promise<ProposalSubmission> => {
-    log(`Creating proposal secrets for player ${proposer.wallet.address} in game ${gameId}, turn ${turn}`);
+    log(`Creating proposal secrets for player ${proposer.wallet.address} in game ${gameId}, turn ${turn}`, 2);
     const poseidon = await buildPoseidon();
 
     const playerPubKey = utils.recoverPublicKey(
@@ -862,7 +862,7 @@ class EnvironmentSimulator {
       proposerSignature,
     };
 
-    log(`Generated proposal secrets with commitment ${poseidonCommitment}`);
+    log(`Generated proposal secrets with commitment ${poseidonCommitment}`, 2);
     return {
       params,
       proposal,
@@ -896,6 +896,7 @@ class EnvironmentSimulator {
       `Generating proposals integrity for game ${gameId}, turn ${turn} with ${players.length} players. Proposal data was ${
         proposalSubmissionData ? 'in' : 'not in'
       } args`,
+      2,
     );
     const proposals =
       proposalSubmissionData ||
@@ -918,7 +919,7 @@ class EnvironmentSimulator {
       hre: this.hre,
     });
 
-    log(`Generated proposals integrity with commitment ${commitment}`);
+    log(`Generated proposals integrity with commitment ${commitment}`, 2);
     return {
       newProposals: {
         a,
@@ -993,7 +994,7 @@ class EnvironmentSimulator {
     gameRank: BigNumberish,
     openNow?: boolean,
   ) {
-    log(`Creating game with rank ${gameRank} and minGameTime ${minGameTime}`);
+    log(`Creating game with rank ${gameRank} and minGameTime ${minGameTime}`, 2);
     await this.env.rankifyToken
       .connect(signer)
       .approve(this.rankifyInstance.address, this.hre.ethers.constants.MaxUint256)
@@ -1021,7 +1022,7 @@ class EnvironmentSimulator {
         .connect(signer)
         .openRegistration(gameId)
         .then(r => r.wait(1));
-    log(`Game created with ID ${gameId}`);
+    log(`Game created with ID ${gameId}`, 2);
     return gameId;
   }
 
@@ -1036,10 +1037,10 @@ class EnvironmentSimulator {
     votes?: MockVote[];
     proposals?: ProposalSubmission[];
   }) {
-    log(`Ending turn for game ${gameId}`);
+    log(`Ending turn for game ${gameId}`, 2);
     const turn = await this.rankifyInstance.getTurn(gameId);
     const players = await this.rankifyInstance.getPlayers(gameId);
-    log(`Current turn: ${turn}, Players count: ${players.length}`);
+    log(`Current turn: ${turn}, Players count: ${players.length}`, 2);
 
     const { newProposals, permutation, nullifier } = await this.getProposalsIntegrity({
       players: this.getPlayers(this.adr, players.length),
@@ -1074,12 +1075,12 @@ class EnvironmentSimulator {
   }
 
   public async runToTheEnd(gameId: BigNumberish, distribution: 'ftw' | 'semiUniform' | 'equal' = 'ftw') {
-    log(`Running game ${gameId.toString()} to the end with distribution ${distribution}`);
+    log(`Running game ${gameId.toString()} to the end with distribution ${distribution}`, 2);
     let lastVotes: MockVote[] = [];
     let isGameOver = await this.rankifyInstance.isGameOver(gameId);
 
     while (!isGameOver) {
-      log(`Game ${gameId.toString()} turn: ${await this.rankifyInstance.getTurn(gameId)}`);
+      log(`Game ${gameId.toString()} turn: ${await this.rankifyInstance.getTurn(gameId)}`, 2);
       await this.makeTurn({ gameId, distribution, increaseFinalTime: true });
 
       // const shuffleSalt = await getTestShuffleSalt(gameId, turn, gameMaster);
@@ -1091,7 +1092,7 @@ class EnvironmentSimulator {
       const players = await this.rankifyInstance.getPlayers(gameId);
       assert(winner == players[0], 'winner is not the first player');
     }
-    log(`Game ${gameId} ended. Winner: ${winner}`);
+    log(`Game ${gameId} ended. Winner: ${winner}`, 2);
     return {
       winner,
       lastVotes,
@@ -1144,7 +1145,7 @@ class EnvironmentSimulator {
     turn?: number;
   }): Promise<ProposalSubmission[]> {
     const _turn = turn ?? (await this.rankifyInstance.getTurn(gameId)).toNumber();
-    log(`Mocking proposals for game ${gameId}, turn ${_turn}`);
+    log(`Mocking proposals for game ${gameId}, turn ${_turn}`, 2);
 
     const proposals: ProposalSubmission[] = [];
 
@@ -1174,11 +1175,12 @@ class EnvironmentSimulator {
         };
       }
       proposals.push(proposal);
-      log(proposal, 2);
+      log(`Proposal ${i} secrets data`, 3);
+      log(proposal, 3);
     }
 
     if (submitNow) {
-      log(`Submitting ${players.length - (idlers?.length ?? 0)} proposals`);
+      log(`Submitting ${players.length - (idlers?.length ?? 0)} proposals`, 2);
       for (let i = 0; i < players.length; i++) {
         if (!idlers?.includes(i)) {
           const proposedFilter = this.rankifyInstance.filters.ProposalSubmitted(
@@ -1188,10 +1190,10 @@ class EnvironmentSimulator {
           const proposed = await this.rankifyInstance.queryFilter(proposedFilter);
           const alreadyExistingProposal = proposed.find(evt => evt.args.proposer === players[i].wallet.address);
           if (!alreadyExistingProposal) {
-            log(`Submitting proposal for player ${players[i].wallet.address}`);
+            log(`Submitting proposal for player ${players[i].wallet.address}`, 2);
             await this.rankifyInstance.connect(gameMaster).submitProposal(proposals[i].params);
           } else {
-            log(`Player ${players[i].wallet.address} already proposed! Replacing mock with real one`);
+            log(`Player ${players[i].wallet.address} already proposed! Replacing mock with real one`, 2);
             proposals[i].params.encryptedProposal = alreadyExistingProposal.args.encryptedProposal;
             proposals[i].params.commitment = alreadyExistingProposal.args.commitment;
             proposals[i].params.proposer = alreadyExistingProposal.args.proposer;
@@ -1208,9 +1210,11 @@ class EnvironmentSimulator {
                 signer: gameMaster,
                 turn: await this.rankifyInstance.getTurn(gameId),
               });
-              log(`decryptedProposal`);
-              log(decryptedProposal, 2);
-              const decrypted = decryptedProposal.startsWith('ipfs://') ? this.decryptProposal : JSON.parse(decryptedProposal) as { title: string; body: string };
+              log(`decryptedProposal`, 3);
+              log(decryptedProposal, 3);
+              const decrypted = decryptedProposal.startsWith('ipfs://')
+                ? this.decryptProposal
+                : (JSON.parse(decryptedProposal) as { title: string; body: string });
               const turn = await this.rankifyInstance.getTurn(gameId);
               const proposalParams = await this.mockProposalSecrets({
                 gm: gameMaster,
@@ -1223,8 +1227,8 @@ class EnvironmentSimulator {
               proposals[i].proposal = proposalParams.proposal;
               proposals[i].proposalValue = proposalParams.proposalValue;
               proposals[i].randomnessValue = proposalParams.randomnessValue;
-              log('!!!!!!!!!!!!!!!!');
-              log(proposals[i]);
+              log(`proposal parameters`, 3);
+              log(proposals[i], 3);
             } catch (e) {
               console.error('MockProposals: Failed to decrypt already existing proposal.', e);
             }
@@ -1242,7 +1246,7 @@ class EnvironmentSimulator {
   ): Promise<{ lastVotes: MockVote[]; lastProposals: ProposalSubmission[] }> {
     let lastVotes: MockVote[] = [];
     let lastProposals: ProposalSubmission[] = [];
-    log(`Game ${gameId.toString()} distribution: ${distribution}`);
+    log(`Game ${gameId.toString()} distribution: ${distribution}`, 2);
     while (!(await this.rankifyInstance.isLastTurn(gameId))) {
       const lastVotesAndProposals = await this.makeTurn({
         gameId,
@@ -1273,11 +1277,14 @@ class EnvironmentSimulator {
     let lastProposals: ProposalSubmission[] = [];
     const gameEnded = await this.rankifyInstance.isGameOver(gameId);
 
-    log(`Game ${gameId} distribution: ${distribution} increaseFinalTime: ${increaseFinalTime} gameEnded: ${gameEnded}`);
+    log(
+      `Game ${gameId} distribution: ${distribution} increaseFinalTime: ${increaseFinalTime} gameEnded: ${gameEnded}`,
+      2,
+    );
     if (!gameEnded) {
-      log(`Making move for game: ${gameId}`);
+      log(`Making move for game: ${gameId}`, 2);
       const turn = await this.rankifyInstance.getTurn(gameId);
-      log(`Current turn: ${turn}`);
+      log(`Current turn: ${turn}`, 2);
 
       const gamePlayerAddresses = await this.rankifyInstance.getPlayers(gameId);
       const playersPossible = this.getPlayers(this.adr, 15);
@@ -1286,22 +1293,22 @@ class EnvironmentSimulator {
       );
       // Submit votes if not first turn
       if (turn.toNumber() !== 1) {
-        log(`Submitting votes for turn: ${turn}`);
+        log(`Submitting votes for turn: ${turn}`, 2);
         lastVotes = await this.mockValidVotes(players, gameId, this.adr.gameMaster1, true, distribution);
-        log(`Votes submitted: ${lastVotes.length}`);
+        log(`Votes submitted: ${lastVotes.length}`, 2);
       }
 
       // Submit proposals
-      log('Submitting proposals...');
+      log('Submitting proposals...', 2);
       lastProposals = await this.mockProposals({
         players,
         gameMaster: this.adr.gameMaster1,
         gameId,
         submitNow: true,
       });
-      log(`Proposals submitted: ${lastProposals.length}`);
+      log(`Proposals submitted: ${lastProposals.length}`, 2);
       if (distribution == 'equal' && players.length % 2 !== 0) {
-        log('Increasing time for equal distribution and odd number of players');
+        log('Increasing time for equal distribution and odd number of players', 2);
         await time.increase(constantParams.RInstance_TIME_PER_TURN + 1);
       }
 
@@ -1334,8 +1341,9 @@ class EnvironmentSimulator {
 
     log(
       `Mocking votes for game ${gameId}, turn ${turn.toString()} with distribution ${distribution}, submitNow: ${submitNow}`,
+      2,
     );
-    log(`node env: ${process.env.NODE_ENV}`);
+    log(`node env: ${process.env.NODE_ENV}`, 2);
     if (!turn.eq(1)) {
       votes = await this.mockVotes({
         gameId: gameId,
@@ -1350,7 +1358,7 @@ class EnvironmentSimulator {
         for (let i = 0; i < players.length; i++) {
           const voted = await this.rankifyInstance.getPlayerVotedArray(gameId);
           if (!voted[i]) {
-            log(`submitting vote for player ${players[i].wallet.address}`);
+            log(`submitting vote for player ${players[i].wallet.address}`, 2);
             log(votes[i].vote, 2);
             if (votes[i].vote.some(v => v != 0)) {
               await this.rankifyInstance
@@ -1364,10 +1372,10 @@ class EnvironmentSimulator {
                   votes[i].ballotHash,
                 );
             } else {
-              log(`zero vote for player ${players[i].wallet.address}`);
+              log(`zero vote for player ${players[i].wallet.address}`, 1);
             }
           } else {
-            log(`player ${players[i].wallet.address} already voted! Substituting mock with real one`);
+            log(`player ${players[i].wallet.address} already voted! Substituting mock with real one`, 2);
             const playerVotedEvents = await this.rankifyInstance.queryFilter(
               this.rankifyInstance.filters.VoteSubmitted(gameId, turn, players[i].wallet.address),
             );
@@ -1385,15 +1393,15 @@ class EnvironmentSimulator {
                 signer: gm,
                 turn,
               });
-              log(`Decrypted vote:`, 2);
-              log(votes[i].vote, 2);
+              log(`Decrypted vote:`, 3);
+              log(votes[i].vote, 3);
             } catch (e) {
               console.error('Failed to decrypt vote');
             }
           }
         }
       }
-      log(`Mocked ${votes.length} votes`);
+      log(`Mocked ${votes.length} votes`, 2);
       return votes;
     } else {
       return [];
@@ -1401,7 +1409,7 @@ class EnvironmentSimulator {
   }
 
   async startGame(gameId: BigNumberish) {
-    log(`Starting game ${gameId}`);
+    log(`Starting game ${gameId}`, 2);
     const currentT = await time.latest();
     const isRegistrationOpen = await this.rankifyInstance.isRegistrationOpen(gameId);
     const state = await this.rankifyInstance.getGameState(gameId);
@@ -1440,7 +1448,7 @@ class EnvironmentSimulator {
     gameMaster: Wallet;
     startGame?: boolean;
   }) {
-    log(`Filling party for game ${gameId} with ${players.length} players`);
+    log(`Filling party for game ${gameId} with ${players.length} players`, 2);
     const promises = [];
 
     for (let i = 0; i < players.length; i++) {
@@ -1522,8 +1530,8 @@ class EnvironmentSimulator {
     playerPubKey: string;
     gameMaster: Wallet;
   }) => {
-    log(`Encrypting vote ${vote}...`);
-    log({ playerPubKey, gameMaster, gameId, turn, instanceAddress }, 2);
+    log(`Encrypting vote ${vote}...`, 3);
+    log({ playerPubKey, gameMaster, gameId, turn, instanceAddress }, 3);
     const sharedKey = await sharedGameKeySigner({
       publicKey: playerPubKey,
       gameMaster,
@@ -1532,9 +1540,9 @@ class EnvironmentSimulator {
       contractAddress: instanceAddress,
       chainId: await this.hre.getChainId(),
     });
-    log(`encrypting vote with shared key (hashed value: ${ethers.utils.keccak256(sharedKey)})`);
+    log(`encrypting vote with shared key (hashed value: ${ethers.utils.keccak256(sharedKey)})`, 3);
     const encryptedVote = aes.encrypt(vote, sharedKey).toString();
-    log(`encrypted vote: ${encryptedVote}`, 2);
+    log(`encrypted vote: ${encryptedVote}`, 3);
     return { encryptedVote, sharedKey };
   };
 
@@ -1562,8 +1570,8 @@ class EnvironmentSimulator {
     playerPubKey: string;
     signer: Wallet;
   }) => {
-    log(`Encrypting proposal ${proposal}...`);
-    log({ playerPubKey, signer, gameId, turn, instanceAddress }, 2);
+    log(`Encrypting proposal ${proposal}...`, 2);
+    log({ playerPubKey, signer, gameId, turn, instanceAddress }, 3);
     const sharedKey = await sharedGameKeySigner({
       publicKey: playerPubKey,
       gameMaster: signer,
@@ -1572,9 +1580,9 @@ class EnvironmentSimulator {
       contractAddress: instanceAddress,
       chainId: await this.hre.getChainId(),
     });
-    log(`Encrypting proposal ${proposal} with shared key (hashed value: ${ethers.utils.keccak256(sharedKey)})`);
+    log(`Encrypting proposal ${proposal} with shared key (hashed value: ${ethers.utils.keccak256(sharedKey)})`, 3);
     const encryptedProposal = aes.encrypt(proposal, sharedKey).toString();
-    log(`Encrypted proposal ${encryptedProposal}`);
+    log(`Encrypted proposal ${encryptedProposal}`, 3);
     return { encryptedProposal, sharedKey };
   };
 
@@ -1603,8 +1611,8 @@ class EnvironmentSimulator {
     signer: Wallet;
     turn: BigNumberish;
   }): Promise<string> => {
-    log(`Decrypting proposal ${proposal}...`);
-    log({ playerPubKey, signer, gameId, turn, instanceAddress }, 2);
+    log(`Decrypting proposal ${proposal}...`, 3);
+    log({ playerPubKey, signer, gameId, turn, instanceAddress }, 3);
     const sharedKey = await sharedGameKeySigner({
       publicKey: playerPubKey,
       gameMaster: signer,
@@ -1645,8 +1653,8 @@ class EnvironmentSimulator {
     signer: Wallet;
     turn: BigNumberish;
   }): Promise<BigNumberish[]> => {
-    log(`Decrypting vote ${vote}...`);
-    log({ playerPubKey, signer, gameId, turn, instanceAddress }, 2);
+    log(`Decrypting vote ${vote}...`, 3);
+    log({ playerPubKey, signer, gameId, turn, instanceAddress }, 3);
     const sharedKey = await sharedGameKeySigner({
       publicKey: playerPubKey,
       gameMaster: signer,
@@ -1663,8 +1671,8 @@ class EnvironmentSimulator {
 
     try {
       const parsed = JSON.parse(decrypted) as string[];
-      log(`Decrypted vote:`, 2);
-      log(parsed, 2);
+      log(`Decrypted vote:`, 3);
+      log(parsed, 3);
       return parsed.map(v => BigInt(v));
       // eslint-disable-next-line
     } catch (e: any) {
