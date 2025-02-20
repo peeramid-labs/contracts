@@ -741,10 +741,11 @@ library LibTBG {
     function nextTurn(uint256 gameId) internal returns (bool, bool, bool) {
         require(canEndTurnEarly(gameId), "nextTurn->CanEndEarly");
         State storage state = _getState(gameId);
+        bool wasLastTurn = isLastTurn(gameId);
         state.currentTurn += 1;
         state.turnStartedAt = block.timestamp;
         bool _isLastTurn = isLastTurn(gameId);
-        if (_isLastTurn || state.isOvertime) {
+        if (wasLastTurn || state.isOvertime) {
             bool _isTie = isTie(gameId);
             state.isOvertime = _isTie;
         }
