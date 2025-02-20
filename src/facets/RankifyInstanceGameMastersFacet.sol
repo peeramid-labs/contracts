@@ -415,7 +415,7 @@ contract RankifyInstanceGameMastersFacet is DiamondReentrancyGuard, EIP712 {
                     // We slice the votes array to get the votes for the current player
 
                     for (uint256 candidate = 0; candidate < players.length; candidate++) {
-                        votesSorted[proposer][permutation[candidate]] = votes[proposer][candidate];
+                        votesSorted[proposer][candidate] = votes[proposer][permutation[candidate]];
                     }
                     assert(votesSorted[proposer][proposer] == 0); // did not vote for himself
                 }
