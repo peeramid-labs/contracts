@@ -617,12 +617,7 @@ class EnvironmentSimulator {
             return 0;
           }
         });
-        // now apply permutation to votesToPermute so that
-        // on smart contract -> votesSorted[proposer][permutation[candidate]] = votesPermuted[proposer][candidate];
-        // form [3,2,1,0,0] (skipping K==player)
-        playerVote = votesToPermute.map((vote, idx) => {
-          return votesToPermute[permutation[idx]];
-        });
+        playerVote = this.permuteVotes(playerVote, permutation);
       } else if (distribution == 'semiUniform') {
         const votesToDistribute = players.map(() => {
           const voteWeight = Math.floor(Math.sqrt(creditsLeft));
@@ -633,9 +628,7 @@ class EnvironmentSimulator {
         do {
           votesDistributed = this.shuffle(votesToDistribute);
         } while (votesDistributed[k] !== 0);
-        playerVote = votesDistributed.map((vote, idx) => {
-          return votesDistributed[permutation[idx]];
-        });
+        playerVote = this.permuteVotes(votesDistributed, permutation);
       } else if (distribution == 'equal') {
         // Determine if player is in the first or second half
         const lowSide = k < players.length / 2;
@@ -678,10 +671,7 @@ class EnvironmentSimulator {
           }
         }
 
-        // Apply permutation to votes
-        playerVote = _votes.map((vote, idx) => {
-          return _votes[permutation[idx]];
-        });
+        playerVote = this.permuteVotes(_votes, permutation);
       }
 
       votes.push(
@@ -699,6 +689,17 @@ class EnvironmentSimulator {
       );
     }
     return votes;
+  };
+
+  permuteVotes = (votes: any[], permutation: number[]) => {
+    // now apply permutation to votesToPermute so that
+    // on smart contract -> votesSorted[proposer][candidate] = votes[proposer][permutation[candidate]];
+    // form [3,2,1,0,0] (skipping K==player)
+    const playerVote: any[] = Array.from({ length: votes.length }, () => 0);
+    votes.forEach((vote, idx) => {
+      playerVote[permutation[idx]] = vote;
+    });
+    return playerVote;
   };
 
   proposalTypes = {
@@ -1222,6 +1223,8 @@ class EnvironmentSimulator {
               proposals[i].proposal = proposalParams.proposal;
               proposals[i].proposalValue = proposalParams.proposalValue;
               proposals[i].randomnessValue = proposalParams.randomnessValue;
+              log('!!!!!!!!!!!!!!!!');
+              log(proposals[i]);
             } catch (e) {
               console.error('MockProposals: Failed to decrypt already existing proposal.', e);
             }
