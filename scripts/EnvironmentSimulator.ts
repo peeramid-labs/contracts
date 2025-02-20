@@ -617,7 +617,7 @@ class EnvironmentSimulator {
             return 0;
           }
         });
-        playerVote = this.permuteVotes(playerVote, permutation);
+        playerVote = this.permuteVotes(votesToPermute, permutation);
       } else if (distribution == 'semiUniform') {
         const votesToDistribute = players.map(() => {
           const voteWeight = Math.floor(Math.sqrt(creditsLeft));
