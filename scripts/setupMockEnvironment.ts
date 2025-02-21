@@ -303,9 +303,11 @@ const setupAddresses = async (hre: HardhatRuntimeEnvironment): Promise<AdrSetupR
     gameOwner,
   };
 };
-export const setupMockedEnvironment = async (hre: HardhatRuntimeEnvironment) => {
+export const setupMockedEnvironment = async (hre: HardhatRuntimeEnvironment, useFixture: boolean = true) => {
   const { deployments, getNamedAccounts, ethers: _eth } = hre;
-  await deployments.fixture(['ERC7744', 'MAO']);
+  if (useFixture) {
+    await deployments.fixture(['ERC7744', 'MAO']);
+  }
   const adr = await setupAddresses(hre);
   const { deployer, owner } = await hre.getNamedAccounts();
 

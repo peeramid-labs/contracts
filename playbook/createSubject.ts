@@ -23,9 +23,13 @@ task('createSubject', 'Creates a new subject with MAO distribution')
     'distributorsId',
     'Distributors ID to create game from, defaults to hardhat task defaultDistributionId',
   )
+  .addOptionalParam('useFixture', 'Use fixture hardhat-deploy to speedup tests', true)
   .setAction(async (taskArgs, hre) => {
     const { getNamedAccounts, deployments } = hre;
-    await deployments.fixture(['MAO']);
+    const { useFixture } = taskArgs;
+    if (useFixture) {
+      await deployments.fixture(['MAO']);
+    }
     const distributorDeployment = await hre.deployments.get('DAODistributor');
 
     const distributorArguments: MAODistribution.DistributorArgumentsStruct = {
@@ -86,62 +90,71 @@ task('createSubject', 'Creates a new subject with MAO distribution')
     };
   });
 
-task('makeDemoSubjects', 'Creates 4 demo subjects with different configurations').setAction(async (_, { run }) => {
-  console.log('Creating demo subjects...');
+task('makeDemoSubjects', 'Creates 4 demo subjects with different configurations')
+  .setAction(async (_, { run }) => {
+    console.log('Creating demo subjects...');
 
-  await run('createSubject', {
-    tokenName: 'EIP fun discussions token',
-    tokenSymbol: 'EIPFD',
-    rankTokenContractUri: 'ipfs://QmWJXEhEnNXBtshVR1kR2vfHqU9vCNdcQKQipVAkHHAoU5',
-  });
+    await run('createSubject', {
+      tokenName: 'EIP fun discussions token',
+      tokenSymbol: 'EIPFD',
+      rankTokenContractUri: 'ipfs://QmWJXEhEnNXBtshVR1kR2vfHqU9vCNdcQKQipVAkHHAoU5',
+      useFixture: false,
+    });
 
-  await run('createSubject', {
-    tokenName: 'Rankify inner discussions token',
-    tokenSymbol: 'RKFD',
-    rankTokenContractUri: 'ipfs://QmVzSvWjysUfVHzGMQ4y2EduXrVYLApZ3KHQb2gUTR4x6P',
-  });
+    await run('createSubject', {
+      tokenName: 'Rankify inner discussions token',
+      tokenSymbol: 'RKFD',
+      rankTokenContractUri: 'ipfs://QmVzSvWjysUfVHzGMQ4y2EduXrVYLApZ3KHQb2gUTR4x6P',
+      useFixture: false,
+    });
 
-  await run('createSubject', {
-    tokenName: 'Arbitrum foundation token',
-    tokenSymbol: 'AF',
-    rankTokenContractUri: 'ipfs://QmQ2jQj5LXKuTzTcy4ANc57WbABurejbs9hRi4F18tKJWf',
-  });
+    await run('createSubject', {
+      tokenName: 'Arbitrum foundation token',
+      tokenSymbol: 'ARB',
+      rankTokenContractUri: 'ipfs://QmQ2jQj5LXKuTzTcy4ANc57WbABurejbs9hRi4F18tKJWf',
+    });
 
-  await run('createSubject', {
-    tokenName: 'Optimism Collective token',
-    tokenSymbol: 'OC',
-    rankTokenContractUri: 'ipfs://QmTDdnzRee6G5My4TDhaffWjCYp2d6rssmPQP4GMW5LuBd',
-  });
+    await run('createSubject', {
+      tokenName: 'Optimism Collective token',
+      tokenSymbol: 'OP',
+      rankTokenContractUri: 'ipfs://QmTDdnzRee6G5My4TDhaffWjCYp2d6rssmPQP4GMW5LuBd',
+      useFixture: false,
+    });
 
-  await run('createSubject', {
-    tokenName: 'Open audius foundation token',
-    tokenSymbol: 'OA',
-    rankTokenContractUri: 'ipfs://QmWDUV8Eq1VewZsVGZWVzJMNXT8PrZnQqwy6SJfWFzVzBM',
-  });
+    await run('createSubject', {
+      tokenName: 'Open audius foundation token',
+      tokenSymbol: 'AUDIO',
+      rankTokenContractUri: 'ipfs://QmWDUV8Eq1VewZsVGZWVzJMNXT8PrZnQqwy6SJfWFzVzBM',
+      useFixture: false,
+    });
 
-  await run('createSubject', {
-    tokenName: 'Rankify music challenge token',
-    tokenSymbol: 'RKFM',
-    rankTokenContractUri: 'ipfs://QmXnEA3WAn9VNyG2AgvR3a5GR68qD1ZLYRaDWQc66rou5M',
-  });
+    await run('createSubject', {
+      tokenName: 'Rankify music challenge token',
+      tokenSymbol: 'RKFM',
+      rankTokenContractUri: 'ipfs://QmXnEA3WAn9VNyG2AgvR3a5GR68qD1ZLYRaDWQc66rou5M',
+    });
 
-  await run('createSubject', {
-    tokenName: 'Rankify kids content token',
-    tokenSymbol: 'RKFK',
-    rankTokenContractUri: 'ipfs://QmfKRxEM8QM355PvDaGoocgJiM629PBsUW8i2oBWsV4NJh',
-  });
+    await run('createSubject', {
+      tokenName: 'Rankify kids content token',
+      tokenSymbol: 'RKFK',
+      rankTokenContractUri: 'ipfs://QmfKRxEM8QM355PvDaGoocgJiM629PBsUW8i2oBWsV4NJh',
+      useFixture: false,
+    });
 
-  await run('createSubject', {
-    tokenName: 'Rankify book writers token',
-    tokenSymbol: 'RKFBW',
-    rankTokenContractUri: 'ipfs://QmadNd9e2qPqoL9u8qqkfP2253yUMB7R3hfXibx4LKwnvn',
-  });
+    await run('createSubject', {
+      tokenName: 'Rankify book writers token',
+      tokenSymbol: 'RKFBW',
+      rankTokenContractUri: 'ipfs://QmadNd9e2qPqoL9u8qqkfP2253yUMB7R3hfXibx4LKwnvn',
+      useFixture: false,
+    });
 
-  await run('createSubject', {
-    tokenName: 'Peeramid fellowship council token',
-    tokenSymbol: 'PFC',
-    rankTokenContractUri: 'ipfs://QmaUXPY7TTx9rGS8sgSvZvHRpi6eC8LkfTj1fBRsGBBEjh',
-  });
+    await run('createSubject', {
+      tokenName: 'Peeramid fellowship council token',
+      tokenSymbol: 'PFC',
+      rankTokenContractUri: 'ipfs://QmaUXPY7TTx9rGS8sgSvZvHRpi6eC8LkfTj1fBRsGBBEjh',
+      useFixture: false,
+    });
 
-  console.log('Successfully created 8 demo subjects!');
-});
+    console.log('Successfully created 8 demo subjects!');
+  })
+  .addOptionalParam('useFixture', 'Use fixture hardhat-deploy to speedup tests', true);

@@ -192,7 +192,7 @@ async function handleGameState(instanceBase: InstanceBase, gameId: number) {
 }
 
 task('gameLifecycle', 'Interactive guide through the game lifecycle').setAction(async (_, hre) => {
-  const setupEnv = await setupMockedEnvironment(hre);
+  const setupEnv = await setupMockedEnvironment(hre, false);
   hre.tracer.enabled = true;
   const { ethers } = hre;
   // Initial setup
@@ -236,7 +236,9 @@ task('gameLifecycle', 'Interactive guide through the game lifecycle').setAction(
     let selectedSubject;
     switch (action) {
       case 'Create new subject': {
-        const subject = (await hre.run('createSubject')) as {
+        const subject = (await hre.run('createSubject', {
+          useFixture: false,
+        })) as {
           instances: string[];
           newInstanceId: BigNumber;
           instancesParsed: MAOInstances;
