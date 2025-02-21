@@ -24,6 +24,8 @@ jobs:
           node-version: 18.x
       - name: install dependencies
         run: pnpm install
+      - name: build
+        run: pnpm build
       - name: generate docs
         run: pnpm hardhat docgen
       - name: generate doc selectors
