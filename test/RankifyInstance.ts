@@ -349,9 +349,6 @@ const nextRankGameOver = (simulator: EnvironmentSimulator) =>
     for (let i = 0; i < players.length; i++) {
       balancesBeforeJoined[i] = await rankToken.unlockedBalanceOf(players[i].wallet.address, 2);
     }
-    const gameState = await simulator.rankifyInstance.getGameState(lastCreatedGameId);
-    const registrationOpenAt = gameState.registrationOpenAt;
-    console.log(`registrationOpenAt`, registrationOpenAt, gameState.hasEnded, gameState.hasStarted);
     await simulator.fillParty({
       players,
       gameId: lastCreatedGameId,
