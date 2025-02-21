@@ -1674,7 +1674,7 @@ class EnvironmentSimulator {
       log(`Decrypted vote:`, 3);
       log(parsed, 3);
       return parsed.map(v => BigInt(v));
-      // eslint-disable-next-line
+       
     } catch (e: any) {
       throw new Error('Unexpected token');
     }
