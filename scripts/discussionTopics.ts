@@ -271,11 +271,45 @@ const proposals = {
       body: 'Implement robust privacy measures for the virtual assistant system.',
     },
   ],
+  'player9-id': [
+    {
+      title: 'Smart Notification System',
+      body: 'Implement a smart notification system that learns from user behavior and prioritizes important alerts.',
+    },
+    {
+      title: 'Customizable Notification Categories',
+      body: "Create customizable notification categories inspired by player2-id's focus mode concept.",
+    },
+    {
+      title: 'Machine Learning Capabilities',
+      body: 'Add machine learning capabilities to predict the best times for different types of notifications based on user activity patterns.',
+    },
+    {
+      title: 'Intelligent Reminders',
+      body: "Integrate with the task manager to provide intelligent reminders, building on player1-id's organization features.",
+    },
+    {
+      title: 'Unified Notification Center',
+      body: 'Develop a unified notification center with smart filtering and grouping options.',
+    },
+    {
+      title: 'Advanced Privacy Controls',
+      body: 'Implement advanced privacy controls for notification content and user activity data.',
+    },
+    {
+      title: 'Collaborative Features',
+      body: 'Expand the notification system to include collaborative features, allowing team members to coordinate through smart alerts.',
+    },
+    {
+      title: 'Advanced Privacy Controls',
+      body: 'Implement advanced privacy controls for notification content and user activity data.',
+    },
+  ],
 } as const;
 
 export function getDiscussionForTurn(turn: number, proposerId: string) {
   const proposerProposals = proposals[proposerId as keyof typeof proposals];
-  if (turn <= proposerProposals.length) {
+  if (proposerProposals && turn <= proposerProposals.length) {
     return proposerProposals[turn - 1];
   }
 

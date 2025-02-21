@@ -3,12 +3,13 @@ import { TASK_COMPILE_SOLIDITY_EMIT_ARTIFACTS } from 'hardhat/builtin-tasks/task
 import { join } from 'path';
 import { writeFile, mkdir, readFile } from 'fs/promises';
 import { inspect } from 'util';
+import '@solarity/hardhat-zkit';
+import '@solarity/chai-zkit';
 import '@nomicfoundation/hardhat-chai-matchers';
 import 'hardhat-diamond-abi';
 import '@nomicfoundation/hardhat-toolbox';
 import 'hardhat-abi-exporter';
 import { toSignature, isIncluded } from './scripts/diamond';
-import { cutFacets, replaceFacet } from './scripts/libraries/diamond';
 import 'hardhat-gas-reporter';
 import 'hardhat-contract-sizer';
 import 'hardhat-deploy';
@@ -16,9 +17,9 @@ import 'hardhat-tracer';
 import 'solidity-docgen';
 import './playbook';
 import getSuperInterface from './scripts/getSuperInterface';
-import { ErrorFragment, EventFragment, FunctionFragment } from '@ethersproject/abi';
+import { FormatTypes } from '@ethersproject/abi';
 import './scripts/generateSelectorDocs';
-
+import fs from 'fs';
 type ContractMap = Record<string, { abi: object }>;
 
 subtask(TASK_COMPILE_SOLIDITY_EMIT_ARTIFACTS).setAction(async (args, env, next) => {
@@ -36,6 +37,8 @@ subtask(TASK_COMPILE_SOLIDITY_EMIT_ARTIFACTS).setAction(async (args, env, next) 
     }
   });
   await Promise.all(promises);
+  getSuperInterface('./abi/super-interface.json');
+  env.run('getSuperInterface', { outputPathAbi: './all-signatures.json' });
   return output;
 });
 
@@ -55,7 +58,7 @@ task('diamond-abi-viem-export', 'Generates the rankify diamond viem abi file').s
   }
 });
 
-task('defaultDistributionId', 'Prints the default distribution id', async (taskArgs, hre) => {
+task('defaultDistributionId', 'Prints the default distribution id', async (taskArgs: { print: boolean }, hre) => {
   const id = hre.ethers.utils.formatBytes32String(process.env.DEFAULT_DISTRIBUTION_NAME ?? 'MAO Distribution');
   if (taskArgs.print) console.log(id);
   return id;
@@ -69,59 +72,54 @@ task('accounts', 'Prints the list of accounts', async (taskArgs, hre) => {
   }
 });
 
-task('getSuperInterface', 'Prints the super interface of a contract').setAction(async (taskArgs, hre) => {
-  const su = getSuperInterface();
-  let return_value: {
-    functions: Record<string, FunctionFragment>;
-    events: Record<string, EventFragment>;
-    errors: Record<string, ErrorFragment>;
-  } = {
-    functions: {},
-    events: {},
-    errors: {},
-  };
-  Object.values(su.functions).forEach(x => {
-    return_value['functions'][su.getSighash(x)] = x;
-  });
-  Object.values(su.events).forEach(x => {
-    return_value['events'][su.getEventTopic(x)] = x;
-  });
-  Object.values(su.errors).forEach(x => {
-    return_value['errors'][su.getSighash(x)] = x;
-  });
-  console.log(JSON.stringify(return_value, null, 2));
-});
-task('replaceFacet', 'Upgrades facet')
-  .addParam('facet', 'facet')
-  .addParam('address', 'contract address')
-  .setAction(async (taskArgs, hre) => {
-    const accounts = await hre.ethers.getSigners();
-    const response = await replaceFacet(taskArgs.address, taskArgs.facet, accounts[0]);
-  });
-
-task('addFacet', 'adds a facet')
-  .addParam('facet', 'facet')
-  .addParam('address', 'contract address')
-  .setAction(async (taskArgs, hre) => {
-    const Facet = await hre.ethers.getContractFactory(taskArgs.facet);
-    const accounts = await hre.ethers.getSigners();
-    const facet = await Facet.deploy();
-    await facet.deployed();
-
-    const response = await cutFacets({
-      facets: [facet],
-      diamondAddress: taskArgs.address,
-      signer: accounts[0],
+task('getSuperInterface', 'Prints the super interface of a contract')
+  .setAction(async (taskArgs: { outputPathAbi: string }, hre) => {
+    const su = getSuperInterface();
+    let return_value: Record<string, string> = {};
+    const originalConsoleLog = console.log;
+    console.log = () => {};
+    Object.values(su.functions).forEach(x => {
+      return_value[su.getSighash(x.format())] = x.format(FormatTypes.full);
     });
-  });
-
-// task("PublishIPNS", "Publishes IPNS with new pointer")
-//   .addParam("value")
-//   .setAction(async (taskArgs) => {
-//     await ipfsUtils.publish(`${taskArgs.value}`);
-//   });
+    Object.values(su.events).forEach(x => {
+      return_value[su.getEventTopic(x)] = x.format(FormatTypes.full);
+    });
+    Object.values(su.errors).forEach(x => {
+      return_value[su.getSighash(x)] = x.format(FormatTypes.full);
+    });
+    fs.writeFileSync(taskArgs.outputPathAbi, JSON.stringify(return_value, null, 2));
+    console.log = originalConsoleLog;
+  })
+  .addParam('outputPathAbi', 'The path to the abi file');
 
 export default {
+  zkit: {
+    compilerVersion: '2.2.0',
+    circuitsDir: 'circuits',
+    compilationSettings: {
+      artifactsDir: 'zk_artifacts',
+      onlyFiles: [],
+      skipFiles: [],
+      c: false,
+      json: false,
+      optimization: 'O1',
+    },
+    setupSettings: {
+      contributionSettings: {
+        provingSystem: 'groth16', // or "plonk"
+        contributions: 2,
+      },
+      onlyFiles: [],
+      skipFiles: [],
+      ptauDownload: true,
+    },
+    verifiersSettings: {
+      verifiersDir: 'src/verifiers',
+      verifiersType: 'sol', // or "vy"
+    },
+    typesDir: 'types/zk',
+    quiet: false,
+  },
   docgen: {
     outputDir: './docs/contracts',
     pages: 'files',
@@ -160,32 +158,39 @@ export default {
     player1: {
       default: '0xFE87428cC8C72A3a79eD1cC7e2B5892c088d0af0',
     },
-    gameMaster1: {
-      default: '0xaA63aA2D921F23f204B6Bcb43c2844Fb83c82eb9',
-    },
   },
   mocha: {
     timeout: 400000,
   },
   defaultNetwork: 'hardhat',
   networks: {
+    buildbear: {
+      name: 'buildbear',
+      accounts: {
+        mnemonic: process.env.BUILDBEAR_MNEMONIC ?? 'x',
+      },
+      url: process.env.BUILDBEAR_RPC_URL ?? '',
+    },
     hardhat: {
+      name: 'hardhat',
       accounts: {
         mnemonic: 'casual vacant letter raw trend tool vacant opera buzz jaguar bridge myself',
       }, // ONLY LOCAL
       tags: ['ERC7744'],
     },
     localhost: {
+      name: 'localhost',
       url: 'http://127.0.0.1:8545',
       accounts: {
         mnemonic: 'casual vacant letter raw trend tool vacant opera buzz jaguar bridge myself',
       }, // ONLY LOCAL
       tags: ['ERC7744'],
     },
-    anvil: {
-      url: process.env.ANVIL_RPC_URL ?? '',
+    devnet: {
+      name: 'devnet',
+      url: process.env.DEVNET_RPC_URL ?? '',
       accounts: {
-        mnemonic: process.env.ANVIL_MNEMONIC ?? 'x',
+        mnemonic: process.env.DEVNET_MNEMONIC ?? 'x',
       },
     },
   },
@@ -246,6 +251,11 @@ export default {
     target: 'ethers-v5',
     alwaysGenerateOverloads: true, // should overloads with full signatures like deposit(uint256) be generated always, even if there are no overloads?
     // externalArtifacts: ["externalArtifacts/*.json"], // optional array of glob patterns with external artifacts to process (for example external libs from node_modules)
+  },
+  sourcify: {
+    // Disabled by default
+    // Doesn't need an API key
+    enabled: true,
   },
 
   abiExporter: {

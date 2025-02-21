@@ -2,6 +2,7 @@ import { task } from 'hardhat/config';
 import { DAODistributor, MAODistribution, Rankify } from '../types';
 import { generateDistributorData } from '../scripts/libraries/generateDistributorData';
 import { parseInstantiated } from '../scripts/parseInstantiated';
+import { ethers } from 'ethers';
 
 task('createSubject', 'Creates a new subject with MAO distribution')
   .addOptionalParam('metadata', 'Metadata for the rankify contract', 'metadata')
@@ -22,6 +23,7 @@ task('createSubject', 'Creates a new subject with MAO distribution')
     'distributorsId',
     'Distributors ID to create game from, defaults to hardhat task defaultDistributionId',
   )
+  .addFlag('useFixture', 'Use fixture hardhat-deploy to speedup tests')
   .setAction(async (taskArgs, hre) => {
     const { getNamedAccounts } = hre;
     const distributorDeployment = await hre.deployments.get('DAODistributor');
@@ -34,7 +36,7 @@ task('createSubject', 'Creates a new subject with MAO distribution')
       rankifySettings: {
         rankTokenContractURI: taskArgs.rankTokenContractUri,
         rankTokenURI: taskArgs.rankTokenUri,
-        principalCost: taskArgs.principalCost,
+        principalCost: ethers.utils.parseEther(taskArgs.principalCost),
         principalTimeConstant: taskArgs.principalTimeConstant,
       },
     };
@@ -91,30 +93,34 @@ task('makeDemoSubjects', 'Creates 4 demo subjects with different configurations'
     tokenName: 'EIP fun discussions token',
     tokenSymbol: 'EIPFD',
     rankTokenContractUri: 'ipfs://QmWJXEhEnNXBtshVR1kR2vfHqU9vCNdcQKQipVAkHHAoU5',
+    useFixture: false,
   });
 
   await run('createSubject', {
     tokenName: 'Rankify inner discussions token',
     tokenSymbol: 'RKFD',
     rankTokenContractUri: 'ipfs://QmVzSvWjysUfVHzGMQ4y2EduXrVYLApZ3KHQb2gUTR4x6P',
+    useFixture: false,
   });
 
   await run('createSubject', {
     tokenName: 'Arbitrum foundation token',
-    tokenSymbol: 'AF',
+    tokenSymbol: 'ARB',
     rankTokenContractUri: 'ipfs://QmQ2jQj5LXKuTzTcy4ANc57WbABurejbs9hRi4F18tKJWf',
   });
 
   await run('createSubject', {
     tokenName: 'Optimism Collective token',
-    tokenSymbol: 'OC',
+    tokenSymbol: 'OP',
     rankTokenContractUri: 'ipfs://QmTDdnzRee6G5My4TDhaffWjCYp2d6rssmPQP4GMW5LuBd',
+    useFixture: false,
   });
 
   await run('createSubject', {
     tokenName: 'Open audius foundation token',
-    tokenSymbol: 'OA',
+    tokenSymbol: 'AUDIO',
     rankTokenContractUri: 'ipfs://QmWDUV8Eq1VewZsVGZWVzJMNXT8PrZnQqwy6SJfWFzVzBM',
+    useFixture: false,
   });
 
   await run('createSubject', {
@@ -127,18 +133,21 @@ task('makeDemoSubjects', 'Creates 4 demo subjects with different configurations'
     tokenName: 'Rankify kids content token',
     tokenSymbol: 'RKFK',
     rankTokenContractUri: 'ipfs://QmfKRxEM8QM355PvDaGoocgJiM629PBsUW8i2oBWsV4NJh',
+    useFixture: false,
   });
 
   await run('createSubject', {
     tokenName: 'Rankify book writers token',
     tokenSymbol: 'RKFBW',
     rankTokenContractUri: 'ipfs://QmadNd9e2qPqoL9u8qqkfP2253yUMB7R3hfXibx4LKwnvn',
+    useFixture: false,
   });
 
   await run('createSubject', {
     tokenName: 'Peeramid fellowship council token',
     tokenSymbol: 'PFC',
     rankTokenContractUri: 'ipfs://QmaUXPY7TTx9rGS8sgSvZvHRpi6eC8LkfTj1fBRsGBBEjh',
+    useFixture: false,
   });
 
   console.log('Successfully created 8 demo subjects!');

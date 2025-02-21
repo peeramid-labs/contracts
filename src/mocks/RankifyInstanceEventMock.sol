@@ -27,7 +27,7 @@ contract RankifyInstanceEventMock {
         uint256 indexed gameId,
         uint256 indexed turn,
         address indexed proposer,
-        bytes32 commitmentHash,
+        bytes32 commitment,
         string proposalEncryptedByGM
     );
     event VoteSubmitted(uint256 indexed gameId, uint256 indexed turn, address indexed player, string votesHidden);

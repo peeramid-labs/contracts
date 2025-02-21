@@ -3,6 +3,7 @@ import { expect } from 'chai';
 import { MockERC1155, MockVendingMachine, MockERC20, MockERC721 } from '../types/src/mocks';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { LibCoinVending } from '../types/src/mocks/MockVendingMachine';
+import { Wallet } from 'ethers';
 
 const eth0 = ethers.utils.parseEther('0');
 const eth1 = ethers.utils.parseEther('0.1');
@@ -20,10 +21,10 @@ const valueToAccept = eth4;
 
 describe('LibCoinVending Test', async function () {
   let mockCoinVending: MockVendingMachine;
-  let signer: SignerWithAddress;
-  let payee: SignerWithAddress;
-  let maliciousActor: SignerWithAddress;
-  let beneficiary: SignerWithAddress;
+  let signer: SignerWithAddress | Wallet;
+  let payee: SignerWithAddress | Wallet;
+  let maliciousActor: SignerWithAddress | Wallet;
+  let beneficiary: SignerWithAddress | Wallet;
   let mockERC1155: MockERC1155;
   let mockERC20: MockERC20;
   let mockERC721: MockERC721;
@@ -136,7 +137,7 @@ describe('LibCoinVending Test', async function () {
       }),
     ).not.to.be.reverted;
   });
-  it('Should revert on interaction with non exsistent positions', async () => {
+  it('Should revert on interaction with non existent positions', async () => {
     await expect(
       mockCoinVending.fund(ethers.utils.formatBytes32String('nonExistentPosition'), { value: eth1 }),
     ).to.be.revertedWith('Position does not exist');
@@ -198,10 +199,10 @@ describe('LibCoinVending Test', async function () {
       updatedBalance = await ethers.provider.getBalance(signer.address);
       expect(initialBalance).to.be.equal(updatedBalance.add(gasSpent).add(gasSpent2));
     });
-    it('Release brings correct values back to funder, benificiary and payee', async () => {
+    it('Release brings correct values back to founder, beneficiary and payee', async () => {
       const initialBalance = await ethers.provider.getBalance(signer.address);
       const initialPayeeBalance = await ethers.provider.getBalance(payee.address);
-      const initialBenificiaryBalance = await ethers.provider.getBalance(beneficiary.address);
+      const initialBeneficiaryBalance = await ethers.provider.getBalance(beneficiary.address);
 
       let tx = await mockCoinVending.fund(ethers.utils.formatBytes32String('test position1'), { value: eth10 });
       let txReceipt = await tx.wait();
@@ -217,11 +218,11 @@ describe('LibCoinVending Test', async function () {
       let gasSpent2 = txReceipt.gasUsed.mul(txReceipt.effectiveGasPrice);
       updatedBalance = await ethers.provider.getBalance(signer.address);
       const payeeBalance = await ethers.provider.getBalance(payee.address);
-      const benificiaryBalance = await ethers.provider.getBalance(beneficiary.address);
+      const beneficiaryBalance = await ethers.provider.getBalance(beneficiary.address);
       expect(initialBalance.sub(valueToAccept).sub(valueToAward).sub(valueToBurn)).to.be.equal(
         updatedBalance.add(gasSpent).add(gasSpent2),
       );
-      expect(benificiaryBalance).to.be.equal(initialBenificiaryBalance.add(valueToAward));
+      expect(beneficiaryBalance).to.be.equal(initialBeneficiaryBalance.add(valueToAward));
       expect(payeeBalance).to.be.equal(initialPayeeBalance.add(valueToAccept));
     });
   });
@@ -270,7 +271,7 @@ describe('LibCoinVending Test', async function () {
         mockCoinVending.release(ethers.utils.formatBytes32String('tokens'), signer.address, signer.address),
       ).to.be.revertedWith('Not enough balance to release');
     });
-    it('Funding takes away proper tokens and Refunded address getstokens back as before funding', async () => {
+    it('Funding takes away proper tokens and Refunded address gets tokens back as before funding', async () => {
       const erc20initialBalance = await mockERC20.balanceOf(signer.address);
       const erc1155initialBalance = await mockERC1155.balanceOf(signer.address, '1');
       await mockCoinVending.fund(ethers.utils.formatBytes32String('tokens'));
@@ -284,7 +285,7 @@ describe('LibCoinVending Test', async function () {
       expect(await mockERC1155.balanceOf(signer.address, '1')).to.be.equal(erc1155initialBalance);
       expect(await mockERC721.ownerOf('1')).to.be.equal(signer.address);
     });
-    it('brings correct values upon Fund & Release back to funder, benificiary and payee', async () => {
+    it('brings correct values upon Fund & Release back to founder, beneficiary and payee', async () => {
       await mockCoinVending.fund(ethers.utils.formatBytes32String('tokens'));
       const balanceBefore1155 = await mockERC1155.balanceOf(signer.address, '1');
       const balanceBefore20 = await mockERC20.balanceOf(signer.address);

@@ -6,11 +6,8 @@ import { ERC7744 } from '@peeramid-labs/eds/types';
 import ERC7744Abi from '@peeramid-labs/eds/abi/src/ERC7744.sol/ERC7744.json';
 import { MintSettingsStruct } from '../types/src/tokens/DistributableGovernanceERC20.sol/DistributableGovernanceERC20';
 import { ArguableVotingTournament } from '../types/src/distributions/ArguableVotingTournament';
-import {
-  RANKIFY_INSTANCE_CONTRACT_NAME,
-  RANKIFY_INSTANCE_CONTRACT_VERSION,
-  RInstance_MIN_PLAYERS,
-} from '../playbook/utils';
+import { constantParams } from '../scripts/EnvironmentSimulator';
+import { poseidonContract } from 'circomlibjs';
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployments, getNamedAccounts } = hre;
@@ -23,8 +20,8 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   )) as ERC7744;
 
   let _trustedForwarder = ethers.constants.AddressZero;
-  let _distributionName = process.env.MAO_INSTANCE_NAME ?? RANKIFY_INSTANCE_CONTRACT_NAME;
-  const versionString = process.env.MAO_INSTANCE_VERSION ?? RANKIFY_INSTANCE_CONTRACT_VERSION;
+  let _distributionName = process.env.MAO_INSTANCE_NAME ?? constantParams.RANKIFY_INSTANCE_CONTRACT_NAME;
+  const versionString = process.env.MAO_INSTANCE_VERSION ?? constantParams.RANKIFY_INSTANCE_CONTRACT_VERSION;
   let _distributionVersion: LibSemver.VersionStruct = {
     major: versionString.split('.')[0],
     minor: versionString.split('.')[1],
@@ -172,7 +169,24 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     log('GovernanceToken already registered in CodeIndex');
   }
 
+  const pc = poseidonContract;
+  const ph5 = await deploy('Poseidon5', {
+    from: deployer,
+    contract: { abi: pc.generateABI(5), bytecode: pc.createCode(5) },
+  });
+
+  const ph6 = await deploy('Poseidon6', {
+    from: deployer,
+    contract: { abi: pc.generateABI(6), bytecode: pc.createCode(6) },
+  });
+
+  const ph2 = await deploy('Poseidon2', {
+    from: deployer,
+    contract: { abi: pc.generateABI(2), bytecode: pc.createCode(2) },
+  });
+
   const rankifyToken = await deployments.get('Rankify');
+  const proposalIntegrity18Groth16VerifierDeployment = await deployments.get('ProposalsIntegrity15Groth16Verifier');
   const result = await deploy('MAODistribution', {
     from: deployer,
     skipIfAlreadyDeployed: true,
@@ -180,13 +194,14 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       _trustedForwarder,
       rankifyToken.address,
       DAO,
+      [proposalIntegrity18Groth16VerifierDeployment.address, ph5.address, ph6.address, ph2.address],
       rankTokenCodeId,
       arguableVotingTournamentCodeId,
       accessManagerId,
       govTokenDeploymentCodeId,
       _distributionName, // These could be other, currently duplicates with dependency, good as long as not used
       _distributionVersion,
-      RInstance_MIN_PLAYERS,
+      constantParams.RInstance_MIN_PLAYERS,
     ],
   });
 
@@ -208,5 +223,5 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 };
 
 export default func;
-func.dependencies = ['ERC7744', 'sacm', 'distributor', 'rankify'];
+func.dependencies = ['ERC7744', 'sacm', 'distributor', 'rankify', 'verifiers'];
 func.tags = ['MAO'];

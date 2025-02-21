@@ -7,4 +7,5 @@ export * from './getSuperInterface';
 export * from './ipfs';
 export * from './libraries/index';
 export * from './parseInstantiated';
-export * from './playbooks/index';
+export * from './addDistribution';
+export * from './instantiateMAO';

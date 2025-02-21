@@ -10,7 +10,7 @@ interface IRankifyInstance {
     error RankNotSpecified();
 
     event RegistrationOpen(uint256 indexed gameId);
-    event PlayerJoined(uint256 indexed gameId, address participant);
+    event PlayerJoined(uint256 indexed gameId, address indexed participant, bytes32 gmCommitment, string voterPubKey);
     event GameStarted(uint256 indexed gameId);
     event gameCreated(uint256 gameId, address indexed gm, address indexed creator, uint256 indexed rank);
     event GameClosed(uint256 indexed gameId);

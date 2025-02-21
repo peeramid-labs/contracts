@@ -8,7 +8,8 @@ import {LibQuadraticVoting} from "./LibQuadraticVoting.sol";
 import "hardhat/console.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {SignedMath} from "@openzeppelin/contracts/utils/math/SignedMath.sol";
-
+import {IErrors} from "../interfaces/IErrors.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 /**
  * @title LibRankify
  * @dev Core library for the Rankify protocol that handles game state management, voting, and player interactions
@@ -50,16 +51,10 @@ library LibRankify {
         address beneficiary;
         uint256 minimumParticipantsInCircle;
         address derivedToken;
-    }
-
-    /**
-     * @dev Structure for storing hidden votes with their proof
-     * @param hash Hash of the vote
-     * @param proof Cryptographic proof associated with the vote
-     */
-    struct VoteHidden {
-        bytes32 hash;
-        bytes proof;
+        address proposalIntegrityVerifier;
+        address poseidon5;
+        address poseidon6;
+        address poseidon2;
     }
 
     /**
@@ -83,11 +78,13 @@ library LibRankify {
         uint256 numCommitments;
         uint256 numVotesThisTurn;
         uint256 numVotesPrevTurn;
+        uint256 permutationCommitment;
         LibQuadraticVoting.qVotingStruct voting;
         mapping(uint256 => string) ongoingProposals; //Previous Turn Proposals (These are being voted on)
-        mapping(address => bytes32) proposalCommitmentHashes; //Current turn Proposal submission
-        mapping(address => VoteHidden) votesHidden;
+        mapping(address => uint256) proposalCommitment;
+        mapping(address => bytes32) ballotHashes;
         mapping(address => bool) playerVoted;
+        address winner;
     }
 
     /**
@@ -172,6 +169,7 @@ library LibRankify {
         uint128 minGameTime;
         uint128 timePerTurn;
         uint128 timeToJoin;
+        // ToDo: It must list gameKey for Game master and game master signature, committing to serve the game
     }
 
     function getGamePrice(uint128 minGameTime, CommonParams memory commonParams) internal pure returns (uint256) {
@@ -203,6 +201,13 @@ library LibRankify {
      * - Mints new rank tokens.
      */
     function newGame(NewGameParams memory params) internal {
+        // address signer = ECDSA.recover(digest, gameMasterSignature);
+        //TODO: add this back in start game to verify commitment from game master
+        // require(
+        //     params.gameMaster == signer,
+        //     IErrors.invalidECDSARecoverSigner(digest, "LibRankify::newGame->invalid signature")
+        // );
+
         enforceIsInitialized();
         CommonParams storage commonParams = instanceState().commonParams;
 
@@ -319,10 +324,15 @@ library LibRankify {
      * - Increases the payments balance of the game by the join game price.
      * - Adds `player` to the game.
      */
-    function joinGame(uint256 gameId, address player) internal {
+    function joinGame(uint256 gameId, address player, bytes memory gameMasterSignature, bytes32 digest) internal {
         enforceGameExists(gameId);
         fulfillRankRq(gameId, player);
         gameId.addPlayer(player);
+        address signer = ECDSA.recover(digest, gameMasterSignature);
+        require(
+            gameId.getGM() == signer,
+            IErrors.invalidECDSARecoverSigner(digest, "LibRankify::joinGame->invalid signature")
+        );
     }
 
     /**
@@ -439,6 +449,7 @@ library LibRankify {
             rankTokenContract.burn(leaderboard[0], game.rank, 1);
         }
         rankTokenContract.safeTransferFrom(address(this), leaderboard[0], game.rank + 1, 1, "");
+        game.winner = leaderboard[0];
     }
 
     /**
@@ -510,7 +521,7 @@ library LibRankify {
         if (game.numPrevProposals < game.voting.minQuadraticPositions) expectVote = false; // If there is not enough proposals then round is skipped votes cannot be filled
         bool madeMove = true;
         if (expectVote && !game.playerVoted[player]) madeMove = false;
-        if (expectProposal && game.proposalCommitmentHashes[player] == "") madeMove = false;
+        if (expectProposal && game.proposalCommitment[player] == 0) madeMove = false;
         if (madeMove) gameId.playerMove(player);
         return madeMove;
     }
@@ -523,10 +534,9 @@ library LibRankify {
      * - An array of updated scores for each player.
      * - An array of scores calculated for the current round.
      */
-    function calculateScoresQuadratic(
+    function calculateScores(
         uint256 gameId,
-        uint256[][] memory votesRevealed,
-        uint256[] memory proposerIndices
+        uint256[][] memory votesRevealed
     ) internal returns (uint256[] memory, uint256[] memory) {
         address[] memory players = gameId.getPlayers();
         uint256[] memory scores = new uint256[](players.length);
@@ -536,19 +546,17 @@ library LibRankify {
         for (uint256 i = 0; i < players.length; ++i) {
             playerVoted[i] = gameId._getState().isActive[players[i]];
         }
-        uint256[] memory roundScores = game.voting.computeScoresByVPIndex(
-            votesRevealed,
-            playerVoted,
-            proposerIndices.length
-        );
+        uint256[] memory roundScores = game.voting.tallyVotes(votesRevealed, playerVoted);
         for (uint256 playerIdx = 0; playerIdx < players.length; playerIdx++) {
             //for each player
-            if (proposerIndices[playerIdx] < players.length) {
+            if (game.proposalCommitment[players[playerIdx]] != 0) {
                 //if player proposal exists
                 scores[playerIdx] = gameId.getScore(players[playerIdx]) + roundScores[playerIdx];
                 gameId.setScore(players[playerIdx], scores[playerIdx]);
             } else {
                 //Player did not propose
+                // TODO: implement tests for this
+                // require(roundScores[playerIdx] == 0, "LibRankify->calculateScores: player got votes without proposing");
             }
         }
         return (scores, roundScores);

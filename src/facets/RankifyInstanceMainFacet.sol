@@ -45,6 +45,19 @@ contract RankifyInstanceMainFacet is
      *         - Emitting the game creation event
      */
     function createGame(LibRankify.NewGameParams memory params) private nonReentrant {
+        //TODO: add this back in start  game to verify commitment from game master
+        //  bytes32 digest = _hashTypedDataV4(
+        //     keccak256(
+        //         abi.encode(
+        //             keccak256(
+        //                 "AttestGameCreation(uint256 gameId,uint256 commitment)"
+        //             ),
+        //             params.gameId,
+        //             params.gmCommitment
+        //         )
+        //     )
+        // );
+
         LibRankify.newGame(params);
         LibCoinVending.ConfigPosition memory emptyConfig;
         LibCoinVending.configure(bytes32(params.gameId), emptyConfig);
@@ -139,29 +152,56 @@ contract RankifyInstanceMainFacet is
     /**
      * @dev Allows a player to join a game with the provided game ID. `gameId` is the ID of the game.
      * @param gameId The ID of the game.
+     * @param gameMasterSignature The ECDSA signature of the game master.
+     * @param gmCommitment The gmCommitment to the player signed by the game master.
+     * @param deadline The deadline for the player to sign the gmCommitment.
      * @notice This function:
      *         - Calls the `joinGame` function with `msg.sender`.
      *         - Calls the `fund` function with `bytes32(gameId)`.
      *         - Emits a _PlayerJoined_ event.
      * @custom:security nonReentrant
      */
-    function joinGame(uint256 gameId) public payable nonReentrant {
-        gameId.joinGame(msg.sender);
+    function joinGame(
+        uint256 gameId,
+        bytes memory gameMasterSignature,
+        bytes32 gmCommitment,
+        uint256 deadline,
+        string memory voterPubKey
+    ) public payable nonReentrant {
+        require(block.timestamp < deadline, "Signature deadline has passed");
+        bytes32 digest = _hashTypedDataV4(
+            keccak256(
+                abi.encode(
+                    keccak256(
+                        "AttestJoiningGame(address participant,uint256 gameId,bytes32 gmCommitment,uint256 deadline,bytes32 participantPubKeyHash)"
+                    ),
+                    msg.sender,
+                    gameId,
+                    gmCommitment,
+                    deadline,
+                    keccak256(abi.encodePacked(voterPubKey))
+                )
+            )
+        );
+        gameId.joinGame(msg.sender, gameMasterSignature, digest);
         LibCoinVending.fund(bytes32(gameId));
-        emit PlayerJoined(gameId, msg.sender);
+        emit PlayerJoined(gameId, msg.sender, gmCommitment, voterPubKey);
     }
 
     /**
      * @dev Starts a game with the provided game ID early. `gameId` is the ID of the game.
      * @param gameId The ID of the game.
+     * @param permutationCommitment The commitment to the permutation issued by the game master.
      * @notice This function:
      *         - Calls the `enforceGameExists` function.
      *         - Calls the `startGameEarly` function.
      *         - Emits a _GameStarted_ event.
      */
-    function startGame(uint256 gameId) public {
+    function startGame(uint256 gameId, uint256 permutationCommitment) public {
         gameId.enforceGameExists();
         gameId.startGameEarly();
+        LibRankify.GameState storage game = gameId.getGameState();
+        game.permutationCommitment = permutationCommitment;
         emit GameStarted(gameId);
     }
 
@@ -398,5 +438,14 @@ contract RankifyInstanceMainFacet is
         rankContract.burn(msg.sender, rankId, amount);
         tokenContract.mint(msg.sender, _toMint);
         emit RankTokenExited(msg.sender, rankId, amount, _toMint);
+    }
+
+    /**
+     * @dev Returns the winner of the game with the specified ID
+     * @param gameId The ID of the game
+     * @return address The winner of the game
+     */
+    function gameWinner(uint256 gameId) public view returns (address) {
+        return gameId.getGameState().winner;
     }
 }

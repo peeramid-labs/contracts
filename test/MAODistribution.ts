@@ -4,10 +4,12 @@ import { deployments, ethers, getNamedAccounts } from 'hardhat';
 import hre from 'hardhat';
 import { expect } from 'chai';
 import { MAODistribution, DAODistributor, Rankify, RankifyDiamondInstance } from '../types';
-import { AdrSetupResult, setupTest } from './utils';
+import { setupTest } from './utils';
+
 import { getCodeIdFromArtifact } from '../scripts/getCodeId';
-import addDistribution from '../scripts/playbooks/addDistribution';
+import addDistribution from '../scripts/addDistribution';
 import { generateDistributorData } from '../scripts/libraries/generateDistributorData';
+import { AdrSetupResult } from '../scripts/setupMockEnvironment';
 
 describe('MAODistribution', async function () {
   let contract: MAODistribution;

@@ -34,18 +34,14 @@ export function toSignature(abiElement: unknown): string {
 }
 
 /* In the form of `[ContractNameMatcher, IgnoredSignature]` */
-const signaturesToIgnore = [
-  // The SolidState contracts adds a `supportsInterface` function,
-  // but we already provide that function through DiamondLoupeFacet
-  // ["DiamondLoupeFacet", "supportsInterface(bytes4)"],
-  ['RankifyInstanceMainFacet', 'supportsInterface(bytes4)'],
-  ['DNSFacet', 'supportsInterface(bytes4)'],
-  // ['OwnershipFacet', 'OwnershipTransferred(address,address)'],
-] as const;
+const signaturesToIgnore = [['RankifyInstanceGameMastersFacet', 'invalidECDSARecoverSigner(bytes32,string)']] as const;
 
 export function isIncluded(contractName: string, signature: string): boolean {
   const isIgnored = signaturesToIgnore.some(([contractNameMatcher, ignoredSignature]) => {
-    if (contractName.match(contractNameMatcher)) {
+    if (contractName.split(':')[1].match(contractNameMatcher)) {
+      if (signature === ignoredSignature) {
+        console.log(contractName, signature);
+      }
       return signature === ignoredSignature;
     } else {
       return false;

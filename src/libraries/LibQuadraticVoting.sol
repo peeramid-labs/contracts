@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
-
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 error quadraticVotingError(string parameter, uint256 arg, uint256 arg2);
 
@@ -59,36 +58,35 @@ library LibQuadraticVoting {
      *
      * - An array of scores for each proposal.
      */
-    function computeScoresByVPIndex(
+    function tallyVotes(
         qVotingStruct memory q,
-        uint256[][] memory VotersVotes,
-        bool[] memory isActive,
-        uint256 proposalsLength
+        uint256[][] memory tally, // [participant][votedFor]
+        bool[] memory isActive
     ) internal pure returns (uint256[] memory) {
         uint256 notVotedGivesEveryone = q.maxQuadraticPoints;
-        uint256[] memory scores = new uint256[](proposalsLength);
-        uint256[] memory creditsUsed = new uint256[](VotersVotes.length);
+        uint256[] memory scores = new uint256[](tally.length);
+        uint256[] memory creditsUsed = new uint256[](tally.length);
 
-        for (uint256 proposalIdx = 0; proposalIdx < proposalsLength; proposalIdx++) {
+        for (uint256 participant = 0; participant < tally.length; participant++) {
             //For each proposal
-            scores[proposalIdx] = 0;
-            for (uint256 vi = 0; vi < VotersVotes.length; vi++) {
+            // console.log("New tally iter");
+            uint256[] memory votedFor = tally[participant];
+            for (uint256 candidate = 0; candidate < tally.length; candidate++) {
                 // For each potential voter
-                uint256[] memory voterVotes = VotersVotes[vi];
-                if (!isActive[vi]) {
-                    // Check if voter wasn't voting
-                    scores[proposalIdx] += notVotedGivesEveryone; // Gives benefits to everyone but himself
-                    creditsUsed[vi] = q.voteCredits;
+                if (!isActive[participant] && isActive[candidate]) {
+                    // Check if participant wasn't voting
+                    scores[candidate] += notVotedGivesEveryone; // Gives benefits to everyone but himself
+                    creditsUsed[participant] = q.voteCredits;
                 } else {
-                    //If voter voted
-                    scores[proposalIdx] += voterVotes[proposalIdx];
-                    creditsUsed[vi] += voterVotes[proposalIdx] ** 2;
-                    require(
-                        creditsUsed[vi] <= q.voteCredits,
-                        quadraticVotingError("Quadratic: vote credits overrun", q.voteCredits, creditsUsed[vi])
-                    );
+                    //If participant voted
+                    scores[candidate] += votedFor[candidate];
+                    creditsUsed[participant] += votedFor[candidate] ** 2;
                 }
             }
+            require(
+                creditsUsed[participant] <= q.voteCredits,
+                quadraticVotingError("Quadratic: vote credits overrun", q.voteCredits, creditsUsed[participant])
+            );
         }
         return scores;
     }

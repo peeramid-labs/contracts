@@ -52,7 +52,10 @@ contract MAODistribution is IDistribution, CodeIndexer {
     address private immutable _paymentToken;
     address private immutable _beneficiary;
     uint256 private immutable _minParticipantsInCircle;
-
+    address private immutable _proposalIntegrityVerifier;
+    address private immutable _poseidon5;
+    address private immutable _poseidon6;
+    address private immutable _poseidon2;
     /**
      * @notice Initializes the contract with the provided parameters and performs necessary checks.
      * @dev Retrieves contract addresses from a contract index using the provided identifiers
@@ -73,6 +76,7 @@ contract MAODistribution is IDistribution, CodeIndexer {
         address trustedForwarder,
         address paymentToken,
         address beneficiary,
+        address[] memory zkpVerifier,
         bytes32 rankTokenCodeId,
         bytes32 RankifyDIistributionId,
         bytes32 accessManagerId,
@@ -89,7 +93,22 @@ contract MAODistribution is IDistribution, CodeIndexer {
         _distributionVersion = LibSemver.toUint256(distributionVersion);
         _rankTokenBase = getContractsIndex().get(rankTokenCodeId);
         _governanceERC20Base = getContractsIndex().get(governanceERC20BaseId);
-
+        _proposalIntegrityVerifier = zkpVerifier[0];
+        _poseidon5 = zkpVerifier[1];
+        _poseidon6 = zkpVerifier[2];
+        _poseidon2 = zkpVerifier[3];
+        if (_poseidon5 == address(0)) {
+            revert("Poseidon5 not found");
+        }
+        if (_poseidon6 == address(0)) {
+            revert("Poseidon6 not found");
+        }
+        if (_poseidon2 == address(0)) {
+            revert("Poseidon2 not found");
+        }
+        if (_proposalIntegrityVerifier == address(0)) {
+            revert("Verifier not set");
+        }
         if (_governanceERC20Base == address(0)) {
             revert("Governance ERC20 base not found");
         }
@@ -206,7 +225,11 @@ contract MAODistribution is IDistribution, CodeIndexer {
             minimumParticipantsInCircle: _minParticipantsInCircle,
             paymentToken: _paymentToken,
             beneficiary: _beneficiary,
-            derivedToken: derivedToken
+            derivedToken: derivedToken,
+            proposalIntegrityVerifier: _proposalIntegrityVerifier,
+            poseidon5: _poseidon5,
+            poseidon6: _poseidon6,
+            poseidon2: _poseidon2
         });
 
         RankifyInstanceInit(RankifyDistrAddresses[0]).init(

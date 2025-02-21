@@ -1,6 +1,6 @@
 import { task } from 'hardhat/config';
 
-import addDistribution from '../scripts/playbooks/addDistribution';
+import addDistribution from '../scripts/addDistribution';
 import { getCodeIdFromArtifact } from '../scripts/getCodeId';
 
 task('addDistribution', 'Adds new distribution').setAction(async (_, hre) => {
