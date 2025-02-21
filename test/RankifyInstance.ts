@@ -1400,7 +1400,7 @@ describe(scriptName, () => {
                   for (let i = 0; i < players.length; i++) {
                     sortedVotes.push(Array(players.length).fill(0));
                     for (let j = 0; j < players.length; j++) {
-                      sortedVotes[i][Number(integrity.permutation[j])] = votes[i].vote[j];
+                      sortedVotes[i][j] = votes[i].vote[Number(integrity.permutation[j])];
                     }
                   }
                   //   console.log(sortedVotes);
