@@ -91,7 +91,8 @@ contract RankifyInstanceRequirementsFacet {
             timeToJoin: tbgInstanceState.settings.timeToJoin,
             maxTurns: tbgInstanceState.settings.maxTurns,
             voteCredits: tbgInstanceState.settings.voteCredits,
-            gameMaster: tbgInstanceState.settings.gameMaster
+            gameMaster: tbgInstanceState.settings.gameMaster,
+            metadata: gameState.metadata
         });
     }
 }

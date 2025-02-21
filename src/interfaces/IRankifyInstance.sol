@@ -27,6 +27,7 @@ interface IRankifyInstance {
         uint128 minGameTime;
         uint128 timePerTurn;
         uint128 timeToJoin;
+        string metadata;
     }
 
     struct GameStateOutput {
@@ -55,5 +56,6 @@ interface IRankifyInstance {
         uint256 maxTurns;
         uint256 voteCredits;
         address gameMaster;
+        string metadata;
     }
 }

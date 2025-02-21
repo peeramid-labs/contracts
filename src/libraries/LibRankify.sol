@@ -71,6 +71,7 @@ library LibRankify {
      */
     struct GameState {
         uint256 rank;
+        string metadata;
         uint256 minGameTime;
         address createdBy;
         uint256 numOngoingProposals;
@@ -169,6 +170,7 @@ library LibRankify {
         uint128 minGameTime;
         uint128 timePerTurn;
         uint128 timeToJoin;
+        string metadata;
         // ToDo: It must list gameKey for Game master and game master signature, committing to serve the game
     }
 
@@ -242,6 +244,7 @@ library LibRankify {
         params.gameId.createGame(newSettings); // This will enforce game does not exist yet
         GameState storage game = getGameState(params.gameId);
         game.voting = LibQuadraticVoting.precomputeValues(params.voteCredits, params.maxPlayerCnt);
+        game.metadata = params.metadata;
         require(
             SignedMath.abs(int256(uint256(params.minGameTime)) - int256(uint256(commonParams.principalTimeConstant))) <
                 uint256(commonParams.principalTimeConstant) * 16,
