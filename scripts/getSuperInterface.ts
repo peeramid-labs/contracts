@@ -1,4 +1,4 @@
-import { JsonFragment } from '@ethersproject/abi';
+import { FormatTypes, JsonFragment } from '@ethersproject/abi';
 import fs from 'fs';
 import path from 'path';
 import { ethers } from 'ethers';
@@ -26,7 +26,7 @@ const getSuperInterface = (outputPath?: string) => {
   console.log = () => {}; // avoid noisy output
   const result = new ethers.utils.Interface(mergedArray);
   if (outputPath) {
-    fs.writeFileSync(outputPath, JSON.stringify(result.fragments, null, 2));
+    fs.writeFileSync(outputPath, JSON.stringify(result.format(FormatTypes.full), null, 2));
   }
   console.log = originalConsoleLog;
   return result;

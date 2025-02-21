@@ -33,8 +33,7 @@ Smart contract infrastructure for [rankify.it](https://rankify.it) - A platform 
 
 The MAO distribution ([MAODistribution.sol](./src/distributions/MAODistribution.sol)) creates a complete infrastructure for a Meritocratic Autonomous Organization, including:
 - Rank and governance tokens
-- ACID Distribution system
-- Token voting capabilities
+- Autonomous Competence Identification Distribution
 
 ### 2. ACID Distribution
 
@@ -95,22 +94,19 @@ The Autonomous Competence Identification Distribution ([ArguableVotingTournament
    pnpm lint:fix
    ```
 
+4. Clean build:
+```sh
+pnpm clean
+```
+
 ### Deployment
 
 1. Deployment:
    ```sh
-   # deploy EDS dependency (only once per network)
-   git clone https://github.com/peeramid-labs/eds.git
-   cd eds
-   latestTag=$(git describe --tags "$(git rev-list --tags --max-count=1)")
-   git checkout $latestTag
-   pnpm install && pnpm hardhat deploy --network <network> --tags code_index
-   cd ..
-
-   pnpm hardhat deploy --network <network> --tags <tags>
+   pnpm hardhat deploy --network <network> --tags ERC7744,MAO,rankify
    # or
    pnpm anvil:deploy
-   # or to run next step:
+   # or :
    ./playbook/utils/deploy-to-local-anvil.sh
    ```
 ## Interacting with Contracts
@@ -123,6 +119,12 @@ We provide helper tools in form of `playbooks` - small hardhat runtime scripts t
    pnpm hardhat --network $NETWORK createSubject --token-name xxx
    pnpm hardhat --network $NETWORK createGame --rankify-instance-address $INSTANCE_ADDRESS
    ```
+
+   Interactive playbook:
+   ```sh
+   pnpm hardhat --network $NETWORK interactive
+   ```
+
 2. Using viem to interact with contracts:
 
 In (abi)[./abi] directory you can find generated abi files for all contracts, including .ts files to give viem/wagmi a better experience.
@@ -133,14 +135,7 @@ We provide this packaged within our sdk: [`@peeramid-labs/sdk`](https://github.c
 
 3. Get all interfaces and signatures:
 
-You can get all of the function signatures to debug your application via the following command:
-```
-pnpm hardhat getSuperInterface > interface.json
-```
-This will generate a file called `interface.json` in the current directory.
-
-You can also use script in `./scripts/getSuperInterface.ts` to get ethers js object
-
+You can get all of the function signatures to debug your application from `./all-signatures.json`
 
 ## Project Structure
 

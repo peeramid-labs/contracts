@@ -10,7 +10,6 @@ import 'hardhat-diamond-abi';
 import '@nomicfoundation/hardhat-toolbox';
 import 'hardhat-abi-exporter';
 import { toSignature, isIncluded } from './scripts/diamond';
-import { cutFacets, replaceFacet } from './scripts/libraries/diamond';
 import 'hardhat-gas-reporter';
 import 'hardhat-contract-sizer';
 import 'hardhat-deploy';
@@ -18,9 +17,9 @@ import 'hardhat-tracer';
 import 'solidity-docgen';
 import './playbook';
 import getSuperInterface from './scripts/getSuperInterface';
-import { ErrorFragment, EventFragment, FunctionFragment } from '@ethersproject/abi';
+import { FormatTypes } from '@ethersproject/abi';
 import './scripts/generateSelectorDocs';
-
+import fs from 'fs';
 type ContractMap = Record<string, { abi: object }>;
 
 subtask(TASK_COMPILE_SOLIDITY_EMIT_ARTIFACTS).setAction(async (args, env, next) => {
@@ -38,6 +37,8 @@ subtask(TASK_COMPILE_SOLIDITY_EMIT_ARTIFACTS).setAction(async (args, env, next) 
     }
   });
   await Promise.all(promises);
+  getSuperInterface('./abi/super-interface.json');
+  env.run('getSuperInterface', { outputPathAbi: './all-signatures.json' });
   return output;
 });
 
@@ -71,28 +72,25 @@ task('accounts', 'Prints the list of accounts', async (taskArgs, hre) => {
   }
 });
 
-task('getSuperInterface', 'Prints the super interface of a contract').setAction(async (taskArgs, hre) => {
-  const su = getSuperInterface();
-  let return_value: {
-    functions: Record<string, FunctionFragment>;
-    events: Record<string, EventFragment>;
-    errors: Record<string, ErrorFragment>;
-  } = {
-    functions: {},
-    events: {},
-    errors: {},
-  };
-  Object.values(su.functions).forEach(x => {
-    return_value['functions'][su.getSighash(x)] = x;
-  });
-  Object.values(su.events).forEach(x => {
-    return_value['events'][su.getEventTopic(x)] = x;
-  });
-  Object.values(su.errors).forEach(x => {
-    return_value['errors'][su.getSighash(x)] = x;
-  });
-  console.log(JSON.stringify(return_value, null, 2));
-});
+task('getSuperInterface', 'Prints the super interface of a contract')
+  .setAction(async (taskArgs: { outputPathAbi: string }, hre) => {
+    const su = getSuperInterface();
+    let return_value: Record<string, string> = {};
+    const originalConsoleLog = console.log;
+    console.log = () => {};
+    Object.values(su.functions).forEach(x => {
+      return_value[su.getSighash(x.format())] = x.format(FormatTypes.full);
+    });
+    Object.values(su.events).forEach(x => {
+      return_value[su.getEventTopic(x)] = x.format(FormatTypes.full);
+    });
+    Object.values(su.errors).forEach(x => {
+      return_value[su.getSighash(x)] = x.format(FormatTypes.full);
+    });
+    fs.writeFileSync(taskArgs.outputPathAbi, JSON.stringify(return_value, null, 2));
+    console.log = originalConsoleLog;
+  })
+  .addParam('outputPathAbi', 'The path to the abi file');
 
 export default {
   zkit: {
@@ -166,6 +164,13 @@ export default {
   },
   defaultNetwork: 'hardhat',
   networks: {
+    buildbear: {
+      name: 'buildbear',
+      accounts: {
+        mnemonic: process.env.BUILDBEAR_MNEMONIC ?? 'x',
+      },
+      url: process.env.BUILDBEAR_RPC_URL ?? '',
+    },
     hardhat: {
       name: 'hardhat',
       accounts: {
@@ -181,11 +186,11 @@ export default {
       }, // ONLY LOCAL
       tags: ['ERC7744'],
     },
-    anvil: {
-      name: 'anvil',
-      url: process.env.ANVIL_RPC_URL ?? '',
+    devnet: {
+      name: 'devnet',
+      url: process.env.DEVNET_RPC_URL ?? '',
       accounts: {
-        mnemonic: process.env.ANVIL_MNEMONIC ?? 'x',
+        mnemonic: process.env.DEVNET_MNEMONIC ?? 'x',
       },
     },
   },
@@ -246,6 +251,11 @@ export default {
     target: 'ethers-v5',
     alwaysGenerateOverloads: true, // should overloads with full signatures like deposit(uint256) be generated always, even if there are no overloads?
     // externalArtifacts: ["externalArtifacts/*.json"], // optional array of glob patterns with external artifacts to process (for example external libs from node_modules)
+  },
+  sourcify: {
+    // Disabled by default
+    // Doesn't need an API key
+    enabled: true,
   },
 
   abiExporter: {

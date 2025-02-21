@@ -108,7 +108,6 @@ export const createInputs = async ({
   };
 };
 
-
 export const generateEndTurnIntegrity = async ({
   gameId,
   turn,
@@ -160,7 +159,20 @@ export const generateEndTurnIntegrity = async ({
   }
 
   const circuit = await hre.zkit.getCircuit('ProposalsIntegrity15');
-  const inputsKey = ethers.utils.solidityKeccak256(['string'], [JSON.stringify(inputs) + 'groth16']);
+  const inputsKey = ethers.utils.solidityKeccak256(
+    ['string'],
+    [
+      JSON.stringify(inputs) +
+        'groth16' +
+        gameId.toString() +
+        turn.toString() +
+        verifierAddress +
+        chainId.toString() +
+        gm.address +
+        size.toString() +
+        JSON.stringify(proposals),
+    ],
+  );
 
   let cached = loadFromCache(inputsKey);
   if (cached) {

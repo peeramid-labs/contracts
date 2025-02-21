@@ -191,7 +191,7 @@ async function handleGameState(instanceBase: InstanceBase, gameId: number) {
   }
 }
 
-task('gameLifecycle', 'Interactive guide through the game lifecycle').setAction(async (_, hre) => {
+task('interactive', 'Interactive guide through the game lifecycle').setAction(async (_, hre) => {
   const setupEnv = await setupMockedEnvironment(hre, false);
   hre.tracer.enabled = true;
   const { ethers } = hre;
@@ -207,8 +207,7 @@ task('gameLifecycle', 'Interactive guide through the game lifecycle').setAction(
   if (numInstances.gt(0)) {
     console.log('Distributor already has instances, skipping distribution creation');
   } else {
-    const distribution = await hre.run('addDistribution');
-    console.log('Distribution added, Distributors Id:', distribution.distributorsId);
+    await hre.run('addDistribution');
   }
 
   // Get all subjects
@@ -229,12 +228,20 @@ task('gameLifecycle', 'Interactive guide through the game lifecycle').setAction(
       type: 'list',
       name: 'action',
       message: 'What would you like to do?',
-      choices: ['Create new subject', 'Select existing subject', 'Change logs verbosity', 'Exit'],
+      choices: ['Create new subject', 'Select existing subject', 'Change logs verbosity', 'List distributions', 'Exit'],
     });
 
     let instanceBase;
     let selectedSubject;
     switch (action) {
+      case 'List distributions': {
+        const distributions = await distributorContract.getDistributions();
+        console.log(
+          'Distributions:',
+          distributions.map(dist => ethers.utils.parseBytes32String(dist)),
+        );
+        break;
+      }
       case 'Create new subject': {
         const subject = (await hre.run('createSubject', {
           useFixture: false,

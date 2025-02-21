@@ -7,13 +7,15 @@
     "src",
     "types",
     "scripts",
-    "docs"
+    "docs",
+    "zk_artifacts",
+    "all-signatures.json"
   ],
   "description": "Contracts for rankify.it",
   "scripts": {
     "lint:fix": "eslint ./ --fix && pnpm run lint:sol:fix",
+    "clean": "npx hardhat zkit clean && rm -rf ./.zkproofs-cache && pnpm hardhat clean",
     "lint": "eslint ./ && pnpm run lint:sol",
-    "upgrade:game:mumbai": "source .secrets/hh_mumbai.env &&  pnpm hardhat --network mumbai deploy --tags upgrade_game",
     "test": "export NODE_ENV=TEST && pnpm build && pnpm hardhat test",
     "test:parallel": "export NODE_ENV=TEST && pnpm build && pnpm hardhat test --parallel",
     "build": "npx hardhat zkit compile && npx hardhat zkit verifiers && pnpm hardhat compile && pnpm hardhat diamond-abi-viem-export",

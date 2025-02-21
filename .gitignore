@@ -283,3 +283,5 @@ docs/selectors.md
 zk_artifacts/
 src/verifiers/
 .zkproofs-cache/
+
+all-signatures.json

@@ -305,11 +305,15 @@ const setupAddresses = async (hre: HardhatRuntimeEnvironment): Promise<AdrSetupR
 };
 export const setupMockedEnvironment = async (hre: HardhatRuntimeEnvironment, useFixture: boolean = true) => {
   const { deployments, getNamedAccounts, ethers: _eth } = hre;
+  const { deployer, owner } = await hre.getNamedAccounts();
+
   if (useFixture) {
     await deployments.fixture(['ERC7744', 'MAO']);
+  } else {
+    console.log('Running ERC7744 and MAO deployments');
+    await deployments.run(['ERC7744', 'MAO'], { writeDeploymentsToFiles: true });
   }
   const adr = await setupAddresses(hre);
-  const { deployer, owner } = await hre.getNamedAccounts();
 
   await adr.contractDeployer.wallet.sendTransaction({
     to: deployer,
