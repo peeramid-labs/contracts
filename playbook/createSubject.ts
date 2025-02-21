@@ -23,7 +23,7 @@ task('createSubject', 'Creates a new subject with MAO distribution')
     'distributorsId',
     'Distributors ID to create game from, defaults to hardhat task defaultDistributionId',
   )
-  .addOptionalParam('useFixture', 'Use fixture hardhat-deploy to speedup tests', true)
+  .addOptionalParam('useFixture', 'Use fixture hardhat-deploy to speedup tests', false)
   .setAction(async (taskArgs, hre) => {
     const { getNamedAccounts, deployments } = hre;
     const { useFixture } = taskArgs;
