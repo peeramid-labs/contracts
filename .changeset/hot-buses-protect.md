@@ -163,6 +163,13 @@
   - Principal cost calculations based on game parameters
   - 90/10 payment split between burn and DAO
 
+
+- GameLifeCycle script was renamed to `interactive` run it with
+`pnpm hardhat --network $NETWORK interactive`
+
+- all signatures are now available in `./all-signatures.json`
+- `pnpm clean` added to clean all artifacts & zk proofs cache
+
 ### Migration Notes
 
 1. **Client Updates Required**
