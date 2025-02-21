@@ -55,14 +55,22 @@ export class InstanceBase extends EnvironmentSimulator {
     await this.hre.network.provider.send('evm_mine');
   };
 
-  createGame = async (
-    minGameTime: BigNumberish,
-    signer: Wallet | SignerWithAddress,
-    gameMaster: string,
-    gameRank: BigNumberish,
-    openNow?: boolean,
-  ) => {
-    const gameId = await super.createGame(minGameTime, signer, gameMaster, gameRank, openNow);
+  createGame = async ({
+    minGameTime,
+    signer,
+    gameMaster,
+    gameRank,
+    openNow,
+    metadata,
+  }: {
+    minGameTime: BigNumberish;
+    signer: Wallet | SignerWithAddress;
+    gameMaster: string;
+    gameRank: BigNumberish;
+    openNow?: boolean;
+    metadata?: string;
+  }) => {
+    const gameId = await super.createGame({ minGameTime, signer, gameMaster, gameRank, openNow, metadata });
     this.updateGameState(gameId, GameState.Created);
     return gameId;
   };
@@ -108,7 +116,7 @@ export class InstanceBase extends EnvironmentSimulator {
 
   runToOvertime = async (gameId: BigNumberish, gameMaster: Wallet) => {
     await this.runToLastTurn(gameId, gameMaster, 'equal');
-    await this.makeTurn(gameId, 'equal');
+    await this.makeTurn({ gameId, distribution: 'equal', increaseFinalTime: true });
     this.updateGameState(gameId, GameState.Overtime);
   };
 

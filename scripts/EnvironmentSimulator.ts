@@ -248,6 +248,7 @@ class EnvironmentSimulator {
   });
 
   getCreateGameParams = (gameId: BigNumberish, gameMaster?: Wallet): IRankifyInstance.NewGameParamsInputStruct => ({
+    metadata: 'default metadata',
     gameMaster: gameMaster?.address ?? this.adr.gameMaster1.address,
     gameRank: gameId,
     maxPlayerCnt: constantParams.RInstance_MAX_PLAYERS,
@@ -987,13 +988,21 @@ class EnvironmentSimulator {
     return { signature, gmCommitment, deadline, participant, participantPubKey: participantPubKey };
   };
 
-  public async createGame(
-    minGameTime: BigNumberish,
-    signer: Wallet | SignerWithAddress,
-    gameMaster: string,
-    gameRank: BigNumberish,
-    openNow?: boolean,
-  ) {
+  public async createGame({
+    minGameTime,
+    signer,
+    gameMaster,
+    gameRank,
+    openNow,
+    metadata,
+  }: {
+    minGameTime: BigNumberish;
+    signer: Wallet | SignerWithAddress;
+    gameMaster: string;
+    gameRank: BigNumberish;
+    openNow?: boolean;
+    metadata?: string;
+  }) {
     log(`Creating game with rank ${gameRank} and minGameTime ${minGameTime}`, 2);
     await this.env.rankifyToken
       .connect(signer)
@@ -1001,6 +1010,7 @@ class EnvironmentSimulator {
       .then(r => r.wait(1));
     const expectedGameId = (await this.rankifyInstance.getContractState().then(state => state.numGames)).add(1);
     const params: IRankifyInstance.NewGameParamsInputStruct = {
+      metadata: metadata ?? 'test metadata',
       gameMaster: gameMaster,
       gameRank: gameRank,
       maxPlayerCnt: constantParams.RInstance_MAX_PLAYERS,
@@ -1674,7 +1684,6 @@ class EnvironmentSimulator {
       log(`Decrypted vote:`, 3);
       log(parsed, 3);
       return parsed.map(v => BigInt(v));
-       
     } catch (e: any) {
       throw new Error('Unexpected token');
     }

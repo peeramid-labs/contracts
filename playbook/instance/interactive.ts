@@ -321,13 +321,20 @@ task('interactive', 'Interactive guide through the game lifecycle').setAction(as
 
         switch (subjectAction) {
           case 'Create new game': {
-            const gameId = await instanceBase.createGame(
-              instanceBase.RInstanceSettings().RInstance_MIN_GAME_TIME,
-              instanceBase.adr.gameCreator1.wallet,
-              instanceBase.adr.gameMaster1.address,
-              1,
-              false,
-            );
+            const { metadata } = await inquirer.prompt({
+              type: 'input',
+              name: 'metadata',
+              message: 'Enter metadata for the game:',
+              default: 'test metadata',
+            });
+            const gameId = await instanceBase.createGame({
+              minGameTime: instanceBase.RInstanceSettings().RInstance_MIN_GAME_TIME,
+              signer: instanceBase.adr.gameCreator1.wallet,
+              gameMaster: instanceBase.adr.gameMaster1.address,
+              gameRank: 1,
+              openNow: false,
+              metadata: metadata,
+            });
             console.log('Game created with ID:', gameId);
             const { manage } = await inquirer.prompt({
               type: 'confirm',

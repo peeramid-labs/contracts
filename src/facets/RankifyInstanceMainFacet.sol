@@ -87,7 +87,8 @@ contract RankifyInstanceMainFacet is
             voteCredits: params.voteCredits,
             minGameTime: params.minGameTime,
             timePerTurn: params.timePerTurn,
-            timeToJoin: params.timeToJoin
+            timeToJoin: params.timeToJoin,
+            metadata: params.metadata
         });
 
         createGame(newGameParams);

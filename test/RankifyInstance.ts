@@ -175,7 +175,13 @@ const setupFirstRankTest = (simulator: EnvironmentSimulator) =>
     gamePrice = commonParams.principalCost.mul(principalTimeConstant).div(minGameTime);
 
     // Create the game
-    await simulator.createGame(minGameTime, simulator.adr.gameCreator1.wallet, simulator.adr.gameMaster1.address, 1);
+    await simulator.createGame({
+      minGameTime,
+      signer: simulator.adr.gameCreator1.wallet,
+      gameMaster: simulator.adr.gameMaster1.address,
+      gameRank: 1,
+      metadata: 'test metadata',
+    });
     return { initialCreatorBalance, initialBeneficiaryBalance, initialTotalSupply, gamePrice };
   });
 
@@ -306,13 +312,13 @@ const multipleFirstRankGamesTest = (simulator: EnvironmentSimulator) =>
   deployments.createFixture(async ({ deployments, getNamedAccounts, ethers }, options) => {
     // const promises = [];
     for (let numGames = 0; numGames < RInstance_MIN_PLAYERS; numGames++) {
-      const gameId = await simulator.createGame(
-        RInstance_MIN_GAME_TIME,
-        simulator.adr.gameCreator1.wallet,
-        simulator.adr.gameMaster1.address,
-        1,
-        true,
-      );
+      const gameId = await simulator.createGame({
+        minGameTime: RInstance_MIN_GAME_TIME,
+        signer: simulator.adr.gameCreator1.wallet,
+        gameMaster: simulator.adr.gameMaster1.address,
+        gameRank: 1,
+        openNow: true,
+      });
       await simulator.fillParty({
         players: simulator.getPlayers(simulator.adr, RInstance_MIN_PLAYERS, numGames),
         gameId,
@@ -325,25 +331,25 @@ const multipleFirstRankGamesTest = (simulator: EnvironmentSimulator) =>
   });
 const nextRankTest = (simulator: EnvironmentSimulator) =>
   deployments.createFixture(async () => {
-    await simulator.createGame(
-      RInstance_MIN_GAME_TIME,
-      simulator.adr.players[0].wallet,
-      simulator.adr.gameMaster1.address,
-      2,
-      true,
-    );
+    await simulator.createGame({
+      minGameTime: RInstance_MIN_GAME_TIME,
+      signer: simulator.adr.players[0].wallet,
+      gameMaster: simulator.adr.gameMaster1.address,
+      gameRank: 2,
+      openNow: true,
+    });
   });
 const nextRankGameOver = (simulator: EnvironmentSimulator) =>
   deployments.createFixture(async () => {
     let balancesBeforeJoined: BigNumber[] = [];
     const players = simulator.getPlayers(simulator.adr, RInstance_MIN_PLAYERS, 0);
-    await simulator.createGame(
-      RInstance_MIN_GAME_TIME,
-      simulator.adr.players[0].wallet,
-      simulator.adr.gameMaster1.address,
-      2,
-      true,
-    );
+    await simulator.createGame({
+      minGameTime: RInstance_MIN_GAME_TIME,
+      signer: simulator.adr.players[0].wallet,
+      gameMaster: simulator.adr.gameMaster1.address,
+      gameRank: 2,
+      openNow: true,
+    });
 
     const lastCreatedGameId = await simulator.rankifyInstance.getContractState().then(r => r.numGames);
     for (let i = 0; i < players.length; i++) {
@@ -531,6 +537,11 @@ describe(scriptName, () => {
       gamePrice = setup.gamePrice;
     });
 
+    it('can read game metadata', async () => {
+      const { metadata } = await rankifyInstance.getGameState(1);
+      expect(metadata).to.be.equal('test metadata');
+    });
+
     it('Should handle game creation costs and token distribution correctly', async () => {
       const finalCreatorBalance = await env.rankifyToken.balanceOf(adr.gameCreator1.wallet.address);
       const finalBeneficiaryBalance = await env.rankifyToken.balanceOf(
@@ -600,6 +611,7 @@ describe(scriptName, () => {
           nTurns: RInstance_MAX_TURNS,
           voteCredits: RInstance_VOTE_CREDITS,
           minGameTime: testCase.minGameTime,
+          metadata: 'test metadata',
         };
         const { DAO } = await getNamedAccounts();
         const totalSupplyBefore = await env.rankifyToken.totalSupply();
@@ -1454,13 +1466,14 @@ describe(scriptName, () => {
         });
         describe('When another game  of first rank is created', () => {
           beforeEach(async () => {
-            await simulator.createGame(
-              RInstance_MIN_GAME_TIME,
-              adr.gameCreator1.wallet,
-              adr.gameMaster2.address,
-              1,
-              true,
-            );
+            await simulator.createGame({
+              minGameTime: RInstance_MIN_GAME_TIME,
+              signer: adr.gameCreator1.wallet,
+              gameMaster: adr.gameMaster2.address,
+              gameRank: 1,
+              openNow: true,
+              metadata: 'test metadata',
+            });
           });
           it('Reverts if players from another game tries to join', async () => {
             const s1 = await simulator.signJoiningGame({
@@ -1661,6 +1674,7 @@ describe(scriptName, () => {
             voteCredits: RInstance_VOTE_CREDITS,
             nTurns: RInstance_MAX_TURNS,
             timePerTurn: RInstance_TIME_PER_TURN,
+            metadata: 'test metadata',
           };
           await expect(rankifyInstance.connect(adr.players[0].wallet).createGame(params)).to.emit(
             rankifyInstance,
@@ -1743,6 +1757,7 @@ describe(scriptName, () => {
               voteCredits: RInstance_VOTE_CREDITS,
               nTurns: RInstance_MAX_TURNS,
               timePerTurn: RInstance_TIME_PER_TURN,
+              metadata: 'test metadata',
             };
             await rankifyInstance.connect(adr.players[0].wallet).createGame(params);
             await rankifyInstance.connect(adr.players[0].wallet).openRegistration(2);
@@ -1801,6 +1816,7 @@ describe(scriptName, () => {
           voteCredits: RInstance_VOTE_CREDITS,
           nTurns: RInstance_MAX_TURNS,
           timePerTurn: RInstance_TIME_PER_TURN,
+          metadata: 'test metadata',
         };
         const players = getPlayers(adr, RInstance_MAX_PLAYERS);
         const winner = await rankifyInstance['gameWinner(uint256)'](1);
@@ -1851,6 +1867,7 @@ describe(scriptName, () => {
       minGameTime: 0,
       timePerTurn: RInstance_TIME_PER_TURN,
       timeToJoin: RInstance_TIME_TO_JOIN,
+      metadata: 'test metadata',
     };
 
     await env.rankifyToken.connect(adr.gameCreator1.wallet).approve(rankifyInstance.address, eth.constants.MaxUint256);
@@ -1868,6 +1885,7 @@ describe(scriptName, () => {
       nTurns: 5,
       minGameTime: 3601, // Not divisible by 5
       timePerTurn: RInstance_TIME_PER_TURN,
+      metadata: 'test metadata',
       timeToJoin: RInstance_TIME_TO_JOIN,
     };
 
@@ -1888,6 +1906,7 @@ describe(scriptName, () => {
       nTurns: 2,
       minGameTime: RInstance_MIN_GAME_TIME,
       timePerTurn: RInstance_TIME_PER_TURN,
+      metadata: 'test metadata',
       timeToJoin: RInstance_TIME_TO_JOIN,
     };
 
@@ -1918,6 +1937,7 @@ describe(scriptName, () => {
         votingTime: 1000,
         proposalTime: 1000,
         gameDescription: 'Test Game',
+        metadata: 'test metadata',
       };
 
       await expect(rankifyInstance.connect(adr.gameCreator1.wallet).createGame(params)).to.be.revertedWith(
