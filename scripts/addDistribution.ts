@@ -1,6 +1,7 @@
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DAODistributor } from '../types';
 import { Signer } from 'ethers';
+import { log } from './utils';
 
 export const addDistribution =
   (hre: HardhatRuntimeEnvironment) =>
@@ -17,6 +18,7 @@ export const addDistribution =
   }) => {
     const { deployments } = hre;
     const DAODistributor = await deployments.get('DAODistributor');
+    log('DAODistributor address:' + ' ' + DAODistributor.address);
     const distributorContract = new hre.ethers.Contract(
       DAODistributor.address,
       DAODistributor.abi,

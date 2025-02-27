@@ -192,7 +192,7 @@ async function handleGameState(instanceBase: InstanceBase, gameId: number) {
 }
 
 task('interactive', 'Interactive guide through the game lifecycle').setAction(async (_, hre) => {
-  const setupEnv = await setupMockedEnvironment(hre, false);
+  const setupEnv = await setupMockedEnvironment(hre, false, false);
   hre.tracer.enabled = true;
   const { ethers } = hre;
   // Initial setup
@@ -203,8 +203,8 @@ task('interactive', 'Interactive guide through the game lifecycle').setAction(as
     hre.ethers.provider,
   ) as DAODistributor;
 
-  const numInstances = await distributorContract.numInstances();
-  if (numInstances.gt(0)) {
+  const dsitributions = await distributorContract.getDistributions();
+  if (dsitributions.length > 0) {
     console.log('Distributor already has instances, skipping distribution creation');
   } else {
     await hre.run('addDistribution');

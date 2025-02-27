@@ -10,6 +10,7 @@ import { Deployment } from 'hardhat-deploy/types';
 import { Rankify } from '../types/src/tokens/Rankify';
 import { DAODistributor } from '../types/src/DAODistributor';
 import { ArguableVotingTournament } from '../types/src/distributions/ArguableVotingTournament';
+import { log } from './utils';
 
 export interface EnvSetupResult {
   rankifyToken: Rankify;
@@ -303,14 +304,15 @@ const setupAddresses = async (hre: HardhatRuntimeEnvironment): Promise<AdrSetupR
     gameOwner,
   };
 };
-export const setupMockedEnvironment = async (hre: HardhatRuntimeEnvironment, useFixture: boolean = true) => {
+export const setupMockedEnvironment = async (hre: HardhatRuntimeEnvironment, useFixture: boolean = true, withDeploy = true) => {
   const { deployments, getNamedAccounts, ethers: _eth } = hre;
   const { deployer, owner } = await hre.getNamedAccounts();
 
   if (useFixture) {
+    log('Using fixture');
     await deployments.fixture(['ERC7744', 'MAO']);
-  } else {
-    console.log('Running ERC7744 and MAO deployments');
+  } else if (withDeploy) {
+    log('Running ERC7744 and MAO deployments');
     await deployments.run(['ERC7744', 'MAO'], { writeDeploymentsToFiles: true });
   }
   const adr = await setupAddresses(hre);
