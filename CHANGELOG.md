@@ -1,5 +1,11 @@
 # rankify-contracts
 
+## 0.13.0
+
+### Minor Changes
+
+- [#136](https://github.com/peeramid-labs/rankify-contracts/pull/136) [`82efeb0f2301797a0e6435cf3a54cc7c4440e1a5`](https://github.com/peeramid-labs/rankify-contracts/commit/82efeb0f2301797a0e6435cf3a54cc7c4440e1a5) Thanks [@theKosmoss](https://github.com/theKosmoss)! - Fixed created distrubution check... added new flag to setupMockEnvironment
+
 ## 0.12.0
 
 ### Minor Changes
